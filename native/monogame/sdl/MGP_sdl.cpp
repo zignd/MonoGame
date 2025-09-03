@@ -6,7 +6,7 @@
 
 #include "mg_common.h"
 
-#include <sdl.h>
+#include <SDL.h>
 
 #if _WIN32
 #include <combaseapi.h>
@@ -190,11 +190,14 @@ struct MGP_Cursor
 
 MGP_Platform* MGP_Platform_Create(MGGameRunBehavior& behavior)
 {
-	SDL_Init(
-		SDL_INIT_VIDEO |
-		SDL_INIT_JOYSTICK |
-		SDL_INIT_GAMECONTROLLER |
-		SDL_INIT_HAPTIC);
+	// Check if SDL is already initialized to avoid reference count overflow
+	if (SDL_WasInit(0) == 0) {
+		SDL_Init(
+			SDL_INIT_VIDEO |
+			SDL_INIT_JOYSTICK |
+			SDL_INIT_GAMECONTROLLER |
+			SDL_INIT_HAPTIC);
+	}
 
 	SDL_DisableScreenSaver();
 
@@ -218,34 +221,33 @@ void MGP_Platform_Destroy(MGP_Platform* platform)
 	delete platform;
 }
 
-mgbyte* MGP_Platform_MakePath(mgbyte* location, mgbyte* path)
+void* MGP_Platform_MakePath(const char* location, const char* path)
 {
     assert(location != nullptr);
     assert(path != nullptr);
 
-    size_t length = strlen((const char*)path) + 1;
-    if (location[0])
-        length += strlen((const char*)location) + 1;
+    size_t location_len = strlen(location);
+    size_t path_len = strlen(path);
+    size_t separator_len = (location_len > 0) ? strlen(MG_PATH_SEPARATOR) : 0;
 
-#if _WIN32
-    // Windows requires marshaled strings to be allocated like this.
-    char* fpath = (char*)CoTaskMemAlloc(length);    
-#else
-    char* fpath = (char*)malloc(length);
-#endif
+    size_t length = location_len + separator_len + path_len + 1;
 
-    if (location[0])
-    {
-        strcpy_s(fpath, length, (const char*)location);
-        strcat_s(fpath, length, MG_PATH_SEPARATOR);
-        strcat_s(fpath, length, (const char*)path);
-    }
-    else
-    {
-        strcpy_s(fpath, length, (const char*)path);
+    char* fpath = (char*)SDL_malloc(length);
+    assert(fpath != nullptr);
+
+    if (location_len > 0) {
+        snprintf(fpath, length, "%s%s%s", location, MG_PATH_SEPARATOR, path);
+    } else {
+        snprintf(fpath, length, "%s", path);
     }
 
-    return (mgbyte*)fpath;
+	return reinterpret_cast<void*>(fpath);
+}
+
+void MGP_Platform_Free(void* ptr)
+{
+    assert(ptr != nullptr);
+    SDL_free(ptr);
 }
 
 void MGP_Platform_BeforeInitialize(MGP_Platform* platform)
@@ -645,8 +647,8 @@ mgbyte MGP_Platform_PollEvent(MGP_Platform* platform, MGP_Event& event_)
             event_.Type = MGEventType::DropFile;
             event_.Drop.Window = MGP_WindowFromId(platform, ev.drop.windowID);
 
-            static char TempPath[_MAX_PATH];
-            strcpy_s(TempPath, _MAX_PATH, ev.drop.file);
+            static char TempPath[MAX_PATH_SIZE];
+            snprintf(TempPath, MAX_PATH_SIZE, "%s", ev.drop.file);
             SDL_free(ev.drop.file);
 
             event_.Drop.File = TempPath;
@@ -686,7 +688,7 @@ MGP_Window* MGP_Window_Create(
     MGP_Platform* platform,
     mgint& width,
     mgint& height,
-    mgbyte* title)
+    const char* title)
 {
 	assert(platform != nullptr);
     assert(width > 0);
@@ -706,7 +708,7 @@ MGP_Window* MGP_Window_Create(
 	#error Not implemented
 #endif
 
-    title = title ? title : (mgbyte*)"";
+    title = title ? title : "";
 
 	window->window = SDL_CreateWindow((const char*)title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags);
     window->windowId = SDL_GetWindowID(window->window);
@@ -785,12 +787,12 @@ void MGP_Window_SetIsBorderless(MGP_Window* window, mgbyte borderless)
 	SDL_SetWindowBordered(window->window, borderless ? SDL_FALSE : SDL_TRUE);
 }
 
-void MGP_Window_SetTitle(MGP_Window* window, mgbyte* title)
+void MGP_Window_SetTitle(MGP_Window* window, const char* title)
 {
     assert(window != nullptr);
 
-    title = title ? title : (mgbyte*)"";
-    SDL_SetWindowTitle(window->window, (const char*)title);
+    title = title ? title : "";
+    SDL_SetWindowTitle(window->window, title);
 }
 
 void MGP_Window_Show(MGP_Window* window, mgbyte show)
@@ -848,7 +850,7 @@ void MGP_Window_ExitFullScreen(MGP_Window* window)
     SDL_SetWindowFullscreen(window->window, 0);
 }
 
-mgint MGP_Window_ShowMessageBox(MGP_Window* window, mgbyte* title, mgbyte* description, mgbyte* buttons, mgint count)
+mgint MGP_Window_ShowMessageBox(MGP_Window* window, const char* title, const char* description, const char* buttons, mgint count)
 {
     SDL_MessageBoxData data;
     data.window = (window != nullptr ? window->window : nullptr);
@@ -862,10 +864,14 @@ mgint MGP_Window_ShowMessageBox(MGP_Window* window, mgbyte* title, mgbyte* descr
 #endif
 
     auto bdata = new SDL_MessageBoxButtonData[count];
+    const char* p = buttons;
     for (int i = 0; i < count; i++)
     {
         bdata[i].buttonid = i;
-        bdata[i].text = (const char*)buttons[i];
+        bdata[i].text = p;
+        // Since we have double null-terminated strings,
+        // we can safely assume the next button text starts after the current one.
+        p += strlen(p) + 1;
         bdata[i].flags = 0;
     }
 
@@ -1004,7 +1010,7 @@ mgbyte MGP_GamePad_SetVibration(MGP_Platform* platform, mgint identifer, mgfloat
     if (pair == platform->controllers.end())
         return false;
 
-    auto supported = SDL_GameControllerRumble(pair->second, (UINT16)(leftMotor * 0xFFFF), (UINT16)(rightMotor * 0xFFFF), INT_MAX);
+    auto supported = SDL_GameControllerRumble(pair->second, (mgushort)(leftMotor * 0xFFFF), (mgushort)(rightMotor * 0xFFFF), INT_MAX);
     return supported == 0;
 }
 
