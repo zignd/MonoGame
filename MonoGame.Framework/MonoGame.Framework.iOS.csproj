@@ -12,6 +12,7 @@
     <SupportedOSPlatformVersion>11.2</SupportedOSPlatformVersion>
     <IsAotCompatible>true</IsAotCompatible>
     <PackageReadmeFile>README-packages.md</PackageReadmeFile>
+    <CheckEolWorkloads>false</CheckEolWorkloads>
   </PropertyGroup>
 
   <ItemGroup>
