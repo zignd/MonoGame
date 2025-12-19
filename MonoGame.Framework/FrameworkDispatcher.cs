@@ -36,6 +36,19 @@ namespace Microsoft.Xna.Framework
             DynamicSoundEffectInstanceManager.UpdatePlayingInstances();
             SoundEffectInstancePool.Update();
             Microphone.UpdateMicrophones();
+
+#if DESKTOPGL || ANGLE
+            // Check for audio device changes and handle them if needed
+            try
+            {
+                var controller = OpenALSoundController.Instance;
+                controller?.ProcessDeviceChanges();
+            }
+            catch (NoAudioHardwareException)
+            {
+                // Audio system not initialized, skip device change check
+            }
+#endif
         }
 
         private static void Initialize()
@@ -44,4 +57,3 @@ namespace Microsoft.Xna.Framework
         }
     }
 }
-
