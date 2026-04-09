@@ -1332,11 +1332,13 @@ void MGG_Buffer_GetData(MGG_GraphicsDevice* device, MGG_Buffer* buffer, mgint of
 	ComPtr<D3D12MA::Allocation> intermediateAlloc;
 	CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(dataStride * dataCount);
 	D3D12MA::ALLOCATION_DESC allocDesc = { D3D12MA::ALLOCATION_FLAG_NONE, D3D12_HEAP_TYPE_READBACK };
-	device->resources->GetAllocator()->CreateResource(
-		&allocDesc, &resourceDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+	DX::ThrowIfFailed(device->resources->GetAllocator()->CreateResource(
+		&allocDesc,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
 		intermediateAlloc.ReleaseAndGetAddressOf(),
-		IID_GRAPHICS_PPV_ARGS(intermediateBuffer.ReleaseAndGetAddressOf()));
+		IID_GRAPHICS_PPV_ARGS(intermediateBuffer.ReleaseAndGetAddressOf())));
 
 	auto cmd = device->resources->BeginCommandList();
 	auto cmdList = cmd->Get();
@@ -1361,13 +1363,19 @@ void MGG_Buffer_GetData(MGG_GraphicsDevice* device, MGG_Buffer* buffer, mgint of
 
 	UINT8* pSourceDataBegin;
 	DX::ThrowIfFailed(intermediateBuffer->Map(0, nullptr, reinterpret_cast<void**>(&pSourceDataBegin)));
-	if (dataStride == dataStride)
+	if (dataStride == dataBytes)
+	{
 		memcpy(data, pSourceDataBegin, dataStride * dataCount);
-	else {
-		for (auto i = 0; i < dataCount; i++)
-			memcpy(data + (i * dataStride), (void*)(pSourceDataBegin + (i * dataStride)), dataStride);
 	}
-	CD3DX12_RANGE writeRange(0, 0); // We haven't write to the buffer
+	else
+	{
+		auto bytesToCopy = dataBytes < dataStride ? dataBytes : dataStride;
+		for (auto i = 0; i < dataCount; i++)
+		{
+			memcpy(data + (i * dataBytes), (void*)(pSourceDataBegin + (i * dataStride)), bytesToCopy);
+		}
+	}
+	CD3DX12_RANGE writeRange(0, 0); // We haven't written to the buffer
 	intermediateBuffer->Unmap(0, &writeRange);
 }
 

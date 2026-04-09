@@ -4635,9 +4635,10 @@ void MGG_Buffer_GetData(MGG_GraphicsDevice* device, MGG_Buffer* buffer, mgint of
     }
     else
     {
+		auto bytesToCopy = dataBytes < dataStride ? dataBytes : dataStride;
         for (mgint i = 0; i < dataCount; ++i)
         {
-            memcpy(data + i * dataBytes, src_ptr + i * dataStride, dataBytes);
+            memcpy(data + i * dataBytes, src_ptr + i * dataStride, bytesToCopy);
         }
     }
 }
