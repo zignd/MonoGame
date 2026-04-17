@@ -1478,6 +1478,10 @@ void MGG_GraphicsDevice_Destroy(MGG_GraphicsDevice* device)
 {
 	assert(device != nullptr);
 
+	// Be sure we're done drawing.
+	// Prevents some exceptions while shutting down.
+	vkDeviceWaitIdle(device->device);
+
 	cleanupSwapChain(device);
 
 	for (auto pair : device->shader_programs)
