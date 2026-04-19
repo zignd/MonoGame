@@ -148,6 +148,7 @@ struct MGG_BlendState
 struct MGG_DepthStencilState
 {
 	D3D12_DEPTH_STENCIL_DESC desc;
+	mgint referenceStencil;
 };
 
 struct MGG_RasterizerState
@@ -604,6 +605,10 @@ void MGG_GraphicsDevice_SetDepthStencilState(MGG_GraphicsDevice* device, MGG_Dep
 
 	auto& depthStencilState = device->pipelineManager->impl->m_currentPSODesc.DepthStencilState;
 	depthStencilState = state->desc;
+	
+	// Set stencil reference on every frame.
+	auto commandList = device->context->GetCommandList();
+	commandList->OMSetStencilRef(state->referenceStencil);
 }
 
 void MGG_GraphicsDevice_SetRasterizerState(MGG_GraphicsDevice* device, MGG_RasterizerState* state)
@@ -1051,6 +1056,7 @@ MGG_DepthStencilState* MGG_DepthStencilState_Create(MGG_GraphicsDevice* device, 
 	state->desc.BackFace.StencilPassOp = StencilOperationToD3D12_D3D12_STENCIL_OP[(int)info->stencilPass];
 	state->desc.BackFace.StencilFailOp = StencilOperationToD3D12_D3D12_STENCIL_OP[(int)info->stencilFail];
 	state->desc.BackFace.StencilDepthFailOp = StencilOperationToD3D12_D3D12_STENCIL_OP[(int)info->stencilDepthBufferFail];
+	state->referenceStencil = info->referenceStencil;
 
 	return state;
 }
