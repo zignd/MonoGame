@@ -38,7 +38,6 @@ namespace Microsoft.Xna.Framework
             Microphone.UpdateMicrophones();
 
 #if DESKTOPGL || ANGLE
-            // Check for audio device changes and handle them if needed
             try
             {
                 var controller = OpenALSoundController.Instance;
@@ -47,6 +46,7 @@ namespace Microsoft.Xna.Framework
             catch (NoAudioHardwareException)
             {
                 // Audio system not initialized, skip device change check
+                // Should we log this?
             }
 #endif
         }
