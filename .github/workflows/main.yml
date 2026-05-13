@@ -83,7 +83,7 @@ jobs:
         run: |
           dotnet workload install macos ios
 
-      - name: Pin xcode to 26.4
+      - name: Pin xcode version
         uses: maxim-lobanov/setup-xcode@v1
         if: runner.environment == 'github-hosted' && runner.os == 'macos'
         with:
@@ -378,7 +378,7 @@ jobs:
         if: runner.environment == 'github-hosted'
         uses: monogame/monogame-actions/install-fonts@v1
 
-      - name: Pin xcode to 26.4
+      - name: Pin xcode version
         uses: maxim-lobanov/setup-xcode@v1
         if: runner.environment == 'github-hosted' && runner.os == 'macos'
         with:
