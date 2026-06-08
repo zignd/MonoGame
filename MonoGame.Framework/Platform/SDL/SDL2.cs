@@ -682,6 +682,17 @@ internal static class Sdl
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void d_sdl_gl_swapwindow(IntPtr window);
         public static d_sdl_gl_swapwindow SwapWindow = FuncLoader.LoadFunction<d_sdl_gl_swapwindow>(NativeLibrary, "SDL_GL_SwapWindow");
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void d_sdl_gl_getdrawablesize(IntPtr window, out int w, out int h);
+        private static d_sdl_gl_getdrawablesize SDL_GL_GetDrawableSize = FuncLoader.LoadFunction<d_sdl_gl_getdrawablesize>(NativeLibrary, "SDL_GL_GetDrawableSize");
+
+        // Physical pixel size of the window's GL drawable. On HiDPI/Retina this is larger than
+        // the window size in points (e.g. 2x); equal to it on non-HiDPI displays.
+        public static void GetDrawableSize(IntPtr window, out int w, out int h)
+        {
+            SDL_GL_GetDrawableSize(window, out w, out h);
+        }
     }
 
     public static class Mouse

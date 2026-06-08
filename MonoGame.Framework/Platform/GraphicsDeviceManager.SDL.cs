@@ -56,6 +56,30 @@ namespace Microsoft.Xna.Framework
             }
 
             ((SdlGameWindow)SdlGameWindow.Instance).CreateWindow();
+
+            // High-DPI is opt-in: PreferredBackBuffer* are points, but the back buffer/viewport use
+            // physical pixels. Scale the freshly-created device's back buffer up to the drawable's
+            // pixel size. Scale is 1 unless a high-DPI drawable was granted, so this is a no-op by
+            // default. (Subsequent ApplyChanges go through PlatformPreparePresentationParameters.)
+            ScaleBackBufferToPixels(presentationParameters);
+        }
+
+        partial void PlatformPreparePresentationParameters(PresentationParameters presentationParameters)
+        {
+            ScaleBackBufferToPixels(presentationParameters);
+        }
+
+        private static void ScaleBackBufferToPixels(PresentationParameters presentationParameters)
+        {
+            if (SdlGameWindow.Instance is not SdlGameWindow window)
+                return;
+
+            var scale = window.Scale;
+            if (scale == 1f)
+                return;
+
+            presentationParameters.BackBufferWidth = (int)(presentationParameters.BackBufferWidth * scale);
+            presentationParameters.BackBufferHeight = (int)(presentationParameters.BackBufferHeight * scale);
         }
     }
 }

@@ -93,6 +93,22 @@ namespace Microsoft.Xna.Framework
         private string _screenDeviceName;
         private int _width, _height;
         private bool _wasMoved, _supressMoved;
+        private float _scale = 1f;
+
+        // High-DPI is opt-in (GraphicsDeviceManager.AllowHighDpi) and only meaningful where the OS
+        // distinguishes logical points from physical pixels — currently macOS. Everywhere else, or
+        // when not opted in, this is false and the window behaves exactly as before.
+        private bool HighDpiEnabled =>
+            CurrentPlatform.OS == OS.MacOSX &&
+            _game.graphicsDeviceManager != null &&
+            _game.graphicsDeviceManager.AllowHighDpi;
+
+        /// <summary>
+        /// Ratio of the GL drawable (physical pixels) to the window (logical points). 1 unless a
+        /// high-DPI back buffer is active; used to convert between the window's point-space and the
+        /// back buffer's pixel-space (mouse coordinates, window sizing).
+        /// </summary>
+        internal float Scale => _scale;
 
         public SdlGameWindow(Game game)
         {
@@ -143,6 +159,12 @@ namespace Microsoft.Xna.Framework
                 Sdl.Window.State.InputFocus |
                 Sdl.Window.State.MouseFocus;
 
+            // Opt-in only: request a high-DPI/Retina drawable so the GL framebuffer is sized in
+            // physical pixels rather than logical points. The back buffer/viewport are synced to
+            // the drawable size (see ClientResize) so rendering is crisp instead of OS-upscaled.
+            if (HighDpiEnabled)
+                initflags |= Sdl.Window.State.AllowHighDPI;
+
             if (_handle != IntPtr.Zero)
                 Sdl.Window.Destroy(_handle);
 
@@ -165,6 +187,17 @@ namespace Microsoft.Xna.Framework
             );
 
             Id = Sdl.Window.GetWindowId(_handle);
+
+            // Measure the backing scale (physical pixels per logical point). Stays 1 unless a
+            // high-DPI drawable was granted, so all the conversions below become no-ops by default.
+            _scale = 1f;
+            if (HighDpiEnabled)
+            {
+                Sdl.Window.GetSize(_handle, out var winW, out _);
+                Sdl.GL.GetDrawableSize(_handle, out var drawW, out _);
+                if (winW > 0 && drawW > 0)
+                    _scale = (float)drawW / winW;
+            }
 
             if (_icon != IntPtr.Zero)
                 Sdl.Window.SetIcon(_handle, _icon);
@@ -304,20 +337,38 @@ namespace Microsoft.Xna.Framework
 
         public void ClientResize(int width, int height)
         {
+            // The SDL event reports the window size in logical points. With a high-DPI drawable the
+            // back buffer must instead match the GL drawable in physical pixels, or the OS upscales
+            // a too-small framebuffer and everything looks blurry. Off HiDPI this is a no-op.
+            var bbWidth = width;
+            var bbHeight = height;
+            if (HighDpiEnabled)
+            {
+                Sdl.GL.GetDrawableSize(Handle, out var dw, out var dh);
+                if (dw > 0 && dh > 0)
+                {
+                    bbWidth = dw;
+                    bbHeight = dh;
+                    if (width > 0)
+                        _scale = (float)dw / width; // refresh if the window moved to another display
+                }
+            }
+
             // SDL reports many resize events even if the Size didn't change.
             // Only call the code below if it actually changed.
-            if (_game.GraphicsDevice.PresentationParameters.BackBufferWidth == width &&
-                _game.GraphicsDevice.PresentationParameters.BackBufferHeight == height) {
+            if (_game.GraphicsDevice.PresentationParameters.BackBufferWidth == bbWidth &&
+                _game.GraphicsDevice.PresentationParameters.BackBufferHeight == bbHeight) {
                 return;
             }
 
             if (_game.GraphicsDevice.RasterizerState.ScissorTestEnable && _game.GraphicsDevice.ScissorRectangle == _game.GraphicsDevice.Viewport.Bounds)
-                _game.GraphicsDevice.ScissorRectangle = new Rectangle(0, 0, width, height);
+                _game.GraphicsDevice.ScissorRectangle = new Rectangle(0, 0, bbWidth, bbHeight);
 
-            _game.GraphicsDevice.PresentationParameters.BackBufferWidth = width;
-            _game.GraphicsDevice.PresentationParameters.BackBufferHeight = height;
-            _game.GraphicsDevice.Viewport = new Viewport(0, 0, width, height);
+            _game.GraphicsDevice.PresentationParameters.BackBufferWidth = bbWidth;
+            _game.GraphicsDevice.PresentationParameters.BackBufferHeight = bbHeight;
+            _game.GraphicsDevice.Viewport = new Viewport(0, 0, bbWidth, bbHeight);
 
+            // Keep _width/_height in logical points so ClientBounds and window positioning stay correct.
             Sdl.Window.GetSize(Handle, out _width, out _height);
 
             OnClientSizeChanged();
