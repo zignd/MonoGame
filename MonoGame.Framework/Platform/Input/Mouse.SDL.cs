@@ -39,6 +39,16 @@ namespace Microsoft.Xna.Framework.Input
             window.MouseState.X = x - clientBounds.X;
             window.MouseState.Y = y - clientBounds.Y;
 
+            // The OS reports the cursor in logical points; convert to back-buffer pixels when a
+            // high-DPI drawable is active so hit-testing matches what's rendered. Scale is 1
+            // otherwise, so this is a no-op on the default path and on Windows/Linux.
+            var scale = ((SdlGameWindow)window).Scale;
+            if (scale != 1f)
+            {
+                window.MouseState.X = (int)(window.MouseState.X * scale);
+                window.MouseState.Y = (int)(window.MouseState.Y * scale);
+            }
+
             return window.MouseState;
         }
 
@@ -46,7 +56,15 @@ namespace Microsoft.Xna.Framework.Input
         {
             PrimaryWindow.MouseState.X = x;
             PrimaryWindow.MouseState.Y = y;
-            
+
+            // x/y are in back-buffer pixels; WarpInWindow expects logical points.
+            var scale = ((SdlGameWindow)PrimaryWindow).Scale;
+            if (scale != 1f)
+            {
+                x = (int)(x / scale);
+                y = (int)(y / scale);
+            }
+
             Sdl.Mouse.WarpInWindow(PrimaryWindow.Handle, x, y);
         }
 

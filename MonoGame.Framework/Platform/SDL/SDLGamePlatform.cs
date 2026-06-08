@@ -327,6 +327,15 @@ namespace Microsoft.Xna.Framework
 
         public override void EndScreenDeviceChange(string screenDeviceName, int clientWidth, int clientHeight)
         {
+            // clientWidth/Height arrive in back-buffer pixels, but the window is sized in logical
+            // points. Convert back when a high-DPI drawable is active (scale is 1 otherwise).
+            var scale = _view.Scale;
+            if (scale != 1f)
+            {
+                clientWidth = (int)(clientWidth / scale);
+                clientHeight = (int)(clientHeight / scale);
+            }
+
             _view.EndScreenDeviceChange(screenDeviceName, clientWidth, clientHeight);
         }
 
