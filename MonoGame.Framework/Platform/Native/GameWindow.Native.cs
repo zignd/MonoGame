@@ -22,7 +22,14 @@ internal class NativeGameWindow : GameWindow
 
     private int _width;
     private int _height;
-    
+    private float _scale = 1f;
+
+    /// <summary>
+    /// Physical drawable pixels per logical point for this window (1 unless HiDPI/Retina). The
+    /// window/ClientBounds are kept in points; the back buffer and viewport use physical pixels.
+    /// </summary>
+    internal float Scale => _scale;
+
     public static NativeGameWindow FromHandle(nint handle)
     {
         if (_windows.TryGetValue(handle, out var window))
@@ -118,6 +125,13 @@ internal class NativeGameWindow : GameWindow
         }
 
         Handle = MGP.Window_GetNativeHandle(_handle);
+
+        // Measure the backing scale: the window was created at (_width,_height) logical points, and
+        // on HiDPI the drawable is larger (e.g. 2x). Lets us size the back buffer in physical pixels
+        // while keeping the window in points. Stays 1 on non-HiDPI displays (no-op).
+        MGP.Window_GetDrawableSize(_handle, out var drawableWidth, out var drawableHeight);
+        if (_width > 0 && drawableWidth > 0)
+            _scale = (float)drawableWidth / _width;
     }
 
     internal unsafe void Destroy()
@@ -162,13 +176,19 @@ internal class NativeGameWindow : GameWindow
             MGP.Window_ExitFullScreen(_handle);
         }
 
-        if (_width == pp.BackBufferWidth && _height == pp.BackBufferHeight)
+        // pp.BackBufferWidth/Height are in physical pixels (the GraphicsDeviceManager scales the
+        // requested point size by Scale). The window itself is sized in logical points, so convert
+        // back. On non-HiDPI displays Scale is 1, so this is the original behaviour.
+        var pointsWidth = (int)(pp.BackBufferWidth / _scale);
+        var pointsHeight = (int)(pp.BackBufferHeight / _scale);
+
+        if (_width == pointsWidth && _height == pointsHeight)
             return;
 
-        _width = pp.BackBufferWidth;
-        _height = pp.BackBufferHeight;
+        _width = pointsWidth;
+        _height = pointsHeight;
 
-        MGP.Window_SetClientSize(_handle, pp.BackBufferWidth, pp.BackBufferHeight);
+        MGP.Window_SetClientSize(_handle, pointsWidth, pointsHeight);
     }
 
     public unsafe void ClientResize(int width, int height)

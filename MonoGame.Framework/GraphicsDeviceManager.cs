@@ -26,6 +26,7 @@ namespace Microsoft.Xna.Framework
         private bool _drawBegun;
         private bool _disposed;
         private bool _hardwareModeSwitch = true;
+        private bool _allowHighDpi;
         private bool _preferHalfPixelOffset = false;
         private bool _wantFullScreen;
         private GraphicsProfile _graphicsProfile;
@@ -473,6 +474,21 @@ namespace Microsoft.Xna.Framework
                 _shouldApplyChanges = true;
                 _hardwareModeSwitch = value;
             }
+        }
+
+        /// <summary>
+        /// Opt in to a high-DPI ("Retina") back buffer on platforms that support it (currently
+        /// macOS). When <c>true</c>, the window stays sized in logical points while the back buffer
+        /// and viewport are sized in physical pixels, so rendering is crisp instead of being
+        /// upscaled by the OS; <see cref="PreferredBackBufferWidth"/>/<see cref="PreferredBackBufferHeight"/>
+        /// are interpreted as points. When <c>false</c> (the default) behaviour is unchanged. Must
+        /// be set before the graphics device is created (e.g. in the Game constructor); it has no
+        /// effect on platforms without a points/pixels distinction.
+        /// </summary>
+        public bool AllowHighDpi
+        {
+            get { return _allowHighDpi; }
+            set { _allowHighDpi = value; }
         }
 
         /// <summary>

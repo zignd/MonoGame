@@ -168,8 +168,10 @@ class NativeGamePlatform : GamePlatform
                     var window = NativeGameWindow.FromHandle(event_.MouseMove.Window);
                     if (window != null)
                     {
-                        window.MouseState.X = event_.MouseMove.X;
-                        window.MouseState.Y = event_.MouseMove.Y;
+                        // SDL reports the cursor in logical points; scale to physical pixels so
+                        // hit-testing matches the (high-DPI) back buffer. Scale is 1 off HiDPI.
+                        window.MouseState.X = (int)(event_.MouseMove.X * window.Scale);
+                        window.MouseState.Y = (int)(event_.MouseMove.Y * window.Scale);
                     }
                     break;
                 }
@@ -303,7 +305,15 @@ class NativeGamePlatform : GamePlatform
 
     public override unsafe bool BeforeDraw(GameTime gameTime)
     {
-        return MGP.Platform_BeforeDraw(Handle) == 0 ? false : true;
+        var canDraw = MGP.Platform_BeforeDraw(Handle) != 0;
+
+        // The native swapchain may have been recreated to match the surface (e.g. after a fullscreen
+        // aspect change). Sync the managed back buffer/viewport to that actual size so rendering
+        // fills the surface correctly instead of being stretched.
+        if (canDraw)
+            Game.GraphicsDevice?.SyncBackBufferToSwapchain();
+
+        return canDraw;
     }
 
     public override unsafe void EnterFullScreen()
