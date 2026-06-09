@@ -197,6 +197,9 @@ internal static unsafe partial class MGG
         int multiSampleCount,
         int syncInterval);
 
+    [DllImport(MGP.MonoGameNativeDLL, EntryPoint = "MGG_GraphicsDevice_GetBackBufferSize", ExactSpelling = true)]
+    public static extern void GraphicsDevice_GetBackBufferSize(MGG_GraphicsDevice* device, out int width, out int height);
+
     [DllImport(MGP.MonoGameNativeDLL, EntryPoint = "MGG_GraphicsDevice_BeginFrame", ExactSpelling = true)]
     public static extern int GraphicsDevice_BeginFrame(MGG_GraphicsDevice* device);
 

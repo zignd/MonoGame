@@ -1810,9 +1810,21 @@ void MGVK_RecreateSwapChain(
 		multiSampleCount = std::clamp(multiSampleCount, 1, maxMultisampleCount);
 	}
 
-	// We apply the extent range to the entire swapchain size to avoid surface scaling and errors.
-	device->swapchainWidth = std::clamp(width, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
-	device->swapchainHeight = std::clamp(height, surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height);
+	// Size the swapchain to the surface. When the surface reports a fixed size (currentExtent !=
+	// 0xFFFFFFFF, as on macOS/Metal where it's the physical drawable), the spec requires using it,
+	// and doing so keeps the swapchain matched to the surface — otherwise a requested size with a
+	// different aspect (e.g. when fullscreen switches the window to 16:10) gets stretched. When the
+	// surface defers to the swapchain (0xFFFFFFFF), fall back to the requested size, clamped.
+	if (surface_capabilities.currentExtent.width != 0xFFFFFFFF)
+	{
+		device->swapchainWidth = surface_capabilities.currentExtent.width;
+		device->swapchainHeight = surface_capabilities.currentExtent.height;
+	}
+	else
+	{
+		device->swapchainWidth = std::clamp(width, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
+		device->swapchainHeight = std::clamp(height, surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height);
+	}
 	device->colorFormat = vkColor;
 	device->depthFormat = vkDepth;
 	device->multiSampleCount = multiSampleCount;
@@ -2153,6 +2165,16 @@ void MGG_GraphicsDevice_ResizeSwapchain(
 	MGVK_RecreateSwapChain(device, nativeWindowHandle, width, height, vkColor, vkDepth, multiSampleCount, syncInterval);
 
 	MGVK_PrepareFrame(device);
+}
+
+// Actual swapchain extent in physical pixels. May differ from the size requested via
+// ResizeSwapchain — the surface can dictate its own size (e.g. the physical drawable on macOS, or
+// after a fullscreen aspect change). The managed layer syncs its back buffer/viewport to this.
+void MGG_GraphicsDevice_GetBackBufferSize(MGG_GraphicsDevice* device, mgint& width, mgint& height)
+{
+	assert(device);
+	width = (mgint)device->swapchainWidth;
+	height = (mgint)device->swapchainHeight;
 }
 
 

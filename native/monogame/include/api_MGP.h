@@ -39,6 +39,7 @@ MG_EXPORT void MGP_Window_SetIsBorderless(MGP_Window* window, mgbyte borderless)
 MG_EXPORT void MGP_Window_SetTitle(MGP_Window* window, const char* title);
 MG_EXPORT void MGP_Window_Show(MGP_Window* window, mgbyte show);
 MG_EXPORT void MGP_Window_GetPosition(MGP_Window* window, mgint& x, mgint& y);
+MG_EXPORT void MGP_Window_GetDrawableSize(MGP_Window* window, mgint& width, mgint& height);
 MG_EXPORT void MGP_Window_SetPosition(MGP_Window* window, mgint x, mgint y);
 MG_EXPORT void MGP_Window_SetClientSize(MGP_Window* window, mgint width, mgint height);
 MG_EXPORT void MGP_Window_SetCursor(MGP_Window* window, MGP_Cursor* cursor);
