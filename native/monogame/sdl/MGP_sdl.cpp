@@ -7,6 +7,7 @@
 #include "mg_common.h"
 
 #include <SDL.h>
+#include <SDL_vulkan.h>
 
 #if _WIN32
 #include <combaseapi.h>
@@ -737,6 +738,14 @@ MGP_Window* MGP_Window_Create(
 	#error Not implemented
 #endif
 
+#if defined(__APPLE__)
+	// Render at the display's physical (Retina) resolution rather than letting macOS upscale a
+	// logical-point framebuffer. The window stays sized in points; the Metal/Vulkan drawable
+	// becomes physical pixels. Enabled by default on the (new) native backend — see the managed
+	// NativeGameWindow, which keeps the window in points while the back buffer uses drawable pixels.
+	flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
+
     title = title ? title : "";
 
 	window->window = SDL_CreateWindow((const char*)title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags);
@@ -848,6 +857,15 @@ void MGP_Window_GetPosition(MGP_Window* window, mgint& x, mgint& y)
 {
 	assert(window != nullptr);
 	SDL_GetWindowPosition(window->window, &x, &y);
+}
+
+// Physical pixel size of the window's Vulkan drawable. On HiDPI/Retina this is larger than the
+// window size in points (e.g. 2x); equal to it on non-HiDPI displays. Used by the managed layer to
+// keep the window in points while sizing the back buffer/viewport in physical pixels.
+void MGP_Window_GetDrawableSize(MGP_Window* window, mgint& width, mgint& height)
+{
+	assert(window != nullptr);
+	SDL_Vulkan_GetDrawableSize(window->window, &width, &height);
 }
 
 void MGP_Window_SetPosition(MGP_Window* window, mgint x, mgint y)

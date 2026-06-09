@@ -119,6 +119,25 @@ public partial class GraphicsDevice
         }
     }
 
+    // The native swapchain sizes itself to the surface (e.g. the physical drawable, which can change
+    // aspect when entering fullscreen). Pull that actual size into the managed back buffer/viewport
+    // each frame so rendering fills the surface at the correct aspect instead of being stretched.
+    // No window resize is triggered, so this can't feed back into a resize loop.
+    internal unsafe void SyncBackBufferToSwapchain()
+    {
+        MGG.GraphicsDevice_GetBackBufferSize(Handle, out var width, out var height);
+        if (width <= 0 || height <= 0)
+            return;
+        if (PresentationParameters.BackBufferWidth == width && PresentationParameters.BackBufferHeight == height)
+            return;
+
+        PresentationParameters.BackBufferWidth = width;
+        PresentationParameters.BackBufferHeight = height;
+
+        _viewport = new Viewport(0, 0, width, height, _viewport.MinDepth, _viewport.MaxDepth);
+        _scissorRectangle = new Rectangle(0, 0, width, height);
+    }
+
     private unsafe void BeginFrame()
     {
         if (_currentFrame > -1)
