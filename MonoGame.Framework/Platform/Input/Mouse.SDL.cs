@@ -49,6 +49,31 @@ namespace Microsoft.Xna.Framework.Input
                 window.MouseState.Y = (int)(window.MouseState.Y * scale);
             }
 
+            // Borderless desktop fullscreen on macOS: SDL_GetWindowPosition reports the window
+            // origin as (0,0) even though the content area begins below the menu bar, so the
+            // subtraction above leaves the cursor offset by the menu-bar band (and any side chrome).
+            // The drawable is that much smaller than the full screen, so correct by subtracting
+            // (physicalScreen - drawable) per axis. Only fullscreen-desktop windows are affected;
+            // the offset is 0 everywhere the window already fills the display, so this is otherwise
+            // a no-op.
+            var flags = Sdl.Window.GetWindowFlags(window.Handle);
+            if ((flags & Sdl.Window.State.FullscreenDesktop) == Sdl.Window.State.FullscreenDesktop)
+            {
+                var displayIndex = Sdl.Window.GetDisplayIndex(window.Handle);
+                Sdl.Rectangle displayRect;
+                Sdl.Display.GetBounds(displayIndex, out displayRect);
+
+                var drawW = (int)(displayRect.Width * scale);
+                var drawH = (int)(displayRect.Height * scale);
+                if (scale != 1f)
+                {
+                    Sdl.GL.GetDrawableSize(window.Handle, out drawW, out drawH);
+                }
+
+                window.MouseState.X -= (int)(displayRect.Width * scale) - drawW;
+                window.MouseState.Y -= (int)(displayRect.Height * scale) - drawH;
+            }
+
             return window.MouseState;
         }
 
