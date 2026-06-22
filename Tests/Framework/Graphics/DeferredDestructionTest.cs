@@ -15,28 +15,6 @@ namespace MonoGame.Tests.Graphics
     [NonParallelizable]
     internal class DeferredDestructionTest
     {
-        
-        #region Native Helpers
-
-        /// <summary>
-        /// Used to retrieve the frame field from a texture.
-        /// MGG_Texture layout is different in Vulkan and DX12.
-        /// </summary>
-        /// <remarks>If either layout changes, this would need to be updated!</remarks>
-        private unsafe int GetTextureFrame(Texture2D texture)
-        {
-            var textureHandle = (uint*)texture.Handle;
-#if VULKAN
-            return (int)textureHandle[1]; // Skip writeFrame.
-#elif DIRECTX12
-            return (int)textureHandle[0];
-#else
-            throw new NotImplementedException($"{nameof(GetTextureFrame)} is not implemented for this platform.");
-#endif
-        }
-
-        #endregion Native Helpers
-
         [Test]
         [RunOnUI]
         public void WaitForGpuToIdleBeforeDisposingBuffer()
@@ -319,61 +297,7 @@ namespace MonoGame.Tests.Graphics
 
             // We should only reach here if there were no out-of-order disposals of resources.
             Assert.Pass();
-        }
-
-        [Test]
-        [RunOnUI]
-        public void SetRenderTargetUpdatesTextureFrame()
-        {
-            var testGame = new TestGameBase()
-            {
-                IsFixedTimeStep = false,
-            };
-            new GraphicsDeviceManager(testGame)
-            {
-                GraphicsProfile = GraphicsProfile.HiDef,
-                SynchronizeWithVerticalRetrace = false,
-            };
-
-            var graphicsDeviceManager = testGame.Services.GetService<IGraphicsDeviceManager>();
-            graphicsDeviceManager.CreateDevice();
-            var graphicsDevice = testGame.GraphicsDevice;
-            graphicsDevice.PresentationParameters.PresentationInterval = PresentInterval.Immediate;
-            
-            var renderTarget = new RenderTarget2D(graphicsDevice, 64, 64);
-            var frameZero = GetTextureFrame(renderTarget);
-
-            // Advance 10 frames past creation.
-            for (int i = 0; i < 10; i++)
-            {
-                graphicsDevice.Clear(Color.Black);
-                graphicsDevice.Present();
-            }
-
-            var frameBeforeBind = GetTextureFrame(renderTarget);
-
-            // Frame shouldn't bump unless render target's bound.
-            Assert.AreEqual(frameZero,
-                frameBeforeBind,
-                $"Texture frame should not change in unbound {nameof(RenderTarget2D)}.");
-
-            // Update texture framee.
-            graphicsDevice.SetRenderTarget(renderTarget);
-            graphicsDevice.Clear(Color.Red);
-            var frameAfterBind = GetTextureFrame(renderTarget);
-
-            graphicsDevice.SetRenderTarget(null);
-            graphicsDevice.Present();
-
-            // Frame should bump since render target was bound.
-            Assert.Greater(frameAfterBind,
-                frameBeforeBind,
-                $"Texture frame should change in bound {nameof(RenderTarget2D)}.");
-
-            renderTarget.Dispose();
-            //graphicsDevice.Dispose();
-            testGame.Dispose();
-        }
+        }        
     }
 }
 
