@@ -11,7 +11,7 @@ using MonoGame.Framework.Utilities;
 
 namespace Microsoft.Xna.Framework
 {
-    internal class SdlGameWindow : GameWindow, IDisposable
+    internal partial class SdlGameWindow : GameWindow, IDisposable
     {
         public override bool AllowUserResizing
         {
@@ -84,7 +84,12 @@ namespace Microsoft.Xna.Framework
 
         public static GameWindow Instance;
         public uint? Id;
-        public bool IsFullScreen;
+        private bool _isSdlFullScreen;
+
+        public override bool IsFullScreen
+        {
+            get { return _isSdlFullScreen || IsMacNativeFullscreen(); }
+        }
 
         internal readonly Game _game;
         private IntPtr _handle, _icon;
@@ -256,17 +261,21 @@ namespace Microsoft.Xna.Framework
             Sdl.Rectangle displayRect;
             Sdl.Display.GetBounds(displayIndex, out displayRect);
 
-            // fullcreen mode needs to change
-            var fullScreenChanged = _willBeFullScreen != IsFullScreen;
+            var isNativeMacFullscreen = IsMacNativeFullscreen();
+            var wasFullScreen = _isSdlFullScreen || isNativeMacFullscreen;
+            var fullScreenChanged = _willBeFullScreen != wasFullScreen;
             var hardwareSwitchChanged = _hardwareSwitch != _game.graphicsDeviceManager.HardwareModeSwitch;
             _hardwareSwitch = _game.graphicsDeviceManager.HardwareModeSwitch;
+
+            if (!_willBeFullScreen && isNativeMacFullscreen)
+                ToggleMacNativeFullscreen();
 
             // set fullscreen to windowed mode
             if (!_willBeFullScreen && fullScreenChanged)
                 Sdl.Window.SetFullscreen(Handle, 0);
 
             // set fullscreen to desktop fullscreen
-            if (_willBeFullScreen && !_hardwareSwitch && (fullScreenChanged || hardwareSwitchChanged))
+            if (_willBeFullScreen && !isNativeMacFullscreen && !_hardwareSwitch && (fullScreenChanged || hardwareSwitchChanged))
                 Sdl.Window.SetFullscreen(Handle, Sdl.Window.State.FullscreenDesktop);
 
             // If going to exclusive full-screen mode, force the window to minimize on focus loss (Windows only)
@@ -288,7 +297,7 @@ namespace Microsoft.Xna.Framework
             }
 
             // set fullscreen to hardware fullscreen
-            if (_willBeFullScreen && _hardwareSwitch  && (fullScreenChanged || hardwareSwitchChanged))
+            if (_willBeFullScreen && !isNativeMacFullscreen && _hardwareSwitch  && (fullScreenChanged || hardwareSwitchChanged))
                 Sdl.Window.SetFullscreen(Handle, Sdl.Window.State.Fullscreen);
 
             int ignore, minx = 0, miny = 0;
@@ -297,7 +306,7 @@ namespace Microsoft.Xna.Framework
             var centerX = Math.Max(prevBounds.X + ((prevBounds.Width - clientWidth) / 2), minx);
             var centerY = Math.Max(prevBounds.Y + ((prevBounds.Height - clientHeight) / 2), miny);
 
-            if (IsFullScreen && !_willBeFullScreen)
+            if (wasFullScreen && !_willBeFullScreen)
             {
                 // We need to get the display information again in case
                 // the resolution of it was changed.
@@ -316,10 +325,8 @@ namespace Microsoft.Xna.Framework
             if ((Sdl.version > new Sdl.Version() { Major = 2, Minor = 0, Patch = 4 }  || !AllowUserResizing) && !_wasMoved)
                 Sdl.Window.SetPosition(Handle, centerX, centerY);
 
-            if (IsFullScreen != _willBeFullScreen)
-                OnClientSizeChanged();
-
-            IsFullScreen = _willBeFullScreen;
+            _isSdlFullScreen = _willBeFullScreen && !isNativeMacFullscreen;
+            ClientResize(_width, _height);
 
             _supressMoved = true;
         }

@@ -46,6 +46,7 @@
     <Compile Include="Platform\Graphics\Texture2D.StbSharp.cs" />
     <Compile Include="Platform\SDL\SDL2.cs" />
     <Compile Include="Platform\SDL\SDLGamePlatform.cs" />
+    <Compile Include="Platform\SDL\SDLGameWindow.Mac.cs" />
     <Compile Include="Platform\SDL\SDLGameWindow.cs" />
     <Compile Include="Platform\Utilities\AssemblyHelper.cs" />
     <Compile Include="Platform\Utilities\CurrentPlatform.cs" />

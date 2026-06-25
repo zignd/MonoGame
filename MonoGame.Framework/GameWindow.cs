@@ -92,6 +92,14 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+		/// <summary>
+		/// Gets whether the platform window is currently fullscreen.
+		/// </summary>
+		public virtual bool IsFullScreen
+		{
+			get { return false; }
+		}
+
         internal MouseState MouseState;
 	    internal TouchPanelState TouchPanelState;
 
