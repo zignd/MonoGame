@@ -10,8 +10,8 @@ using NUnit.Framework;
 
 namespace MonoGame.Tests.Graphics
 {
-    [TestFixture]
     [NonParallelizable]
+    [RunOnUiTestFixture]
     internal class RasterizerStateTest : GraphicsDeviceTestFixtureBase
     {
         [TestCase(-1f)]
@@ -23,7 +23,6 @@ namespace MonoGame.Tests.Graphics
         [TestCase(1f)]
 #endif
         [TestCase(-0.0004f)]
-        [RunOnUI]
         public void DepthBiasVisualTest(float depthBias)
         {
             var effect = new BasicEffect(gd)
@@ -69,14 +68,12 @@ namespace MonoGame.Tests.Graphics
         }
 
         [Test]
-        [RunOnUI]
         public void ShouldNotBeAbleToSetNullRasterizerState()
         {
             Assert.Throws<ArgumentNullException>(() => gd.RasterizerState = null);
         }
 
         [Test]
-        [RunOnUI]
         public void ShouldNotBeAbleToMutateStateObjectAfterBindingToGraphicsDevice()
         {
             var rasterizerState = new RasterizerState();
@@ -96,7 +93,6 @@ namespace MonoGame.Tests.Graphics
         }
 
         [Test]
-        [RunOnUI]
         public void ShouldNotBeAbleToMutateDefaultStateObjects()
         {
             DoAsserts(RasterizerState.CullClockwise, d => Assert.Throws<InvalidOperationException>(d));
@@ -121,7 +117,6 @@ namespace MonoGame.Tests.Graphics
         [TestCase(CullMode.CullClockwiseFace)]
         [TestCase(CullMode.CullCounterClockwiseFace)]
         [TestCase(CullMode.None)]
-        [RunOnUI]
         public void VisualTestCullMode(CullMode cullMode)
         {
             PrepareFrameCapture();
@@ -146,7 +141,6 @@ namespace MonoGame.Tests.Graphics
         [Test]
         [TestCase(FillMode.Solid)]
         [TestCase(FillMode.WireFrame)]
-        [RunOnUI]
         public void VisualTestFillMode(FillMode fillMode)
         {
             PrepareFrameCapture();
@@ -171,7 +165,6 @@ namespace MonoGame.Tests.Graphics
         [Test]
         [TestCase(false)]
         [TestCase(true)]
-        [RunOnUI]
         public void VisualTestScissorTestEnable(bool scissorTestEnable)
         {
             PrepareFrameCapture();
@@ -201,7 +194,6 @@ namespace MonoGame.Tests.Graphics
         [Test]
         [TestCase(false)]
         [TestCase(true)]
-        [RunOnUI]
         public void VisualTestDepthClipEnable(bool depthClipEnable)
         {
 #if VULKAN
