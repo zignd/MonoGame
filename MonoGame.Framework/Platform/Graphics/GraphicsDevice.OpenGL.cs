@@ -344,11 +344,11 @@ namespace Microsoft.Xna.Framework.Graphics
 
             framebufferHelper = FramebufferHelper.Create(this);
 
-            // Keep legacy DesktopGL output brightness: macOS/SDL can give us an sRGB-capable
-            // default framebuffer even when the requested XNA back buffer format is Color.
-            // If we gate this on ColorSRgb only, linear scene values are presented without the
-            // final sRGB encode and the whole interactive window appears much darker.
-            if (GraphicsCapabilities.SupportsSRgb)
+            var backBufferFormat = PresentationParameters.BackBufferFormat;
+            if (GraphicsCapabilities.SupportsSRgb &&
+                (backBufferFormat == SurfaceFormat.ColorSRgb ||
+                 backBufferFormat == SurfaceFormat.Bgr32SRgb ||
+                 backBufferFormat == SurfaceFormat.Bgra32SRgb))
             {
                 GL.Enable(EnableCap.FramebufferSrgb);
                 GraphicsExtensions.CheckGLError();
