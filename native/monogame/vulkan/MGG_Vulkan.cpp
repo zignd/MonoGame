@@ -2848,9 +2848,7 @@ void MGG_GraphicsDevice_SetVertexBuffer(MGG_GraphicsDevice* device, mgint slot, 
 	assert(device != nullptr);
 	assert(buffer != nullptr);
 
-	// TODO: Support multiple VB streams!
-	assert(slot == 0);
-	assert(vertexOffset == 0);
+	assert(slot >= 0 && slot < 8);
 
 	device->vertexBuffers[slot] = buffer;
 	device->vertexOffsets[slot] = vertexOffset;
