@@ -33,7 +33,6 @@ namespace Microsoft.Xna.Framework.Graphics
         private int backBufferWidth = GraphicsDeviceManager.DefaultBackBufferWidth;
         private IntPtr deviceWindowHandle;
         private int multiSampleCount;
-        private bool disposed;
         private bool isFullScreen;
         private bool hardwareModeSwitch = true;
 

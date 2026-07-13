@@ -9,8 +9,7 @@ namespace MonoGame.Framework.Utilities
     {
         // This helper caches the Marshal.SizeOf result
         // as it generates an allocation on each call.
-        [Obsolete("This should be made private and use FastSizeOf<T>() below instead!")]
-        internal static class SizeOf<T>
+        static class SizeOf<T>
         {
             static int _sizeOf;
 

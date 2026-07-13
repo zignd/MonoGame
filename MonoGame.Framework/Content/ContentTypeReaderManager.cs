@@ -176,7 +176,7 @@ namespace Microsoft.Xna.Framework.Content
                             l_readerType = Type.GetType(readerTypeString);
 #pragma warning restore IL2057
                         }
-                        catch (NotSupportedException e)
+                        catch (NotSupportedException)
                         {
                             // This will not trigger on recent NativeAOT versions, it will crash later on GetDefaultConstructor() with a native access violation
                             // but we keep this catch block for backward compatibility with older NativeAOT

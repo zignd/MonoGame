@@ -58,7 +58,7 @@ namespace Microsoft.Xna.Framework.Graphics
         /// This event is never called.  It is included for XNA compatibility.
         /// </remarks>
         [Obsolete("This is provided for XNA compatibility is never called by MonoGame")]
-		public event EventHandler<EventArgs> ContentLost;
+		public event EventHandler<EventArgs> ContentLost { add { } remove { } }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RenderTargetCube"/> class.

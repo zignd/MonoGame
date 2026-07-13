@@ -89,7 +89,7 @@ namespace Microsoft.Xna.Framework.Graphics
             int w, h;
             GetSizeForLevel(Width, Height, level, out w, out h);
 
-            var elementSizeInByte = ReflectionHelpers.SizeOf<T>.Get();
+            var elementSizeInByte = ReflectionHelpers.FastSizeOf<T>();
             var dataHandle = GCHandle.Alloc(data, GCHandleType.Pinned);
             // Use try..finally to make sure dataHandle is freed in case of an error
             try
@@ -142,7 +142,7 @@ namespace Microsoft.Xna.Framework.Graphics
         private void PlatformSetDataBody<T>(int level, int arraySlice, Rectangle rect, T[] data, int startIndex, int elementCount)
             where T : struct
         {
-            var elementSizeInByte = ReflectionHelpers.SizeOf<T>.Get();
+            var elementSizeInByte = ReflectionHelpers.FastSizeOf<T>();
             var dataHandle = GCHandle.Alloc(data, GCHandleType.Pinned);
             // Use try..finally to make sure dataHandle is freed in case of an error
             try
@@ -242,7 +242,7 @@ namespace Microsoft.Xna.Framework.Graphics
                 GraphicsExtensions.CheckGLError();
                 GL.DeleteFramebuffers(1, ref framebufferId);
 #else
-                var tSizeInByte = ReflectionHelpers.SizeOf<T>.Get();
+                var tSizeInByte = ReflectionHelpers.FastSizeOf<T>();
                 var pixelToT = Format.GetSize() / tSizeInByte;
 
                 GL.BindTexture(TextureTarget.Texture2D, this.glTexture);

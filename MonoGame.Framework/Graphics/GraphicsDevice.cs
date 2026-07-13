@@ -49,7 +49,9 @@ namespace Microsoft.Xna.Framework.Graphics
 #endif
 
         private Color _blendFactor = Color.White;
+    #if WINDOWS || NATIVE
         private bool _blendFactorDirty;
+    #endif
 
         private BlendState _blendState;
         private BlendState _actualBlendState;
@@ -161,7 +163,7 @@ namespace Microsoft.Xna.Framework.Graphics
         /// <summary>
         /// Occurs when a GraphicsDevice is about to be lost (for example, immediately before a reset).
         /// </summary>
-        public event EventHandler<EventArgs> DeviceLost;
+        public event EventHandler<EventArgs> DeviceLost { add { } remove { } }
 
         /// <summary>
         /// Occurs after a GraphicsDevice is reset, allowing an application to recreate all resources.
@@ -177,12 +179,12 @@ namespace Microsoft.Xna.Framework.Graphics
         /// <summary>
         /// Occurs when a resource is created.
         /// </summary>
-		public event EventHandler<ResourceCreatedEventArgs> ResourceCreated;
+        public event EventHandler<ResourceCreatedEventArgs> ResourceCreated { add { } remove { } }
 
         /// <summary>
         /// Occurs when a resource is destroyed.
         /// </summary>
-		public event EventHandler<ResourceDestroyedEventArgs> ResourceDestroyed;
+        public event EventHandler<ResourceDestroyedEventArgs> ResourceDestroyed { add { } remove { } }
 
         /// <summary>
         /// Occurs when <see cref="Dispose()"/> is called
@@ -502,7 +504,9 @@ namespace Microsoft.Xna.Framework.Graphics
                 if (_blendFactor == value)
                     return;
                 _blendFactor = value;
+#if WINDOWS || NATIVE
                 _blendFactorDirty = true;
+#endif
             }
         }
 

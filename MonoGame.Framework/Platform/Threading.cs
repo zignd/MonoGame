@@ -203,10 +203,7 @@ namespace Microsoft.Xna.Framework
             lock (_resetEventPool)
             {
                 _resetEventPool.Push(resetEvent);
-                return; // return here to skip dispose
             }
-
-            resetEvent.Dispose();
         }
 
         /// <summary>

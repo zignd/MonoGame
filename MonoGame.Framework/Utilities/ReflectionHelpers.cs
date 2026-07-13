@@ -183,11 +183,21 @@ namespace MonoGame.Framework.Utilities
             return SizeOf<T>.Get();
         }
 
+        internal static int FastManagedSizeOf(Type type)
+        {
+            return ManagedSizeOfCore(type);
+        }
+
         /// <summary>
         /// Fallback handler for Marshal.SizeOf(type)
         /// </summary>
         [Obsolete("This shouldn't be used because it is not PublishAot-compliant (but we're only using it in WindowsDX code, which isn't AOT-compatible, so it's fine for the time being)")]
         internal static int ManagedSizeOf(Type type)
+        {
+            return ManagedSizeOfCore(type);
+        }
+
+        static int ManagedSizeOfCore(Type type)
         {
             // to make this AOT-compliant, we should be using Marshal.SizeOf<T>() but it isn't possible here without using reflection (which we can't if we want AOT compatibility)
             #pragma warning disable IL3050
