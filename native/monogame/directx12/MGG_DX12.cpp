@@ -129,6 +129,17 @@ public:
 		offset += bytes;
 		return alloc;
 	}
+
+	void Destroy()
+	{
+		for (auto& chunk : chunks)
+		{
+			chunk.res->Unmap(0, nullptr);
+			chunk.res->Release();
+			chunk.alloc->Release();
+		}
+		chunks.clear();
+	}
 };
 
 struct MGG_GraphicsAdapter
@@ -565,6 +576,11 @@ void MGG_GraphicsDevice_Destroy(MGG_GraphicsDevice* device)
 	for (auto freeBuffer : device->free)
 		delete freeBuffer;
 	device->free.clear();
+
+	for (auto& ringBuffer : device->ringBuffer)
+	{
+		ringBuffer.Destroy();
+	}
 
 	delete device->pipelineManager;
 
