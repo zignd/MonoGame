@@ -22,13 +22,24 @@ internal class NativeGameWindow : GameWindow
 
     private int _width;
     private int _height;
-    private float _scale = 1f;
 
     /// <summary>
     /// Physical drawable pixels per logical point for this window (1 unless HiDPI/Retina). The
     /// window/ClientBounds are kept in points; the back buffer and viewport use physical pixels.
+    /// Computed on demand from the live drawable-vs-point sizes: the HiDPI density can't be known
+    /// while the window is still hidden/unrealized (SDL reports 1.0 then), so caching it at creation
+    /// gave a wrong scale on Retina. Reading it live means it's correct once the window is realized.
     /// </summary>
-    internal float Scale => _scale;
+    internal unsafe float Scale
+    {
+        get
+        {
+            if (_handle == null || _width <= 0)
+                return 1f;
+            MGP.Window_GetDrawableSize(_handle, out var drawableWidth, out var drawableHeight);
+            return drawableWidth > 0 ? (float)drawableWidth / _width : 1f;
+        }
+    }
 
     public static NativeGameWindow FromHandle(nint handle)
     {
@@ -130,12 +141,8 @@ internal class NativeGameWindow : GameWindow
 
         Handle = MGP.Window_GetNativeHandle(_handle);
 
-        // Measure the backing scale: the window was created at (_width,_height) logical points, and
-        // on HiDPI the drawable is larger (e.g. 2x). Lets us size the back buffer in physical pixels
-        // while keeping the window in points. Stays 1 on non-HiDPI displays (no-op).
-        MGP.Window_GetDrawableSize(_handle, out var drawableWidth, out var drawableHeight);
-        if (_width > 0 && drawableWidth > 0)
-            _scale = (float)drawableWidth / _width;
+        // NB: the HiDPI backing scale is read on demand via the Scale property (below), not cached
+        // here — the density isn't known while the window is still hidden/unrealized.
     }
 
     internal unsafe void Destroy()
@@ -183,8 +190,9 @@ internal class NativeGameWindow : GameWindow
         // pp.BackBufferWidth/Height are in physical pixels (the GraphicsDeviceManager scales the
         // requested point size by Scale). The window itself is sized in logical points, so convert
         // back. On non-HiDPI displays Scale is 1, so this is the original behaviour.
-        var pointsWidth = (int)(pp.BackBufferWidth / _scale);
-        var pointsHeight = (int)(pp.BackBufferHeight / _scale);
+        var scale = Scale;
+        var pointsWidth = (int)(pp.BackBufferWidth / scale);
+        var pointsHeight = (int)(pp.BackBufferHeight / scale);
 
         if (_width == pointsWidth && _height == pointsHeight)
             return;

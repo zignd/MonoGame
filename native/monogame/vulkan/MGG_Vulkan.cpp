@@ -42,7 +42,11 @@
 #define VMA_STATIC_VULKAN_FUNCTIONS 1
 #include <vk_mem_alloc.h>
 
-#if defined(MG_SDL2)
+#if defined(MG_SDL3)
+#include <SDL3/SDL_vulkan.h>
+#include <SDL3/SDL_events.h>
+// SDL_syswm.h was removed in SDL3 (native handles come from window properties instead).
+#elif defined(MG_SDL2)
 #include <SDL_vulkan.h>
 #include <SDL_syswm.h>
 #include <SDL_events.h>
@@ -71,7 +75,11 @@
 #define MGVK_MAX_MIPS 16
 
 // TODO: We should expose this to C# somehow.
-bool MGVK_ValidationEnabled = false;
+// Debug hook: set the MG_VULKAN_VALIDATION env var (any value) to turn on the Khronos
+// validation layers at runtime. Requires the Vulkan loader (libvulkan) to be reachable so
+// volk loads it instead of MoltenVK directly (e.g. DYLD_FALLBACK_LIBRARY_PATH=$VULKAN_SDK/lib
+// plus VK_ICD_FILENAMES / VK_LAYER_PATH); MoltenVK linked on its own exposes no layers.
+bool MGVK_ValidationEnabled = getenv("MG_VULKAN_VALIDATION") != nullptr;
 
 
 #if defined(DEBUG)
@@ -280,7 +288,7 @@ struct MGG_GraphicsDevice
 	VkRect2D scissor = { 0 };
 	bool scissorDirty = false;
 
-#if defined(MG_SDL2)
+#if defined(MG_SDL2) || defined(MG_SDL3)
 	SDL_Window* window = nullptr;
 #else
 #error Not Implemented
@@ -824,7 +832,28 @@ MGG_GraphicsSystem* MGG_GraphicsSystem_Create()
 	}
 
 	std::vector<const char*> instanceExtensions;
-#if defined(MG_SDL2)
+#if defined(MG_SDL3)
+	{
+		// SDL3: single call returns a borrowed const array (no window arg, no caller-supplied buffer).
+		Uint32 count = 0;
+		const char* const* names = SDL_Vulkan_GetInstanceExtensions(&count);
+		if (names == nullptr)
+		{
+			fflush(stdout);
+			printf("SDL_Vulkan_GetInstanceExtensions failed: %s\n", SDL_GetError());
+			fflush(stdout);
+			return nullptr;
+		}
+		printf("Found %u Vulkan instance extensions required by SDL.\n", count);
+		printf("Retrieved Vulkan instance extensions required by SDL:\n");
+		for (Uint32 i = 0; i < count; i++)
+		{
+			instanceExtensions.push_back(names[i]);
+			printf("- %s\n", names[i]);
+		}
+		fflush(stdout);
+	}
+#elif defined(MG_SDL2)
 	{
 		uint32_t count = 0;
 		if (SDL_Vulkan_GetInstanceExtensions(nullptr, &count, nullptr))
@@ -917,11 +946,22 @@ MGG_GraphicsSystem* MGG_GraphicsSystem_Create()
 
 	VkInstanceCreateInfo instance_create_info = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 	instance_create_info.pApplicationInfo = &app_info;
+	instance_create_info.pNext = nullptr;
+	instance_create_info.flags = 0;
+
+	// DIAG (loader path): when MoltenVK is reached through the Vulkan loader (needed for
+	// validation layers), it is a "portability" ICD that the loader hides unless we opt in.
+	if (MGVK_ValidationEnabled &&
+		SupportsExtension(supportedInstanceExtensions, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME))
+	{
+		instanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+		instance_create_info.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+	}
+
 	instance_create_info.enabledExtensionCount = instanceExtensions.size();
 	instance_create_info.ppEnabledExtensionNames = instanceExtensions.data();
 	instance_create_info.enabledLayerCount = enabledLayers.size();
 	instance_create_info.ppEnabledLayerNames = enabledLayers.data();
-	instance_create_info.pNext = nullptr;
 
 	VkInstance instance = VK_NULL_HANDLE;
 
@@ -1015,10 +1055,64 @@ void MGG_GraphicsAdapter_GetInfo(MGG_GraphicsAdapter* adapter, MGG_GraphicsAdapt
 	info.SubSystemId = 0;
 	info.MonitorHandle = 0;
 
+#if defined(MG_SDL3)
+	// SDL3 redesigned the display API: displays are SDL_DisplayID (not a 0-based index),
+	// fullscreen modes come back as an owned array of SDL_DisplayMode*, and current/desktop
+	// modes are returned as const SDL_DisplayMode* (no out-param).
+	SDL_DisplayID displayID = SDL_GetPrimaryDisplay();
+
+	if (adapter->modes.size() == 0)
+	{
+		int numModes = 0;
+		SDL_DisplayMode** modes = SDL_GetFullscreenDisplayModes(displayID, &numModes);
+		if (modes)
+		{
+			for (int i = 0; i < numModes; i++)
+			{
+				MGG_DisplayMode displayMode;
+				displayMode.width = modes[i]->w;
+				displayMode.height = modes[i]->h;
+				displayMode.format = MGSurfaceFormat::Color;
+
+				bool found = false;
+				for (auto m : adapter->modes)
+				{
+					if (m.width == displayMode.width &&
+						m.height == displayMode.height)
+					{
+						found = true;
+						break;
+					}
+				}
+
+				if (!found)
+					adapter->modes.push_back(displayMode);
+			}
+			SDL_free(modes);
+		}
+	}
+
+	// Get current display mode (fall back to desktop, then a hardcoded default).
+	const SDL_DisplayMode* currentMode = SDL_GetCurrentDisplayMode(displayID);
+	if (!currentMode)
+		currentMode = SDL_GetDesktopDisplayMode(displayID);
+	if (currentMode)
+	{
+		info.CurrentDisplayMode.width = currentMode->w;
+		info.CurrentDisplayMode.height = currentMode->h;
+		info.CurrentDisplayMode.format = MGSurfaceFormat::Color;
+	}
+	else
+	{
+		info.CurrentDisplayMode.width = 1920;
+		info.CurrentDisplayMode.height = 1080;
+		info.CurrentDisplayMode.format = MGSurfaceFormat::Color;
+	}
+#else
 	// Get the number of display modes for the primary display
 	int displayIndex = 0; // Primary display
 	int numModes = SDL_GetNumDisplayModes(displayIndex);
-	
+
 	if (adapter->modes.size() == 0 && numModes > 0)
 	{
 		// Enumerate available display modes
@@ -1031,7 +1125,7 @@ void MGG_GraphicsAdapter_GetInfo(MGG_GraphicsAdapter* adapter, MGG_GraphicsAdapt
 				displayMode.width = mode.w;
 				displayMode.height = mode.h;
 				displayMode.format = MGSurfaceFormat::Color;
-				
+
 				bool found = false;
 				for (auto m : adapter->modes)
 				{
@@ -1042,13 +1136,13 @@ void MGG_GraphicsAdapter_GetInfo(MGG_GraphicsAdapter* adapter, MGG_GraphicsAdapt
 						break;
 					}
 				}
-				
+
 				if (!found)
 					adapter->modes.push_back(displayMode);
 			}
 		}
 	}
-	
+
 	// Get current display mode
 	SDL_DisplayMode currentMode;
 	if (SDL_GetCurrentDisplayMode(displayIndex, &currentMode) == 0)
@@ -1075,6 +1169,7 @@ void MGG_GraphicsAdapter_GetInfo(MGG_GraphicsAdapter* adapter, MGG_GraphicsAdapt
 			info.CurrentDisplayMode.format = MGSurfaceFormat::Color;
 		}
 	}
+#endif
 	info.DisplayModeCount = adapter->modes.size();
 	info.DisplayModes = adapter->modes.data();
 }
@@ -1738,7 +1833,7 @@ void MGVK_RecreateSwapChain(
 	VkResult res;
 
 	// Create the surface.
-#if defined(MG_SDL2)
+#if defined(MG_SDL2) || defined(MG_SDL3)
 	auto sdl_window = (SDL_Window*)nativeWindowHandle;
 	if (sdl_window != device->window)
 	{
@@ -1747,7 +1842,12 @@ void MGVK_RecreateSwapChain(
 		if (device->surface != nullptr)
 			vkDestroySurfaceKHR(device->instance, device->surface, nullptr);
 
+#if defined(MG_SDL3)
+		// SDL3 added a VkAllocationCallbacks* parameter (pass nullptr).
+		if (!SDL_Vulkan_CreateSurface(sdl_window, device->instance, nullptr, &device->surface))
+#else
 		if (!SDL_Vulkan_CreateSurface(sdl_window, device->instance, &device->surface))
+#endif
 		{
 			printf("SDL_Vulkan_CreateSurface failed: %s\n", SDL_GetError());
 			fflush(stdout);
@@ -1825,6 +1925,10 @@ void MGVK_RecreateSwapChain(
 		device->swapchainWidth = std::clamp(width, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
 		device->swapchainHeight = std::clamp(height, surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height);
 	}
+	// Defense in depth: never exceed what the device can actually allocate. A bad size (e.g. a
+	// point/pixel feedback loop) would otherwise hard-assert inside Metal/MoltenVK (max 16384).
+	device->swapchainWidth = std::clamp(device->swapchainWidth, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
+	device->swapchainHeight = std::clamp(device->swapchainHeight, surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height);
 	device->colorFormat = vkColor;
 	device->depthFormat = vkDepth;
 	device->multiSampleCount = multiSampleCount;
@@ -2645,17 +2749,33 @@ void MGG_GraphicsDevice_Present(MGG_GraphicsDevice* device, mgint currentFrame, 
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 	{
-		// This will happen if the window is minimized too.
-
+		// OUT_OF_DATE: the present didn't happen and the swapchain must be recreated.
+		// SUBOPTIMAL: the present DID succeed but the swapchain isn't ideal. MoltenVK on macOS
+		// (notably under SDL3's HiDPI Metal-layer management) returns SUBOPTIMAL *persistently* even
+		// when the size is stable, so blindly recreating on suboptimal caused thousands of pointless
+		// recreations/sec. But we still must recreate on suboptimal when it reflects a real size
+		// change (e.g. the window growing from the initial default to the game's requested size,
+		// which under SDL3 shows up as suboptimal rather than out-of-date). So: recreate on
+		// out-of-date always; on suboptimal only when the surface's current extent actually differs
+		// from the swapchain we built.
+		bool recreate = (res == VK_ERROR_OUT_OF_DATE_KHR);
 		if (res == VK_SUBOPTIMAL_KHR)
-			printf("Swapchain suboptimal. Recreating swapchain...\n");
-		else
-			printf("Swapchain out of date. Recreating swapchain...\n");
-			
-		MGVK_RecreateSwapChain(device);
-				
-		if (device->swapchain == VK_NULL_HANDLE)
-			printf("Couldn't recreate swapchain!\n");
+		{
+			VkSurfaceCapabilitiesKHR caps;
+			if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device->physicalDevice, device->surface, &caps) == VK_SUCCESS &&
+				caps.currentExtent.width != 0xFFFFFFFF &&
+				(caps.currentExtent.width != device->swapchainWidth || caps.currentExtent.height != device->swapchainHeight))
+			{
+				recreate = true;
+			}
+		}
+
+		if (recreate)
+		{
+			MGVK_RecreateSwapChain(device);
+			if (device->swapchain == VK_NULL_HANDLE)
+				printf("Couldn't recreate swapchain!\n");
+		}
 	}
 	else
 	{
@@ -3317,26 +3437,33 @@ static void MGVK_UpdateRenderPass(MGG_GraphicsDevice* device, FrameCounter curre
 			create_info.pSubpasses = &subpass_desc;
 			create_info.pDependencies = dependencies;
 			create_info.dependencyCount = 1;
-			if (first->isSwapchain)
-			{				
-				dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-				dependencies[0].dstSubpass = 0;
-				dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-				dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-				dependencies[0].srcAccessMask = 0;
-				dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-				dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-			}
-			else
-			{
-				dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-				dependencies[0].dstSubpass = 0;
-				dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-				dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-				dependencies[0].srcAccessMask = 0;
-				dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-				dependencies[0].dependencyFlags = 0;
-			}
+
+			// One external->subpass dependency covering BOTH the color and depth attachments.
+			// vkCmdBeginRenderPass performs the initial image-layout transition and then the
+			// attachment loadOps (LOAD reads the color, DONT_CARE/clear writes color+depth).
+			// The transition and those loadOp accesses must be synchronized or the GPU can
+			// touch an attachment before the transition completes -> undefined contents (this
+			// showed up as SYNC-HAZARD READ/WRITE-AFTER-WRITE at vkCmdBeginRenderPass and, on
+			// MoltenVK, as magenta garbage blocks). So the scope must include the depth stages
+			// (EARLY/LATE fragment tests + depth-stencil write) and color READ (for loadOp LOAD),
+			// not just color write. This is correct for both swapchain and offscreen targets.
+			dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+			dependencies[0].dstSubpass = 0;
+			dependencies[0].srcStageMask =
+				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+				VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+			dependencies[0].dstStageMask =
+				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+				VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+			dependencies[0].srcAccessMask =
+				VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			dependencies[0].dstAccessMask =
+				VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 			VkResult res = vkCreateRenderPass(device->device, &create_info, nullptr, &cached->renderPass);
 			VK_CHECK_RESULT(res);

@@ -12,7 +12,9 @@
     <CopyContentFiles>True</CopyContentFiles>
     <Configurations>Debug;Release</Configurations>
     <Platforms>AnyCPU</Platforms>
-    <IsAotCompatible>true</IsAotCompatible>
+    <!-- AOT-compat analysis only applies to net8.0+; the project targets netstandard2.1, so gate it
+         to avoid NETSDK1210 (which dotnet watch's design-time build escalates to a build failure). -->
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>

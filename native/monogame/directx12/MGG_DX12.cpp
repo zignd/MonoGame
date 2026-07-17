@@ -25,7 +25,11 @@
 #include <Windows.h>
 #endif
 
-#if defined(MG_SDL2)
+#if defined(MG_SDL3)
+#include <SDL3/SDL_video.h>
+#include <SDL3/SDL_properties.h>
+// SDL_syswm.h was removed in SDL3 — the native HWND comes from a window property instead.
+#elif defined(MG_SDL2)
 #include <SDL_video.h>
 #include <SDL_syswm.h>
 #endif
@@ -603,7 +607,15 @@ void MGG_GraphicsDevice_ResizeSwapchain(
 {
 #if !defined(_GAMING_XBOX)
 
-#if defined(MG_SDL2)
+#if defined(MG_SDL3)
+	auto sdl_window = (SDL_Window*)nativeWindowHandle;
+
+	// SDL3 removed SDL_GetWindowWMInfo; the native HWND is exposed as a window property.
+	SDL_PropertiesID props = SDL_GetWindowProperties(sdl_window);
+	HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+	device->resources->SetWindow(hwnd);
+
+#elif defined(MG_SDL2)
 	auto sdl_window = (SDL_Window*)nativeWindowHandle;
 
 	SDL_SysWMinfo windowInfo;

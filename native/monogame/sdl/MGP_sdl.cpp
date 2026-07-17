@@ -6,11 +6,27 @@
 
 #include "mg_common.h"
 
+#if defined(MG_SDL3)
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
+#else
 #include <SDL.h>
 #include <SDL_vulkan.h>
+#endif
 
 #if _WIN32
 #include <combaseapi.h>
+#endif
+
+#if defined(MG_SDL3)
+// SDL3 renamed the SDL_Event gamepad union members: SDL2's controller events cbutton/caxis/cdevice
+// are gbutton/gaxis/gdevice in SDL3 (and the name "cdevice" was repurposed for the *camera* device
+// event). This file never handles camera events, so mapping the old names here keeps the shared
+// event-handling code below identical under both SDL versions. Defined after the SDL headers so it
+// only rewrites our own code, not anything in SDL's headers.
+#define cbutton gbutton
+#define caxis   gaxis
+#define cdevice gdevice
 #endif
 
 
@@ -279,6 +295,11 @@ MGMonoGamePlatform MGP_Platform_GetPlatform()
     return MGMonoGamePlatform::DesktopVK;
 #elif MG_DIRECTX12
     return MGMonoGamePlatform::WindowsDX12;
+#elif MG_METAL
+    // Reuse the DesktopVK platform identity: the managed content path loads the Vulkan shader
+    // profile, whose SPIR-V blobs the Metal backend translates to MSL at runtime. GraphicsBackend
+    // still reports Metal. See METAL-BACKEND-PLAN.md.
+    return MGMonoGamePlatform::DesktopVK;
 #else
     assert(false);
     return (MGMonoGamePlatform)-1;
@@ -291,6 +312,8 @@ MGGraphicsBackend MGP_Platform_GetGraphicsBackend()
     return MGGraphicsBackend::Vulkan;
 #elif MG_DIRECTX12
     return MGGraphicsBackend::DirectX12;
+#elif MG_METAL
+    return MGGraphicsBackend::Metal;
 #else
     assert(false);
     return (MGGraphicsBackend)-1;
@@ -545,8 +568,14 @@ mgbyte MGP_Platform_PollEvent(MGP_Platform* platform, MGP_Event& event_)
             event_.Type = MGEventType::KeyDown;
 
             event_.Key.Window = MGP_WindowFromId(platform, ev.key.windowID);
+#if defined(MG_SDL3)
+            // SDL3 flattened SDL_KeyboardEvent: the keysym struct is gone; the keycode is ev.key.key.
+            event_.Key.Character = ev.key.key;
+            event_.Key.Key = ToXNA(ev.key.key);
+#else
             event_.Key.Character = ev.key.keysym.sym;
             event_.Key.Key = ToXNA(ev.key.keysym.sym);
+#endif
 
             return true;
         }
@@ -555,8 +584,13 @@ mgbyte MGP_Platform_PollEvent(MGP_Platform* platform, MGP_Event& event_)
             event_.Type = MGEventType::KeyUp;
 
             event_.Key.Window = MGP_WindowFromId(platform, ev.key.windowID);
+#if defined(MG_SDL3)
+            event_.Key.Character = ev.key.key;
+            event_.Key.Key = ToXNA(ev.key.key);
+#else
             event_.Key.Character = ev.key.keysym.sym;
             event_.Key.Key = ToXNA(ev.key.keysym.sym);
+#endif
 
             return true;
         }
@@ -627,6 +661,39 @@ mgbyte MGP_Platform_PollEvent(MGP_Platform* platform, MGP_Event& event_)
             break;
         }
 
+#if defined(MG_SDL3)
+        // SDL3 flattened window events: each former SDL_WINDOWEVENT_* sub-type is now its own
+        // top-level SDL_EVENT_WINDOW_* event (there is no ev.window.event sub-field anymore).
+        // IMPORTANT: only RESIZED (data1/data2 in logical points) maps to WindowResized — the managed
+        // layer works in points. SDL3 also emits SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED whose data is in
+        // *physical pixels*; feeding that in as a point-space resize creates a runaway feedback loop
+        // (window grows every frame on HiDPI). Back-buffer sizing is handled via the swapchain sync,
+        // not this event, so PIXEL_SIZE_CHANGED is intentionally ignored here.
+        case SDL_EVENT_WINDOW_RESIZED:
+            event_.Window.Window = MGP_WindowFromId(platform, ev.window.windowID);
+            event_.Type = MGEventType::WindowResized;
+            event_.Window.Data1 = ev.window.data1;
+            event_.Window.Data2 = ev.window.data2;
+            return true;
+        case SDL_EVENT_WINDOW_FOCUS_GAINED:
+            event_.Window.Window = MGP_WindowFromId(platform, ev.window.windowID);
+            event_.Type = MGEventType::WindowGainedFocus;
+            return true;
+        case SDL_EVENT_WINDOW_FOCUS_LOST:
+            event_.Window.Window = MGP_WindowFromId(platform, ev.window.windowID);
+            event_.Type = MGEventType::WindowLostFocus;
+            return true;
+        case SDL_EVENT_WINDOW_MOVED:
+            event_.Window.Window = MGP_WindowFromId(platform, ev.window.windowID);
+            event_.Type = MGEventType::WindowMoved;
+            event_.Window.Data1 = ev.window.data1;
+            event_.Window.Data2 = ev.window.data2;
+            return true;
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+            event_.Window.Window = MGP_WindowFromId(platform, ev.window.windowID);
+            event_.Type = MGEventType::WindowClose;
+            return true;
+#else
         case SDL_WINDOWEVENT:
         {
             event_.Window.Window = MGP_WindowFromId(platform, ev.window.windowID);
@@ -658,6 +725,7 @@ mgbyte MGP_Platform_PollEvent(MGP_Platform* platform, MGP_Event& event_)
 
             break;
         }
+#endif
 
         case SDL_DROPFILE:
         {
@@ -665,8 +733,14 @@ mgbyte MGP_Platform_PollEvent(MGP_Platform* platform, MGP_Event& event_)
             event_.Drop.Window = MGP_WindowFromId(platform, ev.drop.windowID);
 
             static char TempPath[MAX_PATH_SIZE];
+#if defined(MG_SDL3)
+            // SDL3: the dropped path is in ev.drop.data (was ev.drop.file), and SDL owns it — it is
+            // freed automatically after the event is processed, so we must NOT SDL_free it.
+            snprintf(TempPath, MAX_PATH_SIZE, "%s", ev.drop.data);
+#else
             snprintf(TempPath, MAX_PATH_SIZE, "%s", ev.drop.file);
             SDL_free(ev.drop.file);
+#endif
 
             event_.Drop.File = TempPath;
             return true;
@@ -734,6 +808,8 @@ MGP_Window* MGP_Window_Create(
 
 #if defined(MG_VULKAN) || defined(MG_DIRECTX12)
 	flags |= SDL_WINDOW_VULKAN;
+#elif defined(MG_METAL)
+	flags |= SDL_WINDOW_METAL;
 #else
 	#error Not implemented
 #endif
@@ -743,12 +819,22 @@ MGP_Window* MGP_Window_Create(
 	// logical-point framebuffer. The window stays sized in points; the Metal/Vulkan drawable
 	// becomes physical pixels. Enabled by default on the (new) native backend — see the managed
 	// NativeGameWindow, which keeps the window in points while the back buffer uses drawable pixels.
+#if defined(MG_SDL3)
+	flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY; // SDL3 rename of SDL_WINDOW_ALLOW_HIGHDPI
+#else
 	flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
 #endif
 
     title = title ? title : "";
 
+#if defined(MG_SDL3)
+	// SDL3 dropped the x/y args from SDL_CreateWindow (use SDL_CreateWindowWithProperties or set the
+	// position afterwards). The window is created undecorated-position; managed code positions it.
+	window->window = SDL_CreateWindow((const char*)title, width, height, flags);
+#else
 	window->window = SDL_CreateWindow((const char*)title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags);
+#endif
 	
 	if (window->window == nullptr)
 	{
@@ -865,7 +951,27 @@ void MGP_Window_GetPosition(MGP_Window* window, mgint& x, mgint& y)
 void MGP_Window_GetDrawableSize(MGP_Window* window, mgint& width, mgint& height)
 {
 	assert(window != nullptr);
+#if defined(MG_SDL3)
+	// SDL3 removed SDL_Vulkan_GetDrawableSize; the window's physical pixel size is now the generic
+	// SDL_GetWindowSizeInPixels (works for any backend, incl. the Vulkan/Metal drawable). This reports
+	// the true drawable once the window is realized on a display; while it's still hidden/unrealized it
+	// returns the point size (density not yet known), and the managed HiDPI scale — computed on demand
+	// from this — simply self-corrects on the first realized frame.
+	int w = 0, h = 0;
+	SDL_GetWindowSizeInPixels(window->window, &w, &h);
+	width = w;
+	height = h;
+#elif defined(MG_METAL)
+	// Report the window's TRUE physical pixel size, not the CAMetalLayer's drawableSize. The device
+	// SETS layer.drawableSize from the requested back buffer, so SDL_Metal_GetDrawableSize (which
+	// returns layer.drawableSize) would be circular and feed back into the managed HiDPI Scale
+	// (drawable/points) — driving a resize loop that collapses to 0. SDL_GetWindowSizeInPixels reports
+	// the backing-scaled client size independently (same approach as the SDL3 path and analogous to
+	// SDL_Vulkan_GetDrawableSize for Vulkan).
+	SDL_GetWindowSizeInPixels(window->window, &width, &height);
+#else
 	SDL_Vulkan_GetDrawableSize(window->window, &width, &height);
+#endif
 }
 
 void MGP_Window_SetPosition(MGP_Window* window, mgint x, mgint y)
@@ -878,29 +984,55 @@ void MGP_Window_SetClientSize(MGP_Window* window, mgint width, mgint height)
 {
     assert(window != nullptr);
 
-    // Resizing with SDL depends on the fullscreen mode.
-    // If we're in exclusive-fullscreen, SDL_SetWindowDisplayMode()
-    // is needed to be called with the closest requested size.
-    // If windowed-fullscreen or just windowed, only
-    // SDL_SetWindowSize() is needed.
+    // Resizing depends on the fullscreen state:
+    //  - EXCLUSIVE fullscreen (real mode-switch): pick the closest display mode and set it.
+    //  - BORDERLESS-DESKTOP fullscreen: do NOTHING — the window already covers the display. Applying a
+    //    mode/size here would switch to an exclusive resolution and (on macOS) leave the window at its
+    //    old windowed position, so the game rendered offset with the desktop showing at the top/left.
+    //  - Windowed: just SDL_SetWindowSize.
 
     auto flags = SDL_GetWindowFlags(window->window);
 
+#if defined(MG_SDL3)
+    // SDL3: a window is fullscreen if SDL_WINDOW_FULLSCREEN is set; exclusive vs borderless is the
+    // fullscreen *mode* (non-NULL = exclusive mode-switch, NULL = borderless-desktop).
     if ((flags & SDL_WINDOW_FULLSCREEN) != 0)
+    {
+        if (SDL_GetWindowFullscreenMode(window->window) != NULL) // exclusive only
+        {
+            SDL_DisplayID displayID = SDL_GetDisplayForWindow(window->window);
+            if (displayID == 0)
+                displayID = SDL_GetPrimaryDisplay();
+            SDL_DisplayMode closest;
+            if (SDL_GetClosestFullscreenDisplayMode(displayID, width, height, 0.0f, false, &closest))
+            {
+                SDL_SetWindowFullscreenMode(window->window, &closest);
+                SDL_SetWindowSize(window->window, closest.w, closest.h);
+            }
+        }
+        // else: borderless-desktop — leave the window covering the display.
+    }
+    else
+        SDL_SetWindowSize(window->window, width, height);
+#else
+    // SDL2: borderless-desktop is SDL_WINDOW_FULLSCREEN_DESKTOP (= FULLSCREEN | 0x1000); exclusive is
+    // SDL_WINDOW_FULLSCREEN without the desktop bit. Only mode-switch for exclusive.
+    Uint32 fs = flags & SDL_WINDOW_FULLSCREEN_DESKTOP;
+    if (fs == SDL_WINDOW_FULLSCREEN) // exclusive only
     {
         SDL_DisplayMode closest{ 0, 0, 0, 0, nullptr };
         const SDL_DisplayMode desired{ 0, width, height, 60, nullptr };
         if (SDL_GetClosestDisplayMode(0, &desired, &closest))
         {
             SDL_SetWindowDisplayMode(window->window, &closest);
-            // We need to call SDL_SetWindowSize() as well otherwise
-            // SDL won't send resize proper resize events to our
-            // event queue for the Viewport to update properly.
+            // Also SDL_SetWindowSize() so SDL emits the resize event that updates our viewport.
             SDL_SetWindowSize(window->window, closest.w, closest.h);
         }
     }
-    else
+    else if (fs == 0) // windowed
         SDL_SetWindowSize(window->window, width, height);
+    // else: borderless-desktop (FULLSCREEN_DESKTOP) — leave the window covering the display.
+#endif
 }
 
 void MGP_Window_SetCursor(MGP_Window* window, MGP_Cursor* cursor)
@@ -915,6 +1047,15 @@ void MGP_Window_EnterFullScreen(MGP_Window* window, mgbyte useHardwareModeSwitch
 {
     assert(window != nullptr);
 
+#if defined(MG_SDL3)
+    // SDL3 removed SDL_WINDOW_FULLSCREEN_DESKTOP and made SDL_SetWindowFullscreen take a bool.
+    // Exclusive vs desktop fullscreen is now expressed by the window's fullscreen *mode*: a
+    // non-NULL mode (set via SetClientSize / SDL_SetWindowFullscreenMode) = real mode-switch;
+    // a NULL mode = borderless-desktop fullscreen.
+    if (!useHardwareModeSwitch)
+        SDL_SetWindowFullscreenMode(window->window, nullptr);
+    SDL_SetWindowFullscreen(window->window, true);
+#else
     Uint32 flags;
     if (useHardwareModeSwitch)
         flags = SDL_WINDOW_FULLSCREEN;
@@ -922,12 +1063,17 @@ void MGP_Window_EnterFullScreen(MGP_Window* window, mgbyte useHardwareModeSwitch
         flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
 
     SDL_SetWindowFullscreen(window->window, flags);
+#endif
 }
 
 void MGP_Window_ExitFullScreen(MGP_Window* window)
 {
     assert(window != nullptr);
+#if defined(MG_SDL3)
+    SDL_SetWindowFullscreen(window->window, false);
+#else
     SDL_SetWindowFullscreen(window->window, 0);
+#endif
 }
 
 mgint MGP_Window_ShowMessageBox(MGP_Window* window, const char* title, const char* description, const char* buttons, mgint count)
@@ -947,7 +1093,11 @@ mgint MGP_Window_ShowMessageBox(MGP_Window* window, const char* title, const cha
     const char* p = buttons;
     for (int i = 0; i < count; i++)
     {
+#if defined(MG_SDL3)
+        bdata[i].buttonID = i; // SDL3 renamed buttonid -> buttonID
+#else
         bdata[i].buttonid = i;
+#endif
         bdata[i].text = p;
         // Since we have double null-terminated strings,
         // we can safely assume the next button text starts after the current one.
@@ -972,7 +1122,15 @@ mgint MGP_Window_ShowMessageBox(MGP_Window* window, const char* title, const cha
 void MGP_Mouse_SetVisible(MGP_Platform* platform, mgbyte visible)
 {
     assert(platform != nullptr);
+#if defined(MG_SDL3)
+    // SDL3 split cursor visibility into SDL_ShowCursor()/SDL_HideCursor() (no SDL_ENABLE/DISABLE arg).
+    if (visible)
+        SDL_ShowCursor();
+    else
+        SDL_HideCursor();
+#else
     SDL_ShowCursor(visible ? SDL_ENABLE : SDL_DISABLE);
+#endif
 }
 
 void MGP_Mouse_WarpPosition(MGP_Window* window, mgint x, mgint y)
@@ -994,7 +1152,13 @@ MGP_Cursor* MGP_Cursor_CreateCustom(mgbyte* rgba, mgint width, mgint height, mgi
 
     auto cursor = new MGP_Cursor();
 
+#if defined(MG_SDL3)
+    // SDL3 replaced SDL_CreateRGBSurfaceFrom (depth + RGBA masks) with SDL_CreateSurfaceFrom
+    // (an explicit SDL_PixelFormat). The mask set below is RGBA byte order → SDL_PIXELFORMAT_RGBA32.
+    auto surface = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_RGBA32, rgba, width * 4);
+#else
     auto surface = SDL_CreateRGBSurfaceFrom(rgba, width, height, 32, width * 4, 0x000000ff, 0x0000FF00, 0x00FF0000, 0xFF000000);
+#endif
     cursor->cursor = SDL_CreateColorCursor(surface, originx, originy);
 
     return cursor;
@@ -1055,7 +1219,16 @@ void MGP_GamePad_GetCaps(MGP_Platform* platform, mgint identifer, MGP_Controller
     caps->Identifier = (void*)identifier;
     caps->DisplayName = (void*)SDL_GameControllerName(controller);
     caps->GamePadType = MGGamePadType::GamePad;
+#if defined(MG_SDL3)
+    // SDL3 removed SDL_GameControllerHasRumble; rumble capability is now a gamepad property.
+    {
+        SDL_PropertiesID props = SDL_GetGamepadProperties(controller);
+        bool hasRumble = SDL_GetBooleanProperty(props, SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN, false);
+        caps->HasRightVibrationMotor = caps->HasLeftVibrationMotor = hasRumble;
+    }
+#else
     caps->HasRightVibrationMotor = caps->HasLeftVibrationMotor = SDL_GameControllerHasRumble(controller);
+#endif
     caps->HasVoiceSupport = false;
 
     caps->InputFlags = 0;
