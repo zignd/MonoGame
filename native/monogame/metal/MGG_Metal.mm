@@ -675,8 +675,16 @@ static void MGMTL_PrepareNextFrame(MGG_GraphicsDevice* device)
 
     device->clearColor = device->clearDepth = device->clearStencil = false;
 
-    // Recycle buffers discarded MAX_FRAMES_IN_FLIGHT frames ago (ARC releases them).
+    // Recycle buffers discarded MAX_FRAMES_IN_FLIGHT frames ago. std::vector::clear() only drops
+    // the raw pointers — it does not run MGG_Buffer's destructor, so the id<MTLBuffer> field's ARC
+    // reference (and the GPU memory behind it) would never be released, leaking every discarded
+    // dynamic vertex/index buffer for the life of the process. Delete each one explicitly first.
     int slot = (int)(device->frame % MAX_FRAMES_IN_FLIGHT);
+    for (MGG_Buffer* discardedBuffer : device->discarded[slot])
+    {
+        discardedBuffer->buffer = nil;
+        delete discardedBuffer;
+    }
     device->discarded[slot].clear();
 
     device->drewThisFrame = false;
