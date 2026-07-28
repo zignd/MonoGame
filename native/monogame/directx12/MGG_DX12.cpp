@@ -651,6 +651,15 @@ void MGG_GraphicsDevice_ResizeSwapchain(
 	MGDX_PrepareNextFrame(device);
 }
 
+void MGG_GraphicsDevice_GetBackBufferSize(MGG_GraphicsDevice* device, mgint& width, mgint& height)
+{
+	assert(device != nullptr);
+
+	auto backBuffer = device->resources->GetMainTarget();
+	width = backBuffer ? (mgint)backBuffer->GetWidth() : 0;
+	height = backBuffer ? (mgint)backBuffer->GetHeight() : 0;
+}
+
 static void MGDX_PrepareNextFrame(MGG_GraphicsDevice* device)
 {
 	device->begin_frame_index = device->resources->Prepare();
