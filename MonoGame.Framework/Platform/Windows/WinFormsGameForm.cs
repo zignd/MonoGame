@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
@@ -54,6 +55,7 @@ namespace Microsoft.Xna.Framework.Windows
 
         public bool AllowAltF4 = true;
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal bool IsResizing { get; set; }
 
         #region Events
