@@ -7,7 +7,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  DotnetVersion: 9.0.314
+  DotnetVersion: 10.0.103
   XCodeVersion: 26.3
   
 jobs:
@@ -182,7 +182,7 @@ jobs:
           CI: true
         shell: bash
 
-      - name: Setup DotNet on MacOS for DotNet 9
+      - name: Ensure macOS workloads
         if: runner.environment == 'github-hosted' && runner.os == 'macos'
         run: |
           dotnet workload install macos ios --version ${{ env.DotnetVersion }}
