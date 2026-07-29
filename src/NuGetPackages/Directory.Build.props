@@ -2,13 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <NoWarn>NU5128</NoWarn>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <ProduceOutputs>false</ProduceOutputs>
     <DebugType>None</DebugType>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <EnableDefaultItems>false</EnableDefaultItems>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)_._" Pack="true" PackagePath="lib\$(TargetFramework)\_._" Visible="false" />
+  </ItemGroup>
 
   <Import Project="..\..\MonoGame.props" />
 
