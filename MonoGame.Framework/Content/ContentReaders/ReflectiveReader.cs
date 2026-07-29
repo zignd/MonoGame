@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using MonoGame.Framework.Utilities;
@@ -17,7 +18,6 @@ namespace Microsoft.Xna.Framework.Content
     /// Its purpose is to allow to work-around AOT issues when loading assets with the <see cref="ContentManager"/> fail due to the absence of runtime-reflection support in that context (i.e. missing types due to trimming and inability to statically discover them at compile-time).
     /// If <see cref="ContentManager.Load{T}"/> throws an <see cref="NotSupportedException"/>, the message should provide insights on how to fix it.
     /// </summary>
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     public class ReflectiveReader<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor
                                     | DynamicallyAccessedMemberTypes.NonPublicConstructors
@@ -53,17 +53,15 @@ namespace Microsoft.Xna.Framework.Content
         {
             base.Initialize(manager);
 
-            var baseType = ReflectionHelpers.GetBaseType(TargetType);
+            var targetType = typeof(T);
+            var baseType = ReflectionHelpers.GetBaseType(targetType);
             if (baseType != null && baseType != typeof(object))
 				_baseTypeReader = manager.GetTypeReader(baseType);
 
-            // TargetType is the typeof(T) of the generic type parameter of this class.
-            #pragma warning disable IL2072
-            _constructor = TargetType.GetDefaultConstructor();
+            _constructor = targetType.GetDefaultConstructor();
 
-            var properties = TargetType.GetAllProperties();
-            var fields = TargetType.GetAllFields();
-            #pragma warning restore IL2072
+            var properties = targetType.GetAllProperties();
+            var fields = targetType.GetAllFields();
             _readers = new List<ReadElement>(fields.Length + properties.Length);
 
             // Gather the properties.
@@ -169,7 +167,7 @@ namespace Microsoft.Xna.Framework.Content
                 if (elementType == typeof(System.Array))
                     reader = new ArrayReader<Array>();
                 else
-                    throw new ContentLoadException(string.Format("Content reader could not be found for {0} type.", elementType.FullName));
+                    throw new ContentLoadException(string.Format(CultureInfo.InvariantCulture, "Content reader could not be found for {0} type.", elementType.FullName));
 
             // We use the construct delegate to pick the correct existing 
             // object to be the target of deserialization.

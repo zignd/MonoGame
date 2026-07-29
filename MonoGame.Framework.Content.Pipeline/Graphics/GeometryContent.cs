@@ -10,8 +10,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
     public class GeometryContent : ContentItem
     {
         IndexCollection indices;
-        MaterialContent material;
-        MeshContent parent;
+        MaterialContent? material;
+        MeshContent? parent;
         VertexContent vertices;
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <summary>
         /// Gets or sets the material of the parent mesh.
         /// </summary>
-        public MaterialContent Material
+        public MaterialContent? Material
         {
             get
             {
@@ -43,7 +43,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <summary>
         /// Gets or sets the parent MeshContent for this object.
         /// </summary>
-        public MeshContent Parent
+        public MeshContent? Parent
         {
             get
             {

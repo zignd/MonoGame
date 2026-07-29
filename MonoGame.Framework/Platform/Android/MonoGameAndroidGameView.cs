@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Android.Content;
@@ -18,6 +19,9 @@ using Microsoft.Xna.Framework.Input.Touch;
 
 namespace Microsoft.Xna.Framework
 {
+    /// <summary>
+    /// Android surface view responsible for driving MonoGame rendering and input.
+    /// </summary>
     public class MonoGameAndroidGameView : SurfaceView, ISurfaceHolderCallback, View.IOnTouchListener
     {
         // What is the state of the app, for tracking surface recreation inside this class.
@@ -68,9 +72,19 @@ namespace Microsoft.Xna.Framework
         private readonly Game _game;
 
         // Events that are triggered on the game thread
+        /// <summary>
+        /// Raised on the game thread when the view transitions into a paused state.
+        /// </summary>
         public static event EventHandler OnPauseGameThread;
+
+        /// <summary>
+        /// Raised on the game thread when the view resumes execution.
+        /// </summary>
         public static event EventHandler OnResumeGameThread;
 
+        /// <summary>
+        /// Gets or sets whether touch input is enabled for this view.
+        /// </summary>
         public bool TouchEnabled
         {
             get { return _touchManager.Enabled; }
@@ -81,8 +95,17 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Gets whether the view is currently restoring content after context loss.
+        /// </summary>
         public bool IsResuming { get; private set; }
 
+        /// <summary>
+        /// Initializes a new Android game view.
+        /// </summary>
+        /// <param name="context">The Android context.</param>
+        /// <param name="gameWindow">The owning game window.</param>
+        /// <param name="game">The owning game.</param>
         public MonoGameAndroidGameView(Context context, AndroidGameWindow gameWindow, Game game)
             : base(context)
         {
@@ -98,11 +121,9 @@ namespace Microsoft.Xna.Framework
             mHolder = Holder;
             // Add callback to get the SurfaceCreated etc events
             mHolder.AddCallback(this);
-#pragma warning disable CS0618
-            mHolder.SetType(SurfaceType.Gpu);
-#pragma warning restore CS0618
         }
 
+        /// <inheritdoc />
         public void SurfaceChanged(ISurfaceHolder holder, global::Android.Graphics.Format format, int width, int height)
         {
             // Set flag to recreate gl surface or rendering can be bad on orientation change or if app 
@@ -122,6 +143,7 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <inheritdoc />
         public void SurfaceCreated(ISurfaceHolder holder)
         {
             lock (_lockObject)
@@ -130,6 +152,7 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <inheritdoc />
         public void SurfaceDestroyed(ISurfaceHolder holder)
         {
             lock (_lockObject)
@@ -138,12 +161,16 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <inheritdoc />
         public bool OnTouch(View v, MotionEvent e)
         {
             _touchManager.OnTouchEvent(e);
             return true;
         }
 
+        /// <summary>
+        /// Swaps the current EGL buffers.
+        /// </summary>
         public virtual void SwapBuffers()
         {
             EnsureUndisposed();
@@ -159,6 +186,9 @@ namespace Microsoft.Xna.Framework
 
         }
 
+        /// <summary>
+        /// Makes this view's EGL context current.
+        /// </summary>
         public virtual void MakeCurrent()
         {
             EnsureUndisposed();
@@ -170,6 +200,9 @@ namespace Microsoft.Xna.Framework
 
         }
 
+        /// <summary>
+        /// Clears the current EGL context binding.
+        /// </summary>
         public virtual void ClearCurrent()
         {
             EnsureUndisposed();
@@ -182,20 +215,37 @@ namespace Microsoft.Xna.Framework
 
         double updates;
 
+        /// <summary>
+        /// Gets or sets whether frames-per-second logging is enabled.
+        /// </summary>
         public bool LogFPS { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether rendering runs on the Android UI thread.
+        /// </summary>
         public bool RenderOnUIThread { get; set; }
 
+        /// <summary>
+        /// Starts the game view loop with no fixed update rate.
+        /// </summary>
+        [RequiresUnreferencedCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
+        [RequiresDynamicCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
         public virtual void Run()
         {
             Run(0.0);
         }
 
+        /// <summary>
+        /// Starts the game view loop with a target update rate.
+        /// </summary>
+        /// <param name="updatesPerSecond">Target updates per second, or zero for uncapped updates.</param>
+        [RequiresUnreferencedCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
+        [RequiresDynamicCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
         public virtual void Run(double updatesPerSecond)
         {
             cts = new CancellationTokenSource();
             if (LogFPS)
             {
-                targetFps = currentFps = 0;
                 avgFps = 1;
             }
             updates = 1000 / updatesPerSecond;
@@ -215,6 +265,9 @@ namespace Microsoft.Xna.Framework
                });
         }
 
+        /// <summary>
+        /// Pauses the game loop.
+        /// </summary>
         public virtual void Pause()
         {
             EnsureUndisposed();
@@ -261,6 +314,9 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Resumes the game loop.
+        /// </summary>
         public virtual void Resume()
         {
             EnsureUndisposed();
@@ -283,6 +339,10 @@ namespace Microsoft.Xna.Framework
             // do not wait for state transition here since surface creation must be triggered first
         }
 
+        /// <summary>
+        /// Releases view resources.
+        /// </summary>
+        /// <param name="disposing"><see langword="true"/> to dispose managed resources; otherwise <see langword="false"/>.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -292,6 +352,9 @@ namespace Microsoft.Xna.Framework
             base.Dispose(disposing);
         }
 
+        /// <summary>
+        /// Requests that the game loop stop.
+        /// </summary>
         public void Stop()
         {
             EnsureUndisposed();
@@ -314,6 +377,12 @@ namespace Microsoft.Xna.Framework
 
         FrameEventArgs renderEventArgs = new FrameEventArgs();
 
+        /// <summary>
+        /// Executes the worker-thread frame loop.
+        /// </summary>
+        /// <param name="uiThreadSyncContext">Synchronization context for marshaling UI-thread rendering when enabled.</param>
+        [RequiresUnreferencedCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
+        [RequiresDynamicCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
         protected void WorkerThreadFrameDispatcher(SynchronizationContext uiThreadSyncContext)
         {
             Threading.ResetThread(Thread.CurrentThread.ManagedThreadId);
@@ -461,6 +530,8 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        [RequiresUnreferencedCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
+        [RequiresDynamicCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
         void processStateResuming()
         {
             bool isSurfaceAvalible = false;
@@ -571,6 +642,8 @@ namespace Microsoft.Xna.Framework
         }
 
         // Return true to trigger worker thread pause
+        [RequiresUnreferencedCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
+        [RequiresDynamicCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
         bool RunIteration(CancellationToken token)
         {
             // set main game thread global ID
@@ -653,6 +726,10 @@ namespace Microsoft.Xna.Framework
 
         }
 
+        /// <summary>
+        /// Called when an update frame is processed.
+        /// </summary>
+        /// <param name="e">Frame timing arguments.</param>
         protected virtual void OnUpdateFrame(FrameEventArgs e)
         {
 
@@ -675,7 +752,7 @@ namespace Microsoft.Xna.Framework
             catch (Content.ContentLoadException ex)
             {
                 if (RenderOnUIThread)
-                    throw ex;
+                    throw;
                 else
                 {
                     Game.Activity.RunOnUiThread (() =>
@@ -712,6 +789,10 @@ namespace Microsoft.Xna.Framework
                 RenderFrame(this, e);
         }
 
+        /// <summary>
+        /// Called when a render frame is processed.
+        /// </summary>
+        /// <param name="e">Frame timing arguments.</param>
         protected virtual void OnRenderFrame(FrameEventArgs e)
         {
 
@@ -720,8 +801,6 @@ namespace Microsoft.Xna.Framework
         int frames = 0;
         double prev = 0;
         double avgFps = 0;
-        double currentFps = 0;
-        double targetFps = 0;
 
         void Mark()
         {
@@ -746,12 +825,18 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Throws an exception if this view has been disposed.
+        /// </summary>
         protected void EnsureUndisposed()
         {
             if (disposed)
                 throw new ObjectDisposedException("");
         }
 
+        /// <summary>
+        /// Destroys the current EGL context and display binding.
+        /// </summary>
         protected void DestroyGLContext()
         {
             if (eglContext != null)
@@ -770,6 +855,9 @@ namespace Microsoft.Xna.Framework
             glContextAvailable = false;
         }
 
+        /// <summary>
+        /// Destroys the current EGL surface.
+        /// </summary>
         protected void DestroyGLSurface()
         {
             if (!(eglSurface == null || eglSurface == IEGL10.EglNoSurface))
@@ -875,10 +963,13 @@ namespace Microsoft.Xna.Framework
 
             public override string ToString()
             {
-                return string.Format("Red:{0} Green:{1} Blue:{2} Alpha:{3} Depth:{4} Stencil:{5} SampleBuffers:{6} Samples:{7}", Red, Green, Blue, Alpha, Depth, Stencil, SampleBuffers, Samples);
+                return string.Format(System.Globalization.CultureInfo.InvariantCulture, "Red:{0} Green:{1} Blue:{2} Alpha:{3} Depth:{4} Stencil:{5} SampleBuffers:{6} Samples:{7}", Red, Green, Blue, Alpha, Depth, Stencil, SampleBuffers, Samples);
             }
         }
 
+        /// <summary>
+        /// Creates an EGL context for rendering.
+        /// </summary>
         protected void CreateGLContext()
         {
             lostglContext = false;
@@ -953,14 +1044,14 @@ namespace Microsoft.Xna.Framework
             egl.EglGetConfigs(eglDisplay, cfgs, numConfigs[0], numConfigs);
             Log.Verbose("AndroidGameView", "Device Supports");
             foreach (var c in cfgs) {
-                Log.Verbose("AndroidGameView", string.Format(" {0}", SurfaceConfig.FromEGLConfig(c, egl, eglDisplay)));
+                Log.Verbose("AndroidGameView", string.Format(System.Globalization.CultureInfo.InvariantCulture, " {0}", SurfaceConfig.FromEGLConfig(c, egl, eglDisplay)));
             }
 
             bool found = false;
             numConfigs[0] = 0;
             foreach (var config in configs)
             {
-                Log.Verbose("AndroidGameView", string.Format("Checking Config : {0}", config));
+                Log.Verbose("AndroidGameView", string.Format(System.Globalization.CultureInfo.InvariantCulture, "Checking Config : {0}", config));
                 found = egl.EglChooseConfig(eglDisplay, config.ToConfigAttribs(), results, 1, numConfigs);
                 Log.Verbose("AndroidGameView", "EglChooseConfig returned {0} and {1}", found, numConfigs[0]);
                 if (!found || numConfigs[0] <= 0)
@@ -968,7 +1059,7 @@ namespace Microsoft.Xna.Framework
                     Log.Verbose("AndroidGameView", "Config not supported");
                     continue;
                 }
-                Log.Verbose("AndroidGameView", string.Format("Selected Config : {0}", config));
+                Log.Verbose("AndroidGameView", string.Format(System.Globalization.CultureInfo.InvariantCulture, "Selected Config : {0}", config));
                 break;
             }
 
@@ -980,7 +1071,7 @@ namespace Microsoft.Xna.Framework
                 eglContext = egl.EglCreateContext(eglDisplay, results[0], IEGL10.EglNoContext, v.GetAttributes());
                 if (eglContext == null || eglContext == IEGL10.EglNoContext)
                 {
-                    Log.Verbose("AndroidGameView", string.Format("GLES {0} Not Supported. {1}", v, GetErrorAsString()));
+                    Log.Verbose("AndroidGameView", string.Format(System.Globalization.CultureInfo.InvariantCulture, "GLES {0} Not Supported. {1}", v, GetErrorAsString()));
                     eglContext = IEGL10.EglNoContext;
                     continue;
                 }
@@ -1037,6 +1128,9 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Creates the primary EGL window surface for this view.
+        /// </summary>
         protected void CreateGLSurface()
         {
             if (!glSurfaceAvailable)
@@ -1071,6 +1165,12 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Creates a pbuffer surface for background GL work.
+        /// </summary>
+        /// <param name="config">The EGL configuration to use.</param>
+        /// <param name="attribList">The surface attribute list.</param>
+        /// <returns>A created pbuffer surface.</returns>
         protected EGLSurface CreatePBufferSurface(EGLConfig config, int[] attribList)
         {
             IEGL10 egl = EGLContext.EGL.JavaCast<IEGL10>();
@@ -1080,6 +1180,11 @@ namespace Microsoft.Xna.Framework
             return result;
         }
 
+        /// <summary>
+        /// Handles GL context restoration after a context loss.
+        /// </summary>
+        [RequiresUnreferencedCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
+        [RequiresDynamicCode("Graphics context recovery reloads assets by reflecting over runtime asset types.")]
         protected void ContextSetInternal()
         {
             if (lostglContext)
@@ -1098,9 +1203,9 @@ namespace Microsoft.Xna.Framework
                     System.Threading.Thread bgThread = new System.Threading.Thread(
                         o =>
                         {
-                            Android.Util.Log.Debug("MonoGame", "Begin reloading graphics content");
+                            global::Android.Util.Log.Debug("MonoGame", "Begin reloading graphics content");
                             Microsoft.Xna.Framework.Content.ContentManager.ReloadGraphicsContent();
-                            Android.Util.Log.Debug("MonoGame", "End reloading graphics content");
+                            global::Android.Util.Log.Debug("MonoGame", "End reloading graphics content");
 
                             // DeviceReset events
                             _game.graphicsDeviceManager.OnDeviceReset(EventArgs.Empty);
@@ -1115,6 +1220,9 @@ namespace Microsoft.Xna.Framework
             OnContextSet(EventArgs.Empty);
         }
 
+        /// <summary>
+        /// Handles GL context loss.
+        /// </summary>
         protected void ContextLostInternal()
         {
             OnContextLost(EventArgs.Empty);
@@ -1123,26 +1231,46 @@ namespace Microsoft.Xna.Framework
                 _game.GraphicsDevice.OnDeviceResetting();
         }
 
+        /// <summary>
+        /// Called when the GL context is lost.
+        /// </summary>
+        /// <param name="eventArgs">Event data.</param>
         protected virtual void OnContextLost(EventArgs eventArgs)
         {
 
         }
 
+        /// <summary>
+        /// Called when the GL context is created or restored.
+        /// </summary>
+        /// <param name="eventArgs">Event data.</param>
         protected virtual void OnContextSet(EventArgs eventArgs)
         {
 
         }
 
+        /// <summary>
+        /// Called when graphics content is being unloaded.
+        /// </summary>
+        /// <param name="eventArgs">Event data.</param>
         protected virtual void OnUnload(EventArgs eventArgs)
         {
 
         }
 
+        /// <summary>
+        /// Called when graphics content is loaded.
+        /// </summary>
+        /// <param name="eventArgs">Event data.</param>
         protected virtual void OnLoad(EventArgs eventArgs)
         {
 
         }
 
+        /// <summary>
+        /// Called when the worker loop stops.
+        /// </summary>
+        /// <param name="eventArgs">Event data.</param>
         protected virtual void OnStopped(EventArgs eventArgs)
         {
 
@@ -1165,6 +1293,7 @@ namespace Microsoft.Xna.Framework
             return ((sources & InputSourceType.Gamepad) == InputSourceType.Gamepad || (sources & InputSourceType.Joystick) == InputSourceType.Joystick) && device.VendorId != 0 && device.ProductId != 0 ;
         }
 
+        /// <inheritdoc />
         public override bool OnKeyDown(Keycode keyCode, KeyEvent e)
         {
             bool handled = false;
@@ -1197,6 +1326,7 @@ namespace Microsoft.Xna.Framework
             return handled;
         }
 
+        /// <inheritdoc />
         public override bool OnKeyUp(Keycode keyCode, KeyEvent e)
         {
             if (keyCode == Keycode.Back)
@@ -1206,6 +1336,7 @@ namespace Microsoft.Xna.Framework
             return IsKeyboard (e.Device) && Keyboard.KeyUp(keyCode);
         }
 
+        /// <inheritdoc />
         public override bool OnGenericMotionEvent(MotionEvent e)
         {
             if (IsGamePad (e.Device) && GamePad.OnGenericMotionEvent(e))
@@ -1268,11 +1399,26 @@ namespace Microsoft.Xna.Framework
 
         #endregion
 
+        /// <summary>
+        /// Raised when a frame is rendered.
+        /// </summary>
         public event FrameEvent RenderFrame;
+
+        /// <summary>
+        /// Raised when a frame is updated.
+        /// </summary>
         public event FrameEvent UpdateFrame;
 
+        /// <summary>
+        /// Represents a frame callback.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">Frame timing arguments.</param>
         public delegate void FrameEvent(object sender, FrameEventArgs e);
 
+        /// <summary>
+        /// Provides frame timing data for update and render callbacks.
+        /// </summary>
         public class FrameEventArgs : EventArgs
         {
             double elapsed;
@@ -1308,11 +1454,18 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Creates a background EGL context helper.
+        /// </summary>
+        /// <returns>A background context wrapper.</returns>
         public BackgroundContext CreateBackgroundContext()
         {
             return new BackgroundContext(this);
         }
 
+        /// <summary>
+        /// Wraps a background EGL context bound to this view.
+        /// </summary>
         public class BackgroundContext
         {
 
@@ -1320,6 +1473,10 @@ namespace Microsoft.Xna.Framework
             MonoGameAndroidGameView view;
             EGLSurface surface;
 
+            /// <summary>
+            /// Initializes a background context for the specified view.
+            /// </summary>
+            /// <param name="view">The source game view.</param>
             public BackgroundContext(MonoGameAndroidGameView view)
             {
                 this.view = view;
@@ -1343,6 +1500,9 @@ namespace Microsoft.Xna.Framework
                     throw new Exception("Could not create Pbuffer Surface" + view.GetErrorAsString());
             }
 
+            /// <summary>
+            /// Makes the background context current on its pbuffer surface.
+            /// </summary>
             public void MakeCurrent()
             {
                 view.ClearCurrent();

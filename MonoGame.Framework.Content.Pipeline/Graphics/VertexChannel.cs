@@ -14,7 +14,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
     /// </summary>
     public abstract class VertexChannel : IList, ICollection, IEnumerable
     {
-        string name;
+        string name = string.Empty;
 
         /// <summary>
         /// Allows overriding classes to implement the list, and for properties/methods in this class to access it.
@@ -43,7 +43,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <summary>
         /// Gets or sets the element at the specified index.
         /// </summary>
-        public Object this[int index]
+        public Object? this[int index]
         {
             get
             {
@@ -128,7 +128,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="value">Element being searched for.</param>
         /// <returns>true if the element is present; false otherwise.</returns>
-        public bool Contains(Object value)
+        public bool Contains(Object? value)
         {
             return Items.Contains(value);
         }
@@ -157,7 +157,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="value">Item whose index is to be retrieved.</param>
         /// <returns>Index of specified item.</returns>
-        public int IndexOf(Object value)
+        public int IndexOf(Object? value)
         {
             return Items.IndexOf(value);
         }
@@ -174,7 +174,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="value">The element to add.</param>
         /// <returns>Index of the element.</returns>
-        int IList.Add(Object value)
+        int IList.Add(Object? value)
         {
             return Items.Add(value);
         }
@@ -192,7 +192,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="index">Index at which to insert the element.</param>
         /// <param name="value">The element to insert.</param>
-        void IList.Insert(int index, Object value)
+        void IList.Insert(int index, Object? value)
         {
             Items.Insert(index, value);
         }
@@ -208,7 +208,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// Removes a specified element from the collection.
         /// </summary>
         /// <param name="value">The element to remove.</param>
-        void IList.Remove(Object value)
+        void IList.Remove(Object? value)
         {
             Items.Remove(value);
         }

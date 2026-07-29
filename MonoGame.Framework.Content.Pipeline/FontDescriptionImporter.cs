@@ -31,10 +31,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
 	    /// <returns>Resulting game asset.</returns>
 	    public override FontDescription Import(string filename, ContentImporterContext context)
 	    {
-	        FontDescription fontDescription = null;
+	        FontDescription? fontDescription = null;
 
 	        using (var input = XmlReader.Create(filename))
 	            fontDescription = IntermediateSerializer.Deserialize<FontDescription>(input, filename);
+
+	        if (fontDescription == null)
+	            throw new InvalidContentException($"Font description import of '{filename}' returned null.");
 
 	        fontDescription.Identity = new ContentIdentity(new FileInfo(filename).FullName, "FontDescriptionImporter");
 

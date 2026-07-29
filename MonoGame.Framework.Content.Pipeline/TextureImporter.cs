@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using System.IO;
 using Microsoft.Xna.Framework.Content.Pipeline.Graphics;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
@@ -65,7 +66,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <returns>Resulting game asset.</returns>
         public override TextureContent Import(string filename, ContentImporterContext context)
         {
-            var ext = Path.GetExtension(filename).ToLower();
+            var ext = Path.GetExtension(filename).ToLower(CultureInfo.InvariantCulture);
 
             // Special case for loading some formats
             switch (ext)
@@ -80,7 +81,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
             IntPtr err = MGCP.MP_ImportBitmap(filename, ref bitmap);
             if (err != IntPtr.Zero)
             {
-                string errorMsg = System.Runtime.InteropServices.Marshal.PtrToStringUTF8(err);
+                var errorMsg = System.Runtime.InteropServices.Marshal.PtrToStringUTF8(err) ?? "unknown error";
                 throw new InvalidContentException($"TextureImporter failed to load '{filename}': {errorMsg}");
             }
             if (bitmap.data == IntPtr.Zero)

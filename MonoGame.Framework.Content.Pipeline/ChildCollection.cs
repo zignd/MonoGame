@@ -9,7 +9,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
 {
     /// <summary>
     /// Provides a collection of child objects for a content item.
-    /// 
+    ///
     /// Links from a child object to its parent are maintained as the collection contents are modified.
     /// </summary>
     /// <typeparam name="TParent"></typeparam>
@@ -48,7 +48,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// </summary>
         /// <param name="child">The child of the parent being retrieved.</param>
         /// <returns>The parent of the child object.</returns>
-        protected abstract TParent GetParent(TChild child);
+        protected abstract TParent? GetParent(TChild child);
 
         /// <summary>
         /// Inserts a child object into the collection at the specified location.
@@ -57,7 +57,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <param name="item">The child object being inserted.</param>
         protected override void InsertItem(int index, TChild item)
         {
-            // Make sure we have a 
+            // Make sure we have a
             if (item == null)
                 throw new ArgumentNullException("child");
             if (GetParent(item) != null)
@@ -99,6 +99,6 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// </summary>
         /// <param name="child">The child of the parent being modified.</param>
         /// <param name="parent">The new value for the parent object.</param>
-        protected abstract void SetParent(TChild child, TParent parent);
+        protected abstract void SetParent(TChild child, TParent? parent);
     }
 }

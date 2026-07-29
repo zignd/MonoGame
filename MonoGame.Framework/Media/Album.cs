@@ -40,7 +40,7 @@ namespace Microsoft.Xna.Framework.Media
 #if IOS && !TVOS
         private MPMediaItemArtwork thumbnail;
 #elif ANDROID
-        private Android.Net.Uri thumbnail;
+    private global::Android.Net.Uri thumbnail;
 #endif
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace Microsoft.Xna.Framework.Media
             this.thumbnail = thumbnail;
         }
 #elif ANDROID
-        internal Album(SongCollection songCollection, string name, Artist artist, Genre genre, Android.Net.Uri thumbnail)
+    internal Album(SongCollection songCollection, string name, Artist artist, Genre genre, global::Android.Net.Uri thumbnail)
             : this(songCollection, name, artist, genre)
         {
             this.thumbnail = thumbnail;
@@ -166,6 +166,12 @@ namespace Microsoft.Xna.Framework.Media
 			return this.thumbnail.ImageWithSize(new CGSize(width, height));
         }
 #elif ANDROID && !NO_AUDIO
+    /// <summary>
+    /// Gets album art as a bitmap, optionally scaled to the requested size.
+    /// </summary>
+    /// <param name="width">Requested width in pixels, or 0 to keep original width.</param>
+    /// <param name="height">Requested height in pixels, or 0 to keep original height.</param>
+    /// <returns>A bitmap containing album art.</returns>
         public Bitmap GetAlbumArt(int width = 0, int height = 0)
         {
             Bitmap albumArt;
@@ -198,6 +204,10 @@ namespace Microsoft.Xna.Framework.Media
             return this.GetAlbumArt(220, 220);
         }
 #elif ANDROID && !NO_AUDIO
+    /// <summary>
+    /// Gets a thumbnail bitmap for this album.
+    /// </summary>
+    /// <returns>A 220x220 album-art thumbnail bitmap.</returns>
         public Bitmap GetThumbnail()
         {
             return this.GetAlbumArt(220, 220);

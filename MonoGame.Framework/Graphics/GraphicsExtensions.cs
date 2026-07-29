@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 
 #if OPENGL
 #if DESKTOPGL || GLES
@@ -798,7 +799,7 @@ namespace Microsoft.Xna.Framework.Graphics
 				break;
             case InvalidFormat: 
             default:
-                    throw new NotSupportedException(string.Format("The requested SurfaceFormat `{0}` is not supported.", format));
+                    throw new NotSupportedException(string.Format(CultureInfo.InvariantCulture, "The requested SurfaceFormat `{0}` is not supported.", format));
 			}
 		}
 
@@ -1053,7 +1054,7 @@ namespace Microsoft.Xna.Framework.Graphics
             {
 #if ANDROID
                 // Todo: Add generic MonoGame logging interface
-                Android.Util.Log.Debug("MonoGame", "MonoGameGLException at " + location + " - " + ex.Message);
+                global::Android.Util.Log.Debug("MonoGame", "MonoGameGLException at " + location + " - " + ex.Message);
 #else
                 Debug.WriteLine("MonoGameGLException at " + location + " - " + ex.Message);
 #endif

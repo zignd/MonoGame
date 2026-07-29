@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
@@ -127,7 +128,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             {
                 // Resize the intermediate if required
                 if (intermediate.Width != destinationRegion.Width || intermediate.Height != destinationRegion.Height)
-                    intermediate = intermediate.Resize(destinationRegion.Width, destinationRegion.Height) as PixelBitmapContent<Vector4>;
+                {
+                    intermediate = intermediate.Resize(destinationRegion.Width, destinationRegion.Height) as PixelBitmapContent<Vector4>
+                        ?? throw new InvalidOperationException("Bitmap resize did not return a Vector4 bitmap.");
+                }
                 // Copy from the intermediate to the destination
                 if (destinationBitmap.TryCopyFrom(intermediate, new Rectangle(0, 0, intermediate.Width, intermediate.Height), destinationRegion))
                     return;
@@ -155,7 +159,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <returns>Description of the bitmap.</returns>
         public override string ToString()
         {
-            return string.Format("{0}, {1}x{2}", GetType().Name, Width, Height);
+            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}x{2}", GetType().Name, Width, Height);
         }
 
         /// <summary>

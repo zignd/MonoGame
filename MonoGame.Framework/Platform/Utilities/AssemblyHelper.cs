@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 
@@ -22,7 +23,7 @@ namespace MonoGame.Framework.Utilities
                 // Use the Title attribute of the Assembly if possible.
                 try
                 {
-                    var assemblyTitleAtt = ((AssemblyTitleAttribute)Attribute.GetCustomAttribute(assembly, typeof(AssemblyTitleAttribute)));
+                    var assemblyTitleAtt = Attribute.GetCustomAttribute(assembly, typeof(AssemblyTitleAttribute)) as AssemblyTitleAttribute;
                     if (assemblyTitleAtt != null)
                         windowTitle = assemblyTitleAtt.Title;
                 }
@@ -33,12 +34,13 @@ namespace MonoGame.Framework.Utilities
 
                 // Otherwise, fallback to the Name of the assembly.
                 if (string.IsNullOrEmpty(windowTitle))
-                    windowTitle = assembly.GetName().Name;
+                    windowTitle = assembly.GetName().Name ?? string.Empty;
             }
 
             return windowTitle;
         }
 
+        [return: MaybeNull]
         public static byte[] GetDefaultWindowIcon()
         {
             var entryAssembly = Assembly.GetEntryAssembly();

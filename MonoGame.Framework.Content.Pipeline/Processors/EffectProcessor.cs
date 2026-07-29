@@ -37,9 +37,14 @@ public class EffectProcessor() : ContentProcessor<EffectContent, CompiledEffectC
     /// <remarks>If you get an error during processing, compilation stops immediately. The effect processor displays an error message. Once you fix the current error, it is possible you may get more errors on subsequent compilation attempts.</remarks>
     public override CompiledEffectContent Process(EffectContent input, ContentProcessorContext context)
     {
+        var sourceIdentity = input.Identity ?? throw new InvalidContentException("Effect content is missing source identity.");
+        var sourceFile = sourceIdentity.SourceFilename;
+        if (string.IsNullOrEmpty(sourceFile))
+            throw new InvalidContentException("Effect content is missing a source file.", sourceIdentity);
+
         var options = new Options
         {
-            SourceFile = input.Identity.SourceFilename,
+            SourceFile = sourceFile,
             Profile = ShaderProfile.GetProfileForPlatform(context.TargetPlatform),
             Debug = DebugMode == EffectProcessorDebugMode.Debug,
             Defines = Defines,
@@ -95,7 +100,7 @@ public class EffectProcessor() : ContentProcessor<EffectContent, CompiledEffectC
         {
             using var stream = new MemoryStream();
             using var writer = new BinaryWriter(stream);
-            effect.Write(writer, options);
+            (effect ?? throw new InvalidContentException("Effect compilation did not produce an effect object.", sourceIdentity)).Write(writer, options);
 
             result = new CompiledEffectContent(stream.GetBuffer());
         }
@@ -111,7 +116,7 @@ public class EffectProcessor() : ContentProcessor<EffectContent, CompiledEffectC
     {
         // Split the errors and warnings into individual lines.
         var errorsAndWarningArray = shaderErrorsAndWarnings.Split(["\n", "\r", Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
-        ContentIdentity identity = null;
+        ContentIdentity? identity = null;
         var allErrorsAndWarnings = new System.Text.StringBuilder();
 
         // Process all the lines.
@@ -124,7 +129,7 @@ public class EffectProcessor() : ContentProcessor<EffectContent, CompiledEffectC
                 if (buildFailed)
                     allErrorsAndWarnings.AppendLine(errorOrWarningLine);
                 else
-                    context.Logger.LogWarning(string.Empty, input.Identity, errorOrWarningLine);
+                    context.Logger.Log(LogLevel.Warning, input.Identity ?? new ContentIdentity(), errorOrWarningLine);
 
                 continue;
             }
@@ -136,17 +141,17 @@ public class EffectProcessor() : ContentProcessor<EffectContent, CompiledEffectC
             // Try to ensure a good file name for the error message.
             if (string.IsNullOrEmpty(fileName))
             {
-                fileName = input.Identity.SourceFilename;
+                fileName = input.Identity?.SourceFilename ?? string.Empty;
             }
             else if (!File.Exists(fileName))
             {
-                var folder = Path.GetDirectoryName(input.Identity.SourceFilename) ?? "";
+                var folder = Path.GetDirectoryName(input.Identity?.SourceFilename ?? string.Empty) ?? "";
                 fileName = Path.Combine(folder, fileName);
             }
 
-            var newIdentity = new ContentIdentity(fileName, input.Identity.SourceTool, lineAndColumn);
+            var newIdentity = new ContentIdentity(fileName, input.Identity?.SourceTool, lineAndColumn);
 
-            // If we got an exception then we'll be throwing an exception 
+            // If we got an exception then we'll be throwing an exception
             // below, so just gather the lines to throw later.
             if (buildFailed)
             {
@@ -159,7 +164,7 @@ public class EffectProcessor() : ContentProcessor<EffectContent, CompiledEffectC
                     allErrorsAndWarnings.AppendLine(errorOrWarningLine);
             }
             else
-                context.Logger.LogWarning(string.Empty, newIdentity, message);
+                context.Logger.Log(LogLevel.Warning, newIdentity, message);
         }
 
         if (buildFailed)
@@ -179,7 +184,7 @@ public class EffectProcessor() : ContentProcessor<EffectContent, CompiledEffectC
 
         public void WriteWarning(string file, int line, int column, string message)
         {
-            _context.Logger.LogWarning(null, CreateContentIdentity(file, line, column), message);
+            _context.Logger.Log(LogLevel.Warning, CreateContentIdentity(file, line, column), message);
         }
 
         public void WriteError(string file, int line, int column, string message)

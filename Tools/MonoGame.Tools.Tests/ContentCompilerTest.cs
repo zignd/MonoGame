@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework.Content;
@@ -122,7 +123,7 @@ namespace MonoGame.Tests.ContentPipeline
             for (int z = 0; z < expected.GetLength(2); z++)
                 for (int y = 0; y < expected.GetLength(1); y++)
                     for (int x = 0; x < expected.GetLength(0); x++)
-                        expected[x, y, z] = new TestDataClass { A = x + y * 10 + z * 100, B = string.Format("X: {0} Y: {1} Z: {2}", x, y, z) };
+                        expected[x, y, z] = new TestDataClass { A = x + y * 10 + z * 100, B = string.Format(CultureInfo.InvariantCulture, "X: {0} Y: {1} Z: {2}", x, y, z) };
 
             TestCompiler.CompileAndLoadAssets((TestDataClass[,,])expected.Clone(), result =>
             {
@@ -206,7 +207,7 @@ namespace MonoGame.Tests.ContentPipeline
             for (int z = 0; z < expected.GetLength(2); z++)
                 for (int y = 0; y < expected.GetLength(1); y++)
                     for (int x = 0; x < expected.GetLength(0); x++)
-                        expected[x, y, z] = new TestDataStruct { A = x + y * 10 + z * 100, B = string.Format("X: {0} Y: {1} Z: {2}", x, y, z) };
+                        expected[x, y, z] = new TestDataStruct { A = x + y * 10 + z * 100, B = string.Format(CultureInfo.InvariantCulture, "X: {0} Y: {1} Z: {2}", x, y, z) };
 
             TestCompiler.CompileAndLoadAssets((TestDataStruct[,,])expected.Clone(), result =>
             {

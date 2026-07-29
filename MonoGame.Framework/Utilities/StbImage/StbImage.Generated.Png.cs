@@ -290,40 +290,12 @@ namespace MonoGame.Framework.Utilities.StbImage
 			final = (byte*)stbi__malloc_mad3((int)a.s.img_x, (int)a.s.img_y, out_bytes, 0);
 			if (final == null)
 				return stbi__err("outofmem");
+			var xorig = stackalloc int[7] { 0, 4, 0, 2, 0, 1, 0 };
+			var yorig = stackalloc int[7] { 0, 0, 4, 0, 2, 0, 1 };
+			var xspc = stackalloc int[7] { 8, 8, 4, 4, 2, 2, 1 };
+			var yspc = stackalloc int[7] { 8, 8, 8, 4, 4, 2, 2 };
 			for (p = 0; p < 7; ++p)
 			{
-				var xorig = stackalloc int[7];
-				xorig[0] = 0;
-				xorig[1] = 4;
-				xorig[2] = 0;
-				xorig[3] = 2;
-				xorig[4] = 0;
-				xorig[5] = 1;
-				xorig[6] = 0;
-				var yorig = stackalloc int[7];
-				yorig[0] = 0;
-				yorig[1] = 0;
-				yorig[2] = 4;
-				yorig[3] = 0;
-				yorig[4] = 2;
-				yorig[5] = 0;
-				yorig[6] = 1;
-				var xspc = stackalloc int[7];
-				xspc[0] = 8;
-				xspc[1] = 8;
-				xspc[2] = 4;
-				xspc[3] = 4;
-				xspc[4] = 2;
-				xspc[5] = 2;
-				xspc[6] = 1;
-				var yspc = stackalloc int[7];
-				yspc[0] = 8;
-				yspc[1] = 8;
-				yspc[2] = 8;
-				yspc[3] = 4;
-				yspc[4] = 4;
-				yspc[5] = 2;
-				yspc[6] = 2;
 				var i = 0;
 				var j = 0;
 				var x = 0;

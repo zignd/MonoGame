@@ -7,6 +7,9 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 {
+    /// <summary>
+    /// Represents PVRTC 2bpp RGB bitmap content.
+    /// </summary>
     [Obsolete("PVRTC 2BPP formats are no longer supported, and this will be removed in a future version.")]
     public class PvrtcRgb2BitmapContent : PvrtcBitmapContent
     {

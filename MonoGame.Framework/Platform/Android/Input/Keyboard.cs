@@ -9,6 +9,9 @@ using Android.Views;
 
 namespace Microsoft.Xna.Framework.Input
 {
+    /// <summary>
+    /// Provides keyboard state support for Android.
+    /// </summary>
 	public static class Keyboard
 	{
         private static List<Keys> keys = new List<Keys>();
@@ -143,11 +146,19 @@ namespace Microsoft.Xna.Framework.Input
             return maps;
         }
 
+        /// <summary>
+        /// Gets the current keyboard state.
+        /// </summary>
 	    public static KeyboardState GetState()
 		{
 			return new KeyboardState(keys);
 		}
 		
+        /// <summary>
+        /// Gets the current keyboard state for a specific player index.
+        /// </summary>
+        /// <param name="playerIndex">The player index.</param>
+        /// <returns>The current keyboard state.</returns>
 		public static KeyboardState GetState(PlayerIndex playerIndex)
 		{
             return new KeyboardState(keys);

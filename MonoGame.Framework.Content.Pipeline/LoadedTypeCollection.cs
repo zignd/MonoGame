@@ -17,7 +17,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
     /// </summary>
     public class LoadedTypeCollection<T> : IEnumerable<T>
     {
-        private static List<T> _all;
+        private static readonly List<T> _all = new(24);
+        private static bool _loadedAssembliesScanned;
 
         /// <summary>
         /// Creates a new LoadedTypeCollection.
@@ -25,24 +26,22 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         public LoadedTypeCollection()
         {
             // Scan the already loaded assemblies.
-            if (_all == null)
+            if (!_loadedAssembliesScanned)
             {
                 var assemblies = AppDomain.CurrentDomain.GetAssemblies();
                 foreach (var ass in assemblies)
                     ScanAssembly(ass);
+
+                _loadedAssembliesScanned = true;
             }
 
             // Hook into assembly loading events to gather any new
             // enumeration types that are found.
-            AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => ScanAssembly(args.LoadedAssembly);            
+            AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => ScanAssembly(args.LoadedAssembly);
         }
 
         private static void ScanAssembly(Assembly ass)
         {
-            // Initialize the list on first use.
-            if (_all == null)
-                _all = new List<T>(24);
-
             var thisAss = typeof(T).Assembly;
 
             // If the assembly doesn't reference our assembly then it
@@ -59,8 +58,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
                     continue;
 
                 // Create an instance of the type and add it to our list.
-                var ttype = (T)Activator.CreateInstance(type);
-                _all.Add(ttype);
+                if (Activator.CreateInstance(type) is not T instance)
+                    throw new InvalidOperationException($"Could not create an instance of '{type.FullName}'.");
+
+                _all.Add(instance);
             }
         }
 

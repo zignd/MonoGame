@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Xml;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
@@ -17,7 +18,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         protected internal override CurveKeyCollection Deserialize(
             IntermediateReader input,
             ContentSerializerAttribute format,
-            CurveKeyCollection existingInstance)
+            [AllowNull] CurveKeyCollection existingInstance)
         {
             var result = existingInstance ?? new CurveKeyCollection();
 
@@ -61,9 +62,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 
         protected internal override void Serialize(
             IntermediateWriter output,
-            CurveKeyCollection value,
+            [AllowNull] CurveKeyCollection value,
             ContentSerializerAttribute format)
         {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
             var elements = new List<string>();
             foreach (var curveKey in value)
             {

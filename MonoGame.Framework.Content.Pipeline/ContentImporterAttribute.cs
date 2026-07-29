@@ -23,12 +23,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <summary>
         /// Gets or sets the name of the default processor for content read by this importer.
         /// </summary>
-        public string DefaultProcessor { get; set; }
+        public string DefaultProcessor { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the string representing the importer in a user interface. This name is not used by the content pipeline and should not be passed to the BuildAssets task (a custom MSBuild task used by XNA Game Studio). It is used for display purposes only.
         /// </summary>
-        public virtual string DisplayName { get; set; }
+        public virtual string DisplayName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets the supported file name extensions of the importer.

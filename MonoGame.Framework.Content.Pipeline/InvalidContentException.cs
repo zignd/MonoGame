@@ -16,7 +16,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <summary>
         /// Gets or sets the identity of the content item that caused the exception.
         /// </summary>
-        public ContentIdentity ContentIdentity { get; set; }
+        public ContentIdentity? ContentIdentity { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the InvalidContentException class
@@ -55,7 +55,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <param name="contentIdentity">Information about the content item that caused this error, including the file name. In some cases, a location within the file (of the problem) is specified.</param>
         public InvalidContentException(
             string message,
-            ContentIdentity contentIdentity
+            ContentIdentity? contentIdentity
             )
             : this(message, contentIdentity, null)
         {
@@ -69,8 +69,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <param name="innerException">The exception that is the cause of the current exception. If innerException is not a null reference, the current exception is raised in a catch block that handles the inner exception.</param>
         public InvalidContentException(
             string message,
-            ContentIdentity contentIdentity,
-            Exception innerException
+            ContentIdentity? contentIdentity,
+            Exception? innerException
             )
             : base(message, innerException)
         {
@@ -84,7 +84,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <param name="innerException">The exception that is the cause of the current exception. If innerException is not a null reference, the current exception is raised in a catch block that handles the inner exception.</param>
         public InvalidContentException(
             string message,
-            Exception innerException
+            Exception? innerException
             )
             : this(message, null, innerException)
         {

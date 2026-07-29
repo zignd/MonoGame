@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System.Drawing;
+using System.Globalization;
 using System.Xml.Serialization;
 
 namespace MonoGame.Framework.Content.Pipeline.Builder
@@ -62,7 +63,7 @@ namespace MonoGame.Framework.Content.Pipeline.Builder
         {
             if (color.IsNamedColor)
                 return color.Name;
-            return string.Format("{0}, {1}, {2}, {3}", color.R, color.G, color.B, color.A);
+            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}, {3}", color.R, color.G, color.B, color.A);
         }
 
         /// <summary>

@@ -9,8 +9,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     class ModelWriter : BuiltInContentWriter<ModelContent>
     {
-        protected internal override void Write(ContentWriter output, ModelContent value)
+        protected internal override void Write(ContentWriter output, ModelContent? value)
         {
+            if (value == null)
+                throw new ArgumentNullException("value");
+
             WriteBones(output, value.Bones);
 
             output.Write((uint)value.Meshes.Count);
@@ -62,7 +65,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
             }
         }
 
-        private void WriteBoneReference(ContentWriter output, ModelBoneContent bone, ModelBoneContentCollection bones)
+        private void WriteBoneReference(ContentWriter output, ModelBoneContent? bone, ModelBoneContentCollection bones)
         {
             var boneCount = bones != null ? bones.Count : 0;
             var boneId = bone != null

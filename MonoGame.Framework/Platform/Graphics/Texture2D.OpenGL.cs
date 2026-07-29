@@ -299,11 +299,21 @@ namespace Microsoft.Xna.Framework.Graphics
             return PlatformFromStream(graphicsDevice, uiImage.CGImage);
         }
 #elif ANDROID
+    /// <summary>
+    /// Creates a texture from an Android bitmap.
+    /// </summary>
+    /// <param name="graphicsDevice">The graphics device that owns the texture.</param>
+    /// <param name="bitmap">The source bitmap.</param>
+    /// <returns>A new texture containing the bitmap pixels.</returns>
         public static Texture2D FromStream(GraphicsDevice graphicsDevice, Bitmap bitmap)
         {
             return PlatformFromStream(graphicsDevice, bitmap);
         }
 
+    /// <summary>
+    /// Reloads this texture with pixels from an Android bitmap.
+    /// </summary>
+    /// <param name="image">The source bitmap.</param>
         public void Reload(Bitmap image)
         {
             var width = image.Width;
@@ -399,14 +409,7 @@ namespace Microsoft.Xna.Framework.Graphics
             using (Bitmap image = BitmapFactory.DecodeStream(stream, null, new BitmapFactory.Options
             {
                 InScaled = false,
-#pragma warning disable CA1422
-                InDither = false,
-#pragma warning restore CA1422
                 InJustDecodeBounds = false,
-#pragma warning disable CS0618
-                InPurgeable = true,
-                InInputShareable = true,
-#pragma warning restore CS0618
             }))
             {
                 var width = image.Width;

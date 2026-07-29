@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.ComponentModel;
+using System.Globalization;
 
 namespace MonoGame.Content.Builder
 {
@@ -59,7 +60,7 @@ namespace MonoGame.Content.Builder
                     // Record a required option.
                     _requiredOptions.Enqueue(field);
 
-                    _requiredUsageHelp.Add(string.Format("<{0}>", param.Name));
+                    _requiredUsageHelp.Add(string.Format(CultureInfo.InvariantCulture, "<{0}>", param.Name));
                 }
                 else
                 {
@@ -82,7 +83,7 @@ namespace MonoGame.Content.Builder
                     // Record a required option.
                     _requiredOptions.Enqueue(property);
 
-                    _requiredUsageHelp.Add(string.Format("<{0}>", param.Name));
+                    _requiredUsageHelp.Add(string.Format(CultureInfo.InvariantCulture, "<{0}>", param.Name));
                 }
                 else
                 {
@@ -109,7 +110,7 @@ namespace MonoGame.Content.Builder
                     // Record a required option.
                     _requiredOptions.Enqueue(method);
 
-                    _requiredUsageHelp.Add(string.Format("<{0}>", param.Name));
+                    _requiredUsageHelp.Add(string.Format(CultureInfo.InvariantCulture, "<{0}>", param.Name));
                 }
                 else
                 {
@@ -239,7 +240,7 @@ namespace MonoGame.Content.Builder
                 file = Path.GetFullPath(file);
 
                 if (!File.Exists(file))
-                    throw new Exception(string.Format("File '{0}' does not exist.", file));
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture, "File '{0}' does not exist.", file));
 
                 var prevDir = Directory.GetCurrentDirectory();
                 var dir = Path.GetDirectoryName(file);
@@ -419,7 +420,7 @@ namespace MonoGame.Content.Builder
             foreach (var i in ReservedPrefixes)
             {
                 if (str.StartsWith(i))
-                    throw new Exception(string.Format("'{0}' is a reserved prefix and cannot be used at the start of an argument name.", i));
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture, "'{0}' is a reserved prefix and cannot be used at the start of an argument name.", i));
             }
         }
 
@@ -437,7 +438,7 @@ namespace MonoGame.Content.Builder
                 {
                     // Build a list of valid values.
                     string validValues = string.Join(", ", Enum.GetNames(type));
-                    throw new Exception(string.Format("Valid values are: '{0}'.", validValues));
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture, "Valid values are: '{0}'.", validValues));
                 }
             }
             else
@@ -579,7 +580,7 @@ namespace MonoGame.Content.Builder
                         if (IsWindows())
                             s += ":<" + attr.ValueName + ">";
                         else
-                            s += "=" + attr.ValueName.Replace("=", ":").ToUpper();
+                            s += "=" + attr.ValueName.Replace("=", ":").ToUpper(CultureInfo.InvariantCulture);
                     }
 
                     s = s.PadRight(35, ' ');

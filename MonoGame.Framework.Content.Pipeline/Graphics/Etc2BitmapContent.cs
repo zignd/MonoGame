@@ -14,7 +14,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
     public class Etc2BitmapContent : BitmapContent
     {
         private const SurfaceFormat FORMAT = SurfaceFormat.Rgba8Etc2;
-        byte[] _data;
+        byte[]? _data;
 
         /// <summary>
         /// Initializes a new instance of Etc2BitmapContent.
@@ -34,11 +34,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
         }
 
+        /// <inheritdoc/>
         public override byte[] GetPixelData()
         {
-            return _data;
+            return _data ?? throw new InvalidOperationException("No ETC2 bitmap data has been set.");
         }
 
+        /// <inheritdoc/>
         public override void SetPixelData(byte[] sourceData)
         {
             int bytesRequired = ((Width + 3) >> 2) * ((Height + 3) >> 2) * FORMAT.GetSize();
@@ -51,6 +53,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             Buffer.BlockCopy(sourceData, 0, _data, 0, bytesRequired);
         }
 
+        /// <inheritdoc/>
         protected override bool TryCopyFrom(BitmapContent sourceBitmap, Rectangle sourceRegion, Rectangle destinationRegion)
         {
             SurfaceFormat sourceFormat;
@@ -94,6 +97,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             return true;
         }
 
+        /// <inheritdoc/>
         protected override bool TryCopyTo(BitmapContent destinationBitmap, Rectangle sourceRegion, Rectangle destinationRegion)
         {
             SurfaceFormat destinationFormat;
@@ -116,6 +120,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="format">Format being retrieved.</param>
         /// <returns>The GPU texture format of the bitmap type.</returns>
+        /// <inheritdoc/>
         public override bool TryGetFormat(out SurfaceFormat format)
         {
             format = FORMAT;

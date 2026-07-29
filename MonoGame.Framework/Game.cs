@@ -5,6 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -168,7 +170,7 @@ namespace Microsoft.Xna.Framework
             {
                 string name = GetType().Name;
                 throw new ObjectDisposedException(
-                    name, string.Format("The {0} object was used after being Disposed.", name));
+                    name, string.Format(CultureInfo.InvariantCulture, "The {0} object was used after being Disposed.", name));
             }
         }
 
@@ -177,6 +179,9 @@ namespace Microsoft.Xna.Framework
         #region Properties
 
 #if ANDROID
+    /// <summary>
+    /// Gets the current Android activity hosting the game.
+    /// </summary>
         public static AndroidGameActivity Activity { get; internal set; }
 #endif
         private static Game _instance = null;
@@ -425,6 +430,10 @@ namespace Microsoft.Xna.Framework
         /// <summary>
         /// Run the game for one frame, then exit.
         /// </summary>
+    #if ANDROID
+        [RequiresUnreferencedCode("Android graphics context recovery reloads assets by reflecting over runtime asset types.")]
+        [RequiresDynamicCode("Android graphics context recovery reloads assets by reflecting over runtime asset types.")]
+    #endif
         public void RunOneFrame()
         {
             if (Platform == null)
@@ -452,6 +461,10 @@ namespace Microsoft.Xna.Framework
         /// <summary>
         /// Run the game using the default <see cref="GameRunBehavior"/> for the current platform.
         /// </summary>
+    #if ANDROID
+        [RequiresUnreferencedCode("Android graphics context recovery reloads assets by reflecting over runtime asset types.")]
+        [RequiresDynamicCode("Android graphics context recovery reloads assets by reflecting over runtime asset types.")]
+    #endif
         public void Run()
         {
             Run(Platform.DefaultRunBehavior);
@@ -461,6 +474,10 @@ namespace Microsoft.Xna.Framework
         /// Run the game.
         /// </summary>
         /// <param name="runBehavior">Indicate if the game should be run synchronously or asynchronously.</param>
+    #if ANDROID
+        [RequiresUnreferencedCode("Android graphics context recovery reloads assets by reflecting over runtime asset types.")]
+        [RequiresDynamicCode("Android graphics context recovery reloads assets by reflecting over runtime asset types.")]
+    #endif
         public void Run(GameRunBehavior runBehavior)
         {
             AssertNotDisposed();
@@ -492,6 +509,7 @@ namespace Microsoft.Xna.Framework
                 break;
             default:
                 throw new ArgumentException(string.Format(
+                    CultureInfo.InvariantCulture,
                     "Handling for the run behavior {0} is not implemented.", runBehavior));
             }
         }

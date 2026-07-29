@@ -13,7 +13,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
     /// </summary>
     public class Etc1BitmapContent : BitmapContent
     {
-        byte[] _data;
+        byte[]? _data;
 
         /// <summary>
         /// Initializes a new instance of Etc1BitmapContent.
@@ -36,7 +36,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <inheritdoc/>
         public override byte[] GetPixelData()
         {
-            return _data;
+            return _data ?? throw new InvalidOperationException("No ETC1 bitmap data has been set.");
         }
 
         /// <inheritdoc/>

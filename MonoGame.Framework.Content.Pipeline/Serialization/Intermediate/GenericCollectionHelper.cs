@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
@@ -12,7 +13,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             return GetCollectionElementType(type, checkAncestors) != null;
         }
 
-        private static Type GetCollectionElementType(Type type, bool checkAncestors)
+        private static Type? GetCollectionElementType(Type type, bool checkAncestors)
         {
             if (!checkAncestors && type.BaseType != null && FindCollectionInterface(type.BaseType) != null)
                 return null;
@@ -24,7 +25,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             return collectionInterface.GetGenericArguments()[0];
         }
 
-        private static Type FindCollectionInterface(Type type)
+        private static Type? FindCollectionInterface(Type type)
         {
             var interfaces = type.FindInterfaces((t, o) =>
             {
@@ -45,16 +46,22 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         public GenericCollectionHelper(IntermediateSerializer serializer, Type type)
         {
             var collectionElementType = GetCollectionElementType(type, false);
+            if (collectionElementType == null)
+                throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Type '{0}' is not a supported generic collection.", type.FullName));
+
             _contentSerializer = serializer.GetTypeSerializer(collectionElementType);
 
             var collectionType = typeof(ICollection<>).MakeGenericType(collectionElementType);
-            _countProperty = collectionType.GetProperty("Count");
-            _addMethod = collectionType.GetMethod("Add", new[] { collectionElementType });
+            _countProperty = collectionType.GetProperty("Count")
+                ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Collection type '{0}' is missing a Count property.", collectionType.FullName));
+            _addMethod = collectionType.GetMethod("Add", new[] { collectionElementType })
+                ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Collection type '{0}' is missing an Add method.", collectionType.FullName));
         }
 
         public bool ObjectIsEmpty(object list)
         {
-            return (int) _countProperty.GetValue(list, null) == 0;
+            var count = _countProperty.GetValue(list, null);
+            return count is int value && value == 0;
         }
 
         public void ScanChildren(ContentTypeSerializer.ChildCallback callback, object collection)

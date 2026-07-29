@@ -71,22 +71,37 @@ namespace MonoGame.Framework.Content.Pipeline.Builder
         }
 
         /// <inheritdoc/>
+        [Obsolete("Please pass importer and processor as instances instead of just their names.")]
         public override TOutput Convert<TInput, TOutput>(TInput input,
                                                             string processorName,
-                                                            OpaqueDataDictionary processorParameters)
+                                                            OpaqueDataDictionary? processorParameters)
+            => ConvertByName<TInput, TOutput>(input, processorName, processorParameters);
+
+        private TOutput ConvertByName<TInput, TOutput>(TInput input,
+                                                        string processorName,
+                                                        OpaqueDataDictionary? processorParameters)
         {
-            var processor = _manager.CreateProcessor(processorName, processorParameters);
-            var processContext = new PipelineProcessorContext(_manager, new PipelineBuildEvent { Parameters = processorParameters });
+            var effectiveParameters = processorParameters ?? new OpaqueDataDictionary();
+            var processor = _manager.CreateProcessor(processorName, effectiveParameters)
+                ?? throw new InvalidOperationException($"Could not create processor '{processorName}'.");
+            var processContext = new PipelineProcessorContext(_manager, new PipelineBuildEvent { Parameters = effectiveParameters });
             using var _ = ContextScopeFactory.BeginContext(processContext);
+            if (input is null)
+                throw new InvalidOperationException($"Processor '{processorName}' received null input.");
+
             var processedObject = processor.Process(input, processContext);
 
             // Add its dependencies and built assets to ours.
             _pipelineEvent.Dependencies.AddRangeUnique(processContext._pipelineEvent.Dependencies);
             _pipelineEvent.BuildAsset.AddRangeUnique(processContext._pipelineEvent.BuildAsset);
 
-            return (TOutput)processedObject;
+            if (processedObject is TOutput output)
+                return output;
+
+            throw new InvalidOperationException($"Processor '{processorName}' returned an unexpected result type '{processedObject?.GetType().FullName ?? "<null>"}'.");
         }
 
+        /// <inheritdoc/>
         public override TOutput Convert<TInput, TOutput>(TInput input, IContentProcessor processor)
         {
             var processorName = processor.GetType().Name.ToString();
@@ -100,14 +115,23 @@ namespace MonoGame.Framework.Content.Pipeline.Builder
                 }
             }
 
-            return Convert<TInput, TOutput>(input, processorName, processorParameters);
+            return ConvertByName<TInput, TOutput>(input, processorName, processorParameters);
         }
 
+        /// <inheritdoc/>
+        [Obsolete("Please pass importer and processor as instances instead of just their names.")]
         public override TOutput BuildAndLoadAsset<TInput, TOutput>(ExternalReference<TInput> sourceAsset,
                                                                     string processorName,
-                                                                    OpaqueDataDictionary processorParameters,
-                                                                    string importerName)
+                                                                    OpaqueDataDictionary? processorParameters,
+                                                                    string? importerName)
+            => BuildAndLoadAssetByName<TInput, TOutput>(sourceAsset, processorName, processorParameters, importerName);
+
+        private TOutput BuildAndLoadAssetByName<TInput, TOutput>(ExternalReference<TInput> sourceAsset,
+                                                                  string processorName,
+                                                                  OpaqueDataDictionary? processorParameters,
+                                                                  string? importerName)
         {
+            var effectiveParameters = processorParameters ?? new OpaqueDataDictionary();
             var sourceFilepath = PathHelper.Normalize(sourceAsset.Filename);
 
             // The processorName can be null or empty. In this case the asset should
@@ -120,9 +144,9 @@ namespace MonoGame.Framework.Content.Pipeline.Builder
             var buildEvent = new PipelineBuildEvent
             {
                 SourceFile = sourceFilepath,
-                Importer = importerName,
-                Processor = processAsset ? processorName : null,
-                Parameters = _manager.ValidateProcessorParameters(processorName, processorParameters),
+                Importer = importerName ?? string.Empty,
+                Processor = processAsset ? processorName : string.Empty,
+                Parameters = _manager.ValidateProcessorParameters(processorName, effectiveParameters),
             };
 
             var processedObject = _manager.ProcessContent(buildEvent);
@@ -130,9 +154,13 @@ namespace MonoGame.Framework.Content.Pipeline.Builder
             // Record that we processed this dependent asset.
             _pipelineEvent.Dependencies.AddUnique(sourceFilepath);
 
-            return (TOutput)processedObject;
+            if (processedObject is TOutput output)
+                return output;
+
+            throw new InvalidOperationException($"Processing '{sourceFilepath}' returned an unexpected result type '{processedObject?.GetType().FullName ?? "<null>"}'.");
         }
 
+        /// <inheritdoc/>
         public override TOutput BuildAndLoadAsset<TInput, TOutput>(ExternalReference<TInput> sourceAsset, IContentImporter importer, IContentProcessor processor)
         {
             var importerName = importer.GetType().Name;
@@ -147,24 +175,35 @@ namespace MonoGame.Framework.Content.Pipeline.Builder
                 }
             }
 
-            return BuildAndLoadAsset<TInput, TOutput>(sourceAsset, processorName, processorParameters, importerName);
+            return BuildAndLoadAssetByName<TInput, TOutput>(sourceAsset, processorName, processorParameters, importerName);
         }
 
+        /// <inheritdoc/>
+        [Obsolete("Please pass importer and processor as instances instead of just their names.")]
         public override ExternalReference<TOutput> BuildAsset<TInput, TOutput>(ExternalReference<TInput> sourceAsset,
                                                                                 string processorName,
-                                                                                OpaqueDataDictionary processorParameters,
-                                                                                string importerName,
-                                                                                string assetName)
+                                                                                OpaqueDataDictionary? processorParameters,
+                                                                                string? importerName,
+                                                                                string? assetName)
+            => BuildAssetByName<TInput, TOutput>(sourceAsset, processorName, processorParameters, importerName, assetName);
+
+        private ExternalReference<TOutput> BuildAssetByName<TInput, TOutput>(ExternalReference<TInput> sourceAsset,
+                                                                              string processorName,
+                                                                              OpaqueDataDictionary? processorParameters,
+                                                                              string? importerName,
+                                                                              string? assetName)
         {
+            var effectiveParameters = processorParameters ?? new OpaqueDataDictionary();
+            var effectiveImporterName = importerName ?? string.Empty;
             // Be sure we have a good absolute path to the source content
             // or it may not cache correctly and create duplicates.
             sourceAsset.Filename = _manager.ResolveSourceFilePath(sourceAsset.Filename);
 
             if (string.IsNullOrEmpty(assetName))
-                assetName = _manager.GetAssetName(sourceAsset.Filename, importerName, processorName, processorParameters);
+                assetName = _manager.GetAssetName(sourceAsset.Filename, effectiveImporterName, processorName, effectiveParameters);
 
             // Build the content.
-            var buildEvent = _manager.BuildContent(sourceAsset.Filename, assetName, importerName, processorName, processorParameters);
+            var buildEvent = _manager.BuildContent(sourceAsset.Filename, assetName, effectiveImporterName, processorName, effectiveParameters);
 
             // Record that we built this dependent asset.
             _pipelineEvent.BuildAsset.AddUnique(buildEvent.DestFile);
@@ -172,6 +211,7 @@ namespace MonoGame.Framework.Content.Pipeline.Builder
             return new ExternalReference<TOutput>(buildEvent.DestFile);
         }
 
+        /// <inheritdoc/>
         public override ExternalReference<TOutput> BuildAsset<TInput, TOutput>(ExternalReference<TInput> sourceAsset, IContentImporter importer, IContentProcessor processor, string? assetName)
         {
             var importerName = importer.GetType().Name;
@@ -186,7 +226,7 @@ namespace MonoGame.Framework.Content.Pipeline.Builder
                 }
             }
 
-            return BuildAsset<TInput, TOutput>(sourceAsset, processorName, processorParameters, importerName, assetName);
+            return BuildAssetByName<TInput, TOutput>(sourceAsset, processorName, processorParameters, importerName, assetName);
         }
     }
 }

@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using System.Runtime.Serialization;
 using System.Diagnostics;
 
@@ -116,10 +117,10 @@ namespace Microsoft.Xna.Framework
             get
             {
                 return string.Concat(
-                    this.X.ToString(), "  ",
-                    this.Y.ToString(), "  ",
-                    this.Z.ToString(), "  ",
-                    this.W.ToString()
+                    this.X.ToString(CultureInfo.CurrentCulture), "  ",
+                    this.Y.ToString(CultureInfo.CurrentCulture), "  ",
+                    this.Z.ToString(CultureInfo.CurrentCulture), "  ",
+                    this.W.ToString(CultureInfo.CurrentCulture)
                 );
             }
         }

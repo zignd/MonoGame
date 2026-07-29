@@ -13,11 +13,11 @@ namespace Microsoft.Xna.Framework.Media
     /// </summary>
     public sealed partial class Video : IDisposable
     {
-        internal Android.Media.MediaPlayer Player;
+        internal global::Android.Media.MediaPlayer Player;
 
         private void PlatformInitialize()
         {
-            Player = new Android.Media.MediaPlayer();
+            Player = new global::Android.Media.MediaPlayer();
             if (Player != null)
             {
                 var afd = Game.Activity.Assets.OpenFd(FileName);

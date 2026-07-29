@@ -15,22 +15,22 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
     public sealed class ProcessorParameter
     {
         PropertyInfo propInfo;
-        ReadOnlyCollection<string> enumValues;
+        ReadOnlyCollection<string>? enumValues;
 
         /// <summary>
         /// Default value of the processor parameter.
         /// </summary>
-        public Object DefaultValue { get; set; }
+        public Object? DefaultValue { get; set; }
 
         /// <summary>
         /// Description of the parameter, as specified by the [Description] attribute.
         /// </summary>
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         /// <summary>
         /// Name of the parameter displayed in the designer, as specified by the [DisplayName] attribute.
         /// </summary>
-        public string DisplayName { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets a value indicating whether the parameter is an enumeration.
@@ -46,7 +46,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <summary>
         /// Available options for enumerated type parameters. For parameters of other types, this value is null.
         /// </summary>
-        public ReadOnlyCollection<string> PossibleEnumValues
+        public ReadOnlyCollection<string>? PossibleEnumValues
         {
             get
             {

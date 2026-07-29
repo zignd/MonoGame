@@ -2,6 +2,8 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
+using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework.Content.Pipeline.Graphics;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
@@ -9,8 +11,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     class IndexBufferWriter : BuiltInContentWriter<IndexCollection>
     {
-        protected internal override void Write(ContentWriter output, IndexCollection value)
+        protected internal override void Write(ContentWriter output, [AllowNull] IndexCollection value)
         {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
             // Check if the buffer and can be saved as Int16.
             var shortIndices = true;
             foreach(var index in value)

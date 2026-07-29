@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Graphics.PackedVector
@@ -99,7 +100,7 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
         /// <inheritdoc />
         public override string ToString()
         {
-            return packedValue.ToString("x16");
+            return packedValue.ToString("x16", CultureInfo.InvariantCulture);
         }
 
         static ulong Pack(ref Vector4 vector)

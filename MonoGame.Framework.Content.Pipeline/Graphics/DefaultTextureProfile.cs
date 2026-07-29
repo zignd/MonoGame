@@ -11,6 +11,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 {
     internal class DefaultTextureProfile : TextureProfile
     {
+        private const TextureProcessorOutputFormat LegacyEtc1Compressed = (TextureProcessorOutputFormat)5;
+
         public override bool Supports(TargetPlatform platform)
         {
             return  platform == TargetPlatform.Android ||
@@ -29,9 +31,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
             switch (format)
             {
-#pragma warning disable CS0618 // Type or member is obsolete
-                case TextureProcessorOutputFormat.Etc1Compressed:
-#pragma warning restore CS0618 // Type or member is obsolete
+                case LegacyEtc1Compressed:
 
                 case TextureProcessorOutputFormat.AtcCompressed:
                 case TextureProcessorOutputFormat.DxtCompressed:
@@ -96,9 +96,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                     requiresPowerOfTwo = context.TargetProfile == GraphicsProfile.Reach;
                     break;
 
-#pragma warning disable CS0618 // Type or member is obsolete
-                case TextureProcessorOutputFormat.Etc1Compressed:
-#pragma warning restore CS0618 // Type or member is obsolete
+                case LegacyEtc1Compressed:
 
                 case TextureProcessorOutputFormat.PvrCompressed:
                 case TextureProcessorOutputFormat.EtcCompressed:
@@ -150,9 +148,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                     GraphicsUtil.CompressDxt(context, content, isSpriteFont);
                     break;
 
-#pragma warning disable CS0618 // Type or member is obsolete
-                case TextureProcessorOutputFormat.Etc1Compressed:
-#pragma warning restore CS0618 // Type or member is obsolete
+                case LegacyEtc1Compressed:
                     GraphicsUtil.CompressEtc1(context, content, isSpriteFont);
                     break;
 

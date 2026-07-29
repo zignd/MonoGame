@@ -7,6 +7,9 @@ using System.Collections.ObjectModel;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
 {
+    /// <summary>
+    /// Represents a read-only collection of <see cref="ModelMeshPartContent"/> instances.
+    /// </summary>
     public sealed class ModelMeshPartContentCollection : ReadOnlyCollection<ModelMeshPartContent>
     {
         internal ModelMeshPartContentCollection(IList<ModelMeshPartContent> list)

@@ -104,7 +104,7 @@ namespace FreeTypeAPI
         public FT_Face* face;
         public FT_Generic generic;
         public FT_Size_Metrics metrics;
-        nint inter;
+        public nint inter;
     }
 
     unsafe struct FT_Bitmap
@@ -137,7 +137,7 @@ namespace FreeTypeAPI
         public ushort flags;
         public int arg1;
         public int arg2;
-        FT_Matrix transform;
+        public FT_Matrix transform;
     }
 
     unsafe struct FT_Face
@@ -187,7 +187,7 @@ namespace FreeTypeAPI
         public FT_Generic autohint;
         public nint extensions;
 
-        nint intern;
+        public nint intern;
     };
 
     unsafe struct FT_GlyphSlot
@@ -222,7 +222,7 @@ namespace FreeTypeAPI
 
         public nint other;
 
-        nint intern;
+        public nint intern;
     }
 
     unsafe partial class FreeType

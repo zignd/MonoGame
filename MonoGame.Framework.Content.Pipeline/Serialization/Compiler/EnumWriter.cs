@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 {
@@ -13,8 +14,14 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     class EnumWriter<T> : BuiltInContentWriter<T>
     {
-        Type _underlyingType;
-        ContentTypeWriter _underlyingTypeWriter;
+        Type? _underlyingType;
+        ContentTypeWriter? _underlyingTypeWriter;
+
+        Type UnderlyingType => _underlyingType
+            ?? throw new InvalidOperationException("Enum writer has not been initialized with an underlying type.");
+
+        ContentTypeWriter UnderlyingTypeWriter => _underlyingTypeWriter
+            ?? throw new InvalidOperationException("Enum writer has not been initialized with an underlying type writer.");
 
         /// <inheritdoc/>
         internal override void OnAddedToContentWriter(ContentWriter output)
@@ -29,9 +36,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
             return "Microsoft.Xna.Framework.Content.EnumReader`1[[" + GetRuntimeType(targetPlatform) + "]]";
         }
 
-        protected internal override void Write(ContentWriter output, T value)
+        protected internal override void Write(ContentWriter output, T? value)
         {
-            output.WriteRawObject(Convert.ChangeType(value, _underlyingType), _underlyingTypeWriter);
+            output.WriteRawObject(Convert.ChangeType(value, UnderlyingType, CultureInfo.InvariantCulture), UnderlyingTypeWriter);
         }
     }
 }

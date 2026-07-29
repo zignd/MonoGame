@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 {
@@ -47,7 +48,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 
             _targetType = targetType;
         }
-        
+
         /// <summary>
         /// Gets the assembly qualified name of the runtime loader for this type.
         /// </summary>
@@ -94,7 +95,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         /// from a general-purpose lossless compression algorithm.
         /// The implementations for Song Class and SoundEffect Class data return false because data for these
         /// content types is already in compressed form.</remarks>
-        protected internal virtual bool ShouldCompressContent(TargetPlatform targetPlatform, object value)
+        protected internal virtual bool ShouldCompressContent(TargetPlatform targetPlatform, [AllowNull] object value)
         {
             // For now, only support uncompressed
             return false;
@@ -115,6 +116,6 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         /// </summary>
         /// <param name="output">The content writer serializing the value.</param>
         /// <param name="value">The resultant object.</param>
-        protected internal abstract void Write(ContentWriter output, object value);
+        protected internal abstract void Write(ContentWriter output, [AllowNull] object value);
     }
 }

@@ -113,16 +113,17 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         {
         }
 
-        public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
-        {   
+        public override object ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+        {
             try
             {
-                return base.ConvertFrom(context, culture, value);
+                return base.ConvertFrom(context, culture, value)
+                    ?? throw new InvalidOperationException("Target platform conversion returned null.");
             }
             catch (FormatException)
-            { 
+            {
                 // convert legacy Platforms
-                if (value.Equals("Linux") || value.Equals("WindowsGL"))
+                if (value is string platform && (platform == "Linux" || platform == "WindowsGL"))
                     return TargetPlatform.DesktopGL;
                 else
                     throw;

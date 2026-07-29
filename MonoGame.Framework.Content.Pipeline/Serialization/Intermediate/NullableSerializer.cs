@@ -9,8 +9,14 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
     [ContentTypeSerializer]
     class NullableSerializer<T> : ContentTypeSerializer<T?> where T : struct
     {
-        private ContentTypeSerializer _serializer;
-        private ContentSerializerAttribute _format;
+        private ContentTypeSerializer? _serializer;
+        private ContentSerializerAttribute? _format;
+
+        private ContentTypeSerializer Serializer => _serializer
+            ?? throw new InvalidOperationException("Nullable serializer has not been initialized.");
+
+        private ContentSerializerAttribute Format => _format
+            ?? throw new InvalidOperationException("Nullable serializer format has not been initialized.");
 
         protected internal override void Initialize(IntermediateSerializer serializer)
         {
@@ -23,12 +29,15 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 
         protected internal override T? Deserialize(IntermediateReader input, ContentSerializerAttribute format, T? existingInstance)
         {
-            return input.ReadRawObject<T>(_format, _serializer);
+            return input.ReadRawObject<T>(Format, Serializer);
         }
 
         protected internal override void Serialize(IntermediateWriter output, T? value, ContentSerializerAttribute format)
         {
-            output.WriteRawObject<T>(value.Value, _format, _serializer);
+            if (!value.HasValue)
+                throw new ArgumentNullException(nameof(value));
+
+            output.WriteRawObject<T>(value.Value, Format, Serializer);
         }
     }
 }

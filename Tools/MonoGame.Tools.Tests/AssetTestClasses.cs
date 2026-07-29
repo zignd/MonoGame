@@ -20,7 +20,7 @@ public class TheBasics
 {
     public int PublicField;
     protected int ProtectedField;
-    private int PrivateField;
+    private int PrivateField = default;
     internal int InternalField;
 
     public string GetSetProperty { get; set; }
@@ -37,6 +37,7 @@ public class TheBasics
 
     public TheBasics()
     {
+        _ = PrivateField;
         Nested = Nested2 = new NestedClass();
     }
 }
@@ -168,7 +169,12 @@ public class OptionalElements
 public class AllowNull
 {
     [ContentSerializer(AllowNull = false)]
-    string a;
+    string a = default;
+
+    public AllowNull()
+    {
+        _ = a;
+    }
 }
 
 #endregion
@@ -222,6 +228,15 @@ public class CollectionItemName
 {
     [ContentSerializer(ElementName = "w00t", CollectionItemName = "Flibble")]
     public string[] StringArray;
+}
+
+#endregion
+
+#region MultiDimensionalArrays
+
+public class MultiDimensionalArrays
+{
+    public int[,] Grid;
 }
 
 #endregion
@@ -473,7 +488,7 @@ class GetterOnlyProperties
         _intStringDictionary = new Dictionary<int, string>();
         _customClass = new AnotherClass();
         _customClassArray = new[] { new AnotherClass { A = 42 } };
-        _customStruct = new AnotherStruct();
+        _customStruct = new AnotherStruct { A = 0 };
     }
 }
 

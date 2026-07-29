@@ -33,12 +33,10 @@ namespace MonoGame.Tests.ContentPipeline
             {
                 public GraphicsDevice GraphicsDevice { get; private set; }
 
-                #pragma warning disable 67
-                public event EventHandler<EventArgs> DeviceCreated;
-                public event EventHandler<EventArgs> DeviceDisposing;
-                public event EventHandler<EventArgs> DeviceReset;
-                public event EventHandler<EventArgs> DeviceResetting;
-                #pragma warning restore 67
+                public event EventHandler<EventArgs> DeviceCreated { add { } remove { } }
+                public event EventHandler<EventArgs> DeviceDisposing { add { } remove { } }
+                public event EventHandler<EventArgs> DeviceReset { add { } remove { } }
+                public event EventHandler<EventArgs> DeviceResetting { add { } remove { } }
             }
 
             class FakeServiceProvider : IServiceProvider
@@ -84,6 +82,12 @@ namespace MonoGame.Tests.ContentPipeline
         private static void DeserializeCompileAndLoad<T>(string file, Action<T> doAsserts)
         {
             var result = Deserialize(file, doAsserts);
+
+            CompileAndLoad(result, doAsserts);
+        }
+
+        private static void CompileAndLoad<T>(T result, Action<T> doAsserts)
+        {
 
             var xnbStream = new MemoryStream();
 #if XNA
@@ -255,6 +259,29 @@ namespace MonoGame.Tests.ContentPipeline
                 Assert.AreEqual(2, collections.StringArray.Length);
                 Assert.AreEqual("Hello", collections.StringArray[0]);
                 Assert.AreEqual("World", collections.StringArray[1]);
+            });
+        }
+
+        [Test]
+        public void MultiDimensionalArrays()
+        {
+            CompileAndLoad(new MultiDimensionalArrays
+            {
+                Grid = new[,]
+                {
+                    { 1, 2, 3 },
+                    { 4, 5, 6 }
+                }
+            }, arrays =>
+            {
+                Assert.NotNull(arrays.Grid);
+                Assert.AreEqual(2, arrays.Grid.Rank);
+                Assert.AreEqual(2, arrays.Grid.GetLength(0));
+                Assert.AreEqual(3, arrays.Grid.GetLength(1));
+                Assert.AreEqual(1, arrays.Grid[0, 0]);
+                Assert.AreEqual(3, arrays.Grid[0, 2]);
+                Assert.AreEqual(4, arrays.Grid[1, 0]);
+                Assert.AreEqual(6, arrays.Grid[1, 2]);
             });
         }
 

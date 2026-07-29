@@ -1,14 +1,14 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Design
 {
     internal static class VectorConversion
     {
-        public static bool CanConvertTo(ITypeDescriptorContext context, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type destinationType)
+        public static bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
         {
             if (destinationType == typeof(float))
                 return true;
@@ -18,13 +18,14 @@ namespace Microsoft.Xna.Framework.Design
                 return true;
             if (destinationType == typeof(Vector4))
                 return true;
-            if (destinationType.GetInterface("IPackedVector") != null)
+            if (typeof(IPackedVector).IsAssignableFrom(destinationType))
                 return true;
 
             return false;
         }
 
-        public static object ConvertToFromVector4(ITypeDescriptorContext context, CultureInfo culture, Vector4 value, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type destinationType)
+        [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "TypeConverter.ConvertTo cannot annotate its destinationType override parameter; this design-time fallback intentionally activates arbitrary user-provided IPackedVector implementations.")]
+        public static object ConvertToFromVector4(ITypeDescriptorContext context, CultureInfo culture, Vector4 value, Type destinationType)
         {
             if (destinationType == typeof(float))
                 return value.X;
@@ -34,14 +35,17 @@ namespace Microsoft.Xna.Framework.Design
                 return new Vector3(value.X, value.Y, value.Z);
             if (destinationType == typeof(Vector4))
                 return new Vector4(value.X, value.Y, value.Z, value.W);
-            if (destinationType.GetInterface("IPackedVector") != null)
+            if (typeof(IPackedVector).IsAssignableFrom(destinationType))
             {
-                var packedVec = (IPackedVector)Activator.CreateInstance(destinationType);
+                var packedVec = TypeDescriptor.CreateInstance(context, destinationType, null, null) as IPackedVector;
+                if (packedVec == null)
+                    return null;
+
                 packedVec.PackFromVector4(value);
                 return packedVec;
-            }            
+            }
 
             return null;
-        }         
+        }
     }
 }

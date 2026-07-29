@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 {
@@ -14,7 +15,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         {
         }
 
-        protected internal override object Deserialize(IntermediateReader input, ContentSerializerAttribute format, object existingInstance)
+        protected internal override object Deserialize(IntermediateReader input, ContentSerializerAttribute format, [AllowNull] object existingInstance)
         {
             var str = input.Xml.ReadString();
             try
@@ -27,8 +28,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             }
         }
 
-        protected internal override void Serialize(IntermediateWriter output, object value, ContentSerializerAttribute format)
+        protected internal override void Serialize(IntermediateWriter output, [AllowNull] object value, ContentSerializerAttribute format)
         {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
             Debug.Assert(value.GetType() == TargetType, "Got invalid value type!");
             output.Xml.WriteString(value.ToString());
         }

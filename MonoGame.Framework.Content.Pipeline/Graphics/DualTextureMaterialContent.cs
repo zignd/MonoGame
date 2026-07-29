@@ -4,6 +4,9 @@
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 {
+    /// <summary>
+    /// Represents material content with primary and secondary textures.
+    /// </summary>
     public class DualTextureMaterialContent : MaterialContent
     {
         /// <inheritdoc cref="BasicMaterialContent.AlphaKey"/>
@@ -34,7 +37,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         }
 
         /// <inheritdoc cref="BasicMaterialContent.Texture"/>
-        public ExternalReference<TextureContent> Texture
+        public ExternalReference<TextureContent>? Texture
         {
             get { return GetTexture(TextureKey); }
             set { SetTexture(TextureKey, value); }
@@ -43,7 +46,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <summary>
         /// Gets or sets the second texture property.
         /// </summary>
-        public ExternalReference<TextureContent> Texture2
+        public ExternalReference<TextureContent>? Texture2
         {
             get { return GetTexture(Texture2Key); }
             set { SetTexture(Texture2Key, value); }

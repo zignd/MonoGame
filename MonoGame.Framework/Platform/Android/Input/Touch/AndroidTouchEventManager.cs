@@ -10,7 +10,7 @@ namespace Microsoft.Xna.Framework.Input.Touch
     /// Manages touch events for Android. Maps new presses to new touch Ids as per Xna WP7 incrementing touch Id behaviour. 
     /// This is required as Android reports touch IDs of 0 to 5, which leads to incorrect handling of touch events.
     /// Motivation and discussion: http://monogame.codeplex.com/discussions/382252
-    /// Also supports high-frequency touch events, <see cref="https://developer.android.com/reference/android/view/MotionEvent#batching"/>.
+    /// Also supports <see href="https://developer.android.com/reference/android/view/MotionEvent#batching">high-frequency touch events</see>.
     /// </summary>
     class AndroidTouchEventManager
     {

@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework.Content.Pipeline.Processors;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
@@ -15,8 +16,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         /// </summary>
         /// <param name="output">The output writer object.</param>
         /// <param name="value">The value to write to the output.</param>
-        protected internal override void Write(ContentWriter output, SoundEffectContent value)
+        protected internal override void Write(ContentWriter output, [AllowNull] SoundEffectContent value)
         {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
             output.Write(value.format.Length);
             output.Write(value.format);
 

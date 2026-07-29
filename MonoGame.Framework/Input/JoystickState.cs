@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System.Linq;
+using System.Globalization;
 using System.Text;
 
 namespace Microsoft.Xna.Framework.Input
@@ -114,7 +115,7 @@ namespace Microsoft.Xna.Framework.Input
             {
                 ret.Append(", Axes=");
                 foreach (var axis in Axes)
-                    ret.Append((axis > 0 ? "+" : "") + axis.ToString("00000") + " ");
+                    ret.Append((axis > 0 ? "+" : "") + axis.ToString("00000", CultureInfo.CurrentCulture) + " ");
                 ret.Length--;
 
                 ret.Append(", Buttons=");

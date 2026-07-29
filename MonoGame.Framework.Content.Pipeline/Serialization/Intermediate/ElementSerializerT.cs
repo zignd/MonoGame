@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Xml;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
@@ -28,12 +29,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 
         protected internal abstract void Serialize(T value, List<string> results);
 
-        
+
 
         protected internal void Deserialize(IntermediateReader input, List<T> results)
         {
             var elements = PackedElementsHelper.ReadElements(input);
-                            
+
             for (var index = 0; index < elements.Length;)
             {
                 if (elements.Length - index < _elementCount)
@@ -44,7 +45,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             }
         }
 
-        protected internal override T Deserialize(IntermediateReader input, ContentSerializerAttribute format, T existingInstance)
+        protected internal override T Deserialize(IntermediateReader input, ContentSerializerAttribute format, [AllowNull] T existingInstance)
         {
             var elements = PackedElementsHelper.ReadElements(input);
 
@@ -64,8 +65,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             output.Xml.WriteString(str);
         }
 
-        protected internal override void Serialize(IntermediateWriter output, T value, ContentSerializerAttribute format)
+        protected internal override void Serialize(IntermediateWriter output, [AllowNull] T value, ContentSerializerAttribute format)
         {
+            if (value is null)
+                throw new ArgumentNullException(nameof(value));
+
             var elements = new List<string>();
             Serialize(value, elements);
             var str = PackedElementsHelper.JoinElements(elements);

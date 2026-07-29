@@ -92,7 +92,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <returns>true if an actual scan was required, indicating the collection contents may have changed. false if no assembly changes were detected since the previous call.</returns>
         public bool Update(
             IEnumerable<string> pipelineAssemblies,
-            IEnumerable<string> pipelineAssemblyDependencies
+            IEnumerable<string>? pipelineAssemblyDependencies
             )
         {
             throw new NotImplementedException();

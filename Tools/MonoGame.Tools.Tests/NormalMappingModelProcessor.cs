@@ -27,7 +27,7 @@ namespace MonoGame.Tests.ContentPipeline
             {
                 throw new ArgumentNullException("input");
             }
-            context.Logger.LogImportantMessage("processing: " + input.Name);
+            context.Logger.Log("processing: " + input.Name);
             PreprocessSceneHierarchy(input, context, input.Name);
             return base.Process(input, context);
         }

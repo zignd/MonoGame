@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using MonoGame.Framework.Utilities;
 
@@ -32,9 +33,9 @@ namespace Microsoft.Xna.Framework.Audio
 
             string errorFmt = "OpenAL Error: {0}";
 
-            throw new NoMicrophoneConnectedException(String.Format("{0} - {1}",
+            throw new NoMicrophoneConnectedException(string.Format(CultureInfo.InvariantCulture, "{0} - {1}",
                             operation,
-                            string.Format(errorFmt, error)));
+                            string.Format(CultureInfo.InvariantCulture, errorFmt, error)));
         }
 
         internal static void PopulateCaptureDevices()

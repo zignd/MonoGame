@@ -13,7 +13,7 @@ namespace Microsoft.Xna.Framework.Content
         {
             var effect = new AlphaTestEffect(input.GetGraphicsDevice());
 
-            effect.Texture = input.ReadExternalReference<Texture>() as Texture2D;
+            effect.Texture = input.ReadExternalReferenceCore<Texture>() as Texture2D;
             effect.AlphaFunction = (CompareFunction)input.ReadInt32();
             effect.ReferenceAlpha = (int)input.ReadUInt32();
             effect.DiffuseColor = input.ReadVector3();

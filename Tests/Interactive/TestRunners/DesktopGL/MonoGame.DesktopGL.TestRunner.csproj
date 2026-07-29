@@ -60,9 +60,6 @@
    <LangVersion>latestMajor</LangVersion>
    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
    <ErrorReport>none</ErrorReport>
-   <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
-   <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
-   <EnableNETAnalyzers>False</EnableNETAnalyzers>
    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
  </PropertyGroup>
 </Project>

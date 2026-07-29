@@ -144,11 +144,11 @@ namespace MonoGame.Tests.ContentPipeline
             Assert.AreEqual(new Vector3(0.8f, 0.8f, 0.8f), materials["character_anim:pantsM"].DiffuseColor);
             Assert.AreEqual(new Vector3(1.0f, 1.0f, 1.0f), materials["character_anim:upBodyM"].DiffuseColor);
             Assert.AreEqual(new Vector3(1.0f, 1.0f, 1.0f), materials["character_anim:eyeBallM"].DiffuseColor);
-            Assert.AreEqual(1.24573088f, materials["character_anim:headM"].SpecularPower, 0.00001f);
-            Assert.AreEqual(1.24573088f, materials["character_anim:jacketM"].SpecularPower, 0.00001f);
-            Assert.AreEqual(1.24573088f, materials["character_anim:pantsM"].SpecularPower, 0.00001f);
-            Assert.AreEqual(1.19371974f, materials["character_anim:upBodyM"].SpecularPower, 0.00001f);
-            Assert.AreEqual(65.986f, materials["character_anim:eyeBallM"].SpecularPower, 0.00001f);
+            Assert.That(materials["character_anim:headM"].SpecularPower, Is.EqualTo(1.24573088f).Within(0.00001f));
+            Assert.That(materials["character_anim:jacketM"].SpecularPower, Is.EqualTo(1.24573088f).Within(0.00001f));
+            Assert.That(materials["character_anim:pantsM"].SpecularPower, Is.EqualTo(1.24573088f).Within(0.00001f));
+            Assert.That(materials["character_anim:upBodyM"].SpecularPower, Is.EqualTo(1.19371974f).Within(0.00001f));
+            Assert.That(materials["character_anim:eyeBallM"].SpecularPower, Is.EqualTo(65.986f).Within(0.00001f));
 
             Paths.AreEqual(@"Assets/Models/Dude/head.tga", materials["character_anim:headM"].Textures["Texture"].Filename);
             Paths.AreEqual(@"Assets/Models/Dude/headS.tga", materials["character_anim:headM"].Textures["Specular"].Filename);

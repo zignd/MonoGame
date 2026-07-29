@@ -26,9 +26,6 @@ namespace Microsoft.Xna.Framework.Audio
 
         public XactClip (SoundBank soundBank, BinaryReader clipReader, bool useReverb)
         {
-#pragma warning disable 0219
-            State = SoundState.Stopped;
-
             UseReverb = useReverb;
 
             var volumeDb = XactHelpers.ParseDecibels(clipReader.ReadByte());

@@ -13,7 +13,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     class ListWriter<T> : BuiltInContentWriter<List<T>>
     {
-        ContentTypeWriter _elementWriter;
+        ContentTypeWriter? _elementWriter;
+
+        ContentTypeWriter ElementWriter => _elementWriter
+            ?? throw new InvalidOperationException("List writer has not been initialized with an element writer.");
 
         /// <inheritdoc/>
         internal override void OnAddedToContentWriter(ContentWriter output)
@@ -33,7 +36,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         /// </summary>
         /// <param name="output">The output writer object.</param>
         /// <param name="value">The value to write to the output.</param>
-        protected internal override void Write(ContentWriter output, List<T> value)
+        protected internal override void Write(ContentWriter output, List<T>? value)
         {
             if (value == null)
                 throw new ArgumentNullException("value");
@@ -41,7 +44,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
             output.Write(value.Count);
             foreach (var element in value)
             {
-                output.WriteObject(element, _elementWriter);
+                output.WriteObject(element, ElementWriter);
             }
         }
     }

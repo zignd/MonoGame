@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Microsoft.Win32;
@@ -14,21 +15,34 @@ using Glyph = Microsoft.Xna.Framework.Content.Pipeline.Graphics.Glyph;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
 {
+    /// <summary>
+    /// Builds a <see cref="SpriteFontContent"/> asset from a <see cref="FontDescription"/>.
+    /// </summary>
     [ContentProcessor(DisplayName = "Sprite Font Description - MonoGame")]
     public class FontDescriptionProcessor : ContentProcessor<FontDescription, SpriteFontContent>
     {
+        /// <summary>
+        /// Gets or sets whether generated glyph textures are premultiplied by alpha.
+        /// </summary>
         [DefaultValue(true)]
         public virtual bool PremultiplyAlpha { get; set; }
 
+        /// <summary>
+        /// Gets or sets the output format used for the generated glyph texture.
+        /// </summary>
         [DefaultValue(typeof(TextureProcessorOutputFormat), "Compressed")]
         public virtual TextureProcessorOutputFormat TextureFormat { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FontDescriptionProcessor"/> class.
+        /// </summary>
         public FontDescriptionProcessor()
         {
             PremultiplyAlpha = true;
             TextureFormat = TextureProcessorOutputFormat.Compressed;
         }
 
+        /// <inheritdoc/>
         public override SpriteFontContent Process(FontDescription input, ContentProcessorContext context)
         {
             var output = new SpriteFontContent(input);
@@ -37,11 +51,14 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             // Look for fonts by filename
             if (string.IsNullOrWhiteSpace(fontFile))
             {
-                var directories = new List<string> { Path.GetDirectoryName(input.Identity.SourceFilename) };
+                var directories = new List<string>();
+                var sourceDirectory = Path.GetDirectoryName(input.Identity?.SourceFilename ?? string.Empty);
+                if (!string.IsNullOrEmpty(sourceDirectory))
+                    directories.Add(sourceDirectory);
                 var extensions = new string[] { "", ".ttf", ".ttc", ".otf" };
 
                 // Add special per platform directories
-                if (CurrentPlatform.OS == OS.Windows)
+                if (OperatingSystem.IsWindows())
                     directories.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts)));
                 else if (CurrentPlatform.OS == OS.MacOSX)
                 {
@@ -66,7 +83,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             if (!File.Exists(fontFile))
                 throw new FileNotFoundException("Could not find \"" + input.FontName + "\" font file at \"" + fontFile + "\".");
 
-            context.Logger.LogMessage("Building Font {0}", fontFile);
+            context.Logger.Log("Building Font {0}", fontFile);
 
             // Get the platform specific texture profile.
             var texProfile = TextureProfile.ForPlatform(context.TargetPlatform);
@@ -74,7 +91,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             {
                 if (!File.Exists(fontFile))
                 {
-                    throw new Exception(string.Format("Could not load {0}", fontFile));
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture, "Could not load {0}", fontFile));
                 }
                 var lineSpacing = 0f;
                 long yOffsetMin = 0;
@@ -175,9 +192,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             // Which importer knows how to read this source font?
             IFontImporter importer;
 
-            var TrueTypeFileExtensions = new List<string> { ".ttf", ".ttc", ".otf" };
+            var trueTypeFileExtensions = new List<string> { ".ttf", ".ttc", ".otf" };
             //var BitmapFileExtensions = new List<string> { ".bmp", ".png", ".gif" };
-
             string fileExtension = Path.GetExtension(fontName).ToLowerInvariant();
 
             //			if (BitmapFileExtensions.Contains(fileExtension))
@@ -186,7 +202,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             //			}
             //			else
             //			{
-            if (!TrueTypeFileExtensions.Contains(fileExtension))
+            if (!trueTypeFileExtensions.Contains(fileExtension))
                 throw new PipelineException("Unknown file extension " + fileExtension);
 
             importer = new SharpFontImporter();
@@ -233,18 +249,24 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
 
         private string FindFont(string name, string style)
         {
-            if (CurrentPlatform.OS == OS.Windows)
+            if (OperatingSystem.IsWindows())
             {
-#pragma warning disable CA1416 // Validate platform compatibility
                 var fontDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Fonts");
                 foreach (var key in new RegistryKey[] { Registry.LocalMachine, Registry.CurrentUser })
                 {
                     var subkey = key.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts", false);
+                    if (subkey == null)
+                        continue;
+
                     foreach (var font in subkey.GetValueNames().OrderBy(x => x))
                     {
                         if (font.StartsWith(name, StringComparison.OrdinalIgnoreCase))
                         {
-                            var fontPath = subkey.GetValue(font).ToString();
+                            var registryValue = subkey.GetValue(font)?.ToString();
+                            if (string.IsNullOrEmpty(registryValue))
+                                continue;
+
+                            var fontPath = registryValue;
 
                             // The registry value might have trailing NUL characters
                             // See https://github.com/MonoGame/MonoGame/issues/4061
@@ -264,7 +286,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             else if (CurrentPlatform.OS == OS.Linux)
             {
                 string s, e;
-                ExternalTool.Run("/bin/bash", string.Format("-c \"fc-match -f '%{{file}}:%{{family}}\\n' '{0}:style={1}'\"", name, style), out s, out e);
+                ExternalTool.Run("/bin/bash", string.Format(CultureInfo.InvariantCulture, "-c \"fc-match -f '%{{file}}:%{{family}}\n' '{0}:style={1}'\"", name, style), out s, out e);
                 s = s.Trim();
 
                 var split = s.Split(':');

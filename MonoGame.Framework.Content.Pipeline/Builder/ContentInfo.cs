@@ -30,13 +30,13 @@ public class ContentInfo(string contentRoot = "", bool shouldBuild = true, ICont
     public bool ShouldBuild { get; init; } = shouldBuild;
 
     /// <summary>
-    /// An <see cref="IContentImporter"/> to be used for the building, if its not specified, 
+    /// An <see cref="IContentImporter"/> to be used for the building, if its not specified,
     /// the system will use reflection to try to figure out an apropriate importer.
     /// </summary>
     public IContentImporter? Importer { get; init; } = importer;
 
     /// <summary>
-    /// An <see cref="IContentProcessor"/> to be used for the building, if its not specified, 
+    /// An <see cref="IContentProcessor"/> to be used for the building, if its not specified,
     /// the system will use reflection to try to figure out an apropriate processor.
     /// </summary>
     public IContentProcessor? Processor { get; init; } = processor;
@@ -55,8 +55,16 @@ public class ContentInfo(string contentRoot = "", bool shouldBuild = true, ICont
     public int MakeBuildHash()
     {
         var hash = new Hash();
-        ContentBuilderHelper.HashTypeAndProperties(Importer, ref hash);
-        ContentBuilderHelper.HashTypeAndProperties(Processor, ref hash);
+        if (Importer != null)
+        {
+            ContentBuilderHelper.HashTypeAndProperties(Importer, ref hash);
+        }
+
+        if (Processor != null)
+        {
+            ContentBuilderHelper.HashTypeAndProperties(Processor, ref hash);
+        }
+
         return hash.Value;
     }
 }

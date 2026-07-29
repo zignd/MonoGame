@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -48,12 +50,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// <param name="value">The external reference to write.</param>
         public void WriteExternalReference<T>(ExternalReference<T> value)
         {
-            ExternalReference externalReference;
+            ExternalReference? externalReference;
             if (!_externalReferences.TryGetValue(value, out externalReference))
                 _externalReferences.Add(value, externalReference = new ExternalReference
                 {
                     ID = "#External" + (_externalReferences.Count + 1),
-                    TargetType = typeof(T).FullName,
+                    TargetType = typeof(T).FullName ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Type '{0}' does not have a full name.", typeof(T))),
                     FileName = MakeRelativePath(value.Filename)
                 });
 
@@ -62,16 +64,18 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 
         private string MakeRelativePath(string path)
         {
-            var fullReferencePath = Path.GetFullPath(Path.GetDirectoryName(_filePath)) + Path.DirectorySeparatorChar;
+            var directory = Path.GetDirectoryName(_filePath)
+                ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Could not determine the directory for '{0}'.", _filePath));
+            var fullReferencePath = Path.GetFullPath(directory) + Path.DirectorySeparatorChar;
             var fullPath = Path.GetFullPath(path);
             return new Uri(fullReferencePath).MakeRelativeUri(new Uri(fullPath)).ToString();
         }
 
         private class ExternalReference
         {
-            public string ID;
-            public string TargetType;
-            public string FileName;
+            public string ID = string.Empty;
+            public string TargetType = string.Empty;
+            public string FileName = string.Empty;
         }
 
         /// <summary>
@@ -80,7 +84,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// <typeparam name="T">The type of the object.</typeparam>
         /// <param name="value">The object to write.</param>
         /// <param name="format">The format attribute to use.</param>
-        public void WriteObject<T>(T value, ContentSerializerAttribute format)
+        public void WriteObject<T>([AllowNull] T value, ContentSerializerAttribute format)
         {
             WriteObject(value, format, Serializer.GetTypeSerializer(typeof(T)));
         }
@@ -92,7 +96,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// <param name="value">The object to write.</param>
         /// <param name="format">The format attribute to use.</param>
         /// <param name="typeSerializer">The type serializer to use.</param>
-        public void WriteObject<T>(T value, ContentSerializerAttribute format, ContentTypeSerializer typeSerializer)
+        public void WriteObject<T>([AllowNull] T value, ContentSerializerAttribute format, ContentTypeSerializer typeSerializer)
         {
             WriteObjectInternal(value, format, typeSerializer, typeof(T));
         }
@@ -104,11 +108,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// <param name="format">The format attribute to use.</param>
         /// <param name="typeSerializer">The type serializer to use.</param>
         /// <param name="declaredType">The declared type of the object.</param>
-        public void WriteObject(object value, ContentSerializerAttribute format, ContentTypeSerializer typeSerializer, Type declaredType)
+        public void WriteObject([AllowNull] object value, ContentSerializerAttribute format, ContentTypeSerializer typeSerializer, Type declaredType)
         {
             WriteObjectInternal(value, format, typeSerializer, declaredType);
         }
-        internal void WriteObjectInternal(object value, ContentSerializerAttribute format, ContentTypeSerializer typeSerializer, Type declaredType)
+        internal void WriteObjectInternal([AllowNull] object value, ContentSerializerAttribute format, ContentTypeSerializer typeSerializer, Type declaredType)
         {
             if (format.Optional && (value == null || typeSerializer.ObjectIsEmpty(value)))
                 return;
@@ -129,7 +133,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
                 if (value == null)
                 {
                     if (!format.AllowNull)
-                        throw new InvalidOperationException(string.Format("Element {0} cannot be null.", format.ElementName));
+                        throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Element {0} cannot be null.", format.ElementName));
 
                     Xml.WriteAttributeString("Null", "true");
                 }
@@ -164,7 +168,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// <typeparam name="T">The type of the object.</typeparam>
         /// <param name="value">The object to write.</param>
         /// <param name="format">The format attribute to use.</param>
-        public void WriteRawObject<T>(T value, ContentSerializerAttribute format)
+        public void WriteRawObject<T>([AllowNull] T value, ContentSerializerAttribute format)
         {
             WriteRawObject(value, format, Serializer.GetTypeSerializer(typeof(T)));
         }
@@ -176,7 +180,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// <param name="value">The object to write.</param>
         /// <param name="format">The format attribute to use.</param>
         /// <param name="typeSerializer">The type serializer to use.</param>
-        public void WriteRawObject<T>(T value, ContentSerializerAttribute format, ContentTypeSerializer typeSerializer)
+        public void WriteRawObject<T>([AllowNull] T value, ContentSerializerAttribute format, ContentTypeSerializer typeSerializer)
         {
             if (!format.FlattenContent)
                 Xml.WriteStartElement(format.ElementName);
@@ -193,7 +197,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// <typeparam name="T">The type of the object.</typeparam>
         /// <param name="value">The object to write.</param>
         /// <param name="format">The format attribute to use.</param>
-        public void WriteSharedResource<T>(T value, ContentSerializerAttribute format)
+        public void WriteSharedResource<T>([AllowNull] T value, ContentSerializerAttribute format)
         {
             var sharedResourceID = GetSharedResourceID(value);
 
@@ -203,12 +207,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
                 Xml.WriteElementString(format.ElementName, sharedResourceID);
         }
 
-        private string GetSharedResourceID(object value)
+        private string? GetSharedResourceID([AllowNull] object value)
         {
             if (value == null)
                 return null;
 
-            string id;
+            string? id;
             if (!_sharedResources.TryGetValue(value, out id))
                 _sharedResources.Add(value, id = "#Resource" + (_sharedResources.Count + 1));
             return id;
@@ -259,7 +263,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             foreach (var externalReference in _externalReferences.Values)
             {
                 Xml.WriteStartElement("ExternalReference");
-                
+
                 Xml.WriteAttributeString("ID", externalReference.ID);
                 Xml.WriteAttributeString("TargetType", externalReference.TargetType);
 
@@ -279,5 +283,5 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         {
             Xml.WriteString(Serializer.GetFullTypeName(type));
         }
-    }        
+    }
 }

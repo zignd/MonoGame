@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 {
@@ -11,10 +12,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     /// Writes the dictionary to the output.
     /// </summary>
     [ContentTypeWriter]
-    class DictionaryWriter<K,V> : BuiltInContentWriter<Dictionary<K,V>>
+    class DictionaryWriter<K,V> : BuiltInContentWriter<Dictionary<K,V>> where K : notnull
     {
-        ContentTypeWriter _keyWriter;
-        ContentTypeWriter _valueWriter;
+        ContentTypeWriter? _keyWriter;
+        ContentTypeWriter? _valueWriter;
 
         /// <inheritdoc/>
         internal override void OnAddedToContentWriter(ContentWriter output)
@@ -30,16 +31,19 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
             get { return true; }
         }
 
-        protected internal override void Write(ContentWriter output, Dictionary<K,V> value)
+        protected internal override void Write(ContentWriter output, [AllowNull] Dictionary<K,V> value)
         {
             if (value == null)
                 throw new ArgumentNullException("value");
 
+            var keyWriter = _keyWriter ?? throw new InvalidOperationException("Dictionary key writer has not been initialized.");
+            var valueWriter = _valueWriter ?? throw new InvalidOperationException("Dictionary value writer has not been initialized.");
+
             output.Write(value.Count);
             foreach (var element in value)
             {
-                output.WriteObject(element.Key, _keyWriter);
-                output.WriteObject(element.Value, _valueWriter);
+                output.WriteObject(element.Key, keyWriter);
+                output.WriteObject(element.Value, valueWriter);
             }
         }
     }

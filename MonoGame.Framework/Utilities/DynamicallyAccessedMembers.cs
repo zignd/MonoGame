@@ -36,5 +36,46 @@ namespace System.Diagnostics.CodeAnalysis
 
         public DynamicallyAccessedMemberTypes MemberTypes { get { return _memberTypes; } }
     }
+
+    [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Class, Inherited = false)]
+    internal sealed class RequiresUnreferencedCodeAttribute : Attribute
+    {
+        public RequiresUnreferencedCodeAttribute(string message)
+        {
+            Message = message;
+        }
+
+        public string Message { get; }
+        public string Url { get; set; }
+    }
+
+    [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Class, Inherited = false)]
+    internal sealed class RequiresDynamicCodeAttribute : Attribute
+    {
+        public RequiresDynamicCodeAttribute(string message)
+        {
+            Message = message;
+        }
+
+        public string Message { get; }
+        public string Url { get; set; }
+    }
+
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = true, Inherited = false)]
+    internal sealed class UnconditionalSuppressMessageAttribute : Attribute
+    {
+        public UnconditionalSuppressMessageAttribute(string category, string checkId)
+        {
+            Category = category;
+            CheckId = checkId;
+        }
+
+        public string Category { get; }
+        public string CheckId { get; }
+        public string Justification { get; set; }
+        public string MessageId { get; set; }
+        public string Scope { get; set; }
+        public string Target { get; set; }
+    }
 }
 #endif

@@ -95,7 +95,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <param name="name">Name of the new channel.</param>
         /// <param name="channelData">Initial data for the new channel. If null, the channel is filled with the default value for that type.</param>
         /// <returns>The newly added vertex channel.</returns>
-        public VertexChannel<ElementType> Add<ElementType>(string name, IEnumerable<ElementType> channelData)
+        public VertexChannel<ElementType> Add<ElementType>(string name, IEnumerable<ElementType>? channelData)
         {
             return Insert(channels.Count, name, channelData);
         }
@@ -107,7 +107,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <param name="elementType">Type of data to be contained in the new channel.</param>
         /// <param name="channelData">Initial data for the new channel. If null, the channel is filled with the default value for that type.</param>
         /// <returns>The newly added vertex channel.</returns>
-        public VertexChannel Add(string name, Type elementType, IEnumerable channelData)
+        public VertexChannel Add(string name, Type elementType, IEnumerable? channelData)
         {
             return Insert(channels.Count, name, elementType, channelData);
         }
@@ -155,7 +155,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             var channel = this[index];
             // Remove it because we cannot add a new channel with the same name
             RemoveAt(index);
-            VertexChannel<TargetType> result = null;
+            VertexChannel<TargetType>? result = null;
             try
             {
                 // Insert a new converted channel at the same index
@@ -169,7 +169,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                 throw;
             }
             // Return the new converted channel
-            return result;
+            return result ?? throw new InvalidOperationException("Converted vertex channel was not created.");
         }
 
         /// <summary>
@@ -258,7 +258,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <param name="name">Name of the new channel.</param>
         /// <param name="channelData">The new channel.</param>
         /// <returns>The inserted vertex channel.</returns>
-        public VertexChannel<ElementType> Insert<ElementType>(int index, string name, IEnumerable<ElementType> channelData)
+        public VertexChannel<ElementType> Insert<ElementType>(int index, string name, IEnumerable<ElementType>? channelData)
         {
             if ((index < 0) || (index > channels.Count))
                 throw new ArgumentOutOfRangeException("index");
@@ -296,10 +296,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <param name="elementType">Type of the new channel.</param>
         /// <param name="channelData">Initial data for the new channel. If null, it is filled with the default value.</param>
         /// <returns>The inserted vertex channel.</returns>
-        public VertexChannel Insert(int index, string name, Type elementType, IEnumerable channelData)
+        public VertexChannel Insert(int index, string name, Type elementType, IEnumerable? channelData)
         {
             // Call the generic version of this method
-            return (VertexChannel) _insertOverload.MakeGenericMethod(elementType).Invoke(this, new object[] { index, name, channelData });
+            return (VertexChannel?)_insertOverload.MakeGenericMethod(elementType).Invoke(this, new object?[] { index, name, channelData })
+                ?? throw new InvalidOperationException("Vertex channel insertion did not return a channel instance.");
         }
 
         /// <summary>

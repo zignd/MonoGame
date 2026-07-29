@@ -80,7 +80,14 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
                 xmlDocument.Load(absolutePath);
 
                 // Scan each string from the .resx file.
-                foreach (XmlNode xmlNode in xmlDocument.SelectNodes("root/data/value"))
+                var resourceNodes = xmlDocument.SelectNodes("root/data/value");
+                if (resourceNodes == null)
+                {
+                    context.AddDependency(absolutePath);
+                    continue;
+                }
+
+                foreach (XmlNode xmlNode in resourceNodes)
                 {
                     string resourceString = xmlNode.InnerText;
 

@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Input.Touch;
@@ -139,6 +140,10 @@ namespace Microsoft.Xna.Framework
         /// the run loop from starting.
         /// </summary>
         /// <returns></returns>
+    #if ANDROID
+        [RequiresUnreferencedCode("Android graphics context recovery reloads assets by reflecting over runtime asset types.")]
+        [RequiresDynamicCode("Android graphics context recovery reloads assets by reflecting over runtime asset types.")]
+    #endif
         public virtual bool BeforeRun()
         {
             return true;

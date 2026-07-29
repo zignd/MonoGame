@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace MonoGame.Tools.Pipeline
@@ -150,7 +151,7 @@ namespace MonoGame.Tools.Pipeline
                 var errorCode = m.Groups["code"];
                 State = type.Value.Equals("error", StringComparison.OrdinalIgnoreCase) ? OutputState.BuildError : OutputState.BuildWarning;
                 Filename = m.Groups["filename"].Value.Replace("\\\\", "/").Replace("\\", "/");
-                ErrorMessage = string.Format("{0} {1} ({2},{3}): {4}", type, errorCode, lineNum, column, m.Groups["message"].Value);
+                ErrorMessage = string.Format(CultureInfo.InvariantCulture, "{0} {1} ({2},{3}): {4}", type, errorCode, lineNum, column, m.Groups["message"].Value);
             }
             else if (_reFileError.IsMatch(line))
             {

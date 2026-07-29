@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 
 namespace MonoGame.Framework.Utilities.StbImageWrite
 {
@@ -170,7 +171,7 @@ namespace MonoGame.Framework.Utilities.StbImageWrite
 				s.func(s.context, ((sbyte*) ptr), bytes.Length);
 			}
 
-			var str = string.Format("EXPOSURE=          1.0000000000000\n\n-Y {0} +X {1}\n", y, x);
+			var str = string.Format(CultureInfo.InvariantCulture, "EXPOSURE=          1.0000000000000\n\n-Y {0} +X {1}\n", y, x);
 			bytes = Encoding.UTF8.GetBytes(str);
 			fixed (byte* ptr = bytes)
 			{

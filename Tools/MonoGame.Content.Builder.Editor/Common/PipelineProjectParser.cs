@@ -85,25 +85,19 @@ namespace MonoGame.Tools.Pipeline
             Description = "The optional build config string from the build system.")]
         public string Config { set { _project.Config = value; } }
 
-        #pragma warning disable 414
-
         // Allow a MGCB file containing the /rebuild parameter to be imported without error
         [CommandLineParameter(
             Name = "rebuild",
             ValueName = "bool",
             Description = "Forces a rebuild of the project.")]
-        public bool Rebuild { set { _rebuild = value; } }
-        private bool _rebuild;
+        public bool Rebuild { set { } }
 
         // Allow a MGCB file containing the /clean parameter to be imported without error
         [CommandLineParameter(
             Name = "clean",
             ValueName = "bool",
             Description = "Removes intermediate and output files.")]
-        public bool Clean { set { _clean = value; } }
-        private bool _clean;
-
-        #pragma warning restore 414
+        public bool Clean { set { } }
 
         [CommandLineParameter(
             Name = "compress",
@@ -284,7 +278,7 @@ namespace MonoGame.Tools.Pipeline
 
             var commands = new string[]
             {
-                string.Format("/@:{0}", projectFilePath),
+                string.Format(CultureInfo.InvariantCulture, "/@:{0}", projectFilePath),
             };
             parser.Parse(commands);
 
@@ -307,22 +301,22 @@ namespace MonoGame.Tools.Pipeline
             line = FormatDivider("Global Properties");
             io.WriteLine(line);
 
-            line = string.Format(lineFormat, "outputDir", _project.OutputDir);
+            line = string.Format(CultureInfo.InvariantCulture, lineFormat, "outputDir", _project.OutputDir);
             io.WriteLine(line);
 
-            line = string.Format(lineFormat, "intermediateDir", _project.IntermediateDir);
+            line = string.Format(CultureInfo.InvariantCulture, lineFormat, "intermediateDir", _project.IntermediateDir);
             io.WriteLine(line);
 
-            line = string.Format(lineFormat, "platform", _project.Platform);
+            line = string.Format(CultureInfo.InvariantCulture, lineFormat, "platform", _project.Platform);
             io.WriteLine(line);
 
-            line = string.Format(lineFormat, "config", _project.Config);
+            line = string.Format(CultureInfo.InvariantCulture, lineFormat, "config", _project.Config);
             io.WriteLine(line);
 
-            line = string.Format(lineFormat, "profile", _project.Profile);
+            line = string.Format(CultureInfo.InvariantCulture, lineFormat, "profile", _project.Profile);
             io.WriteLine(line);
 
-            line = string.Format(lineFormat, "compress", _project.Compress);
+            line = string.Format(CultureInfo.InvariantCulture, lineFormat, "compress", _project.Compress);
             io.WriteLine(line);
 
             if (_project.LaunchDebugger)
@@ -333,7 +327,7 @@ namespace MonoGame.Tools.Pipeline
 
             foreach (var i in _project.References)
             {
-                line = string.Format(lineFormat, "reference", i);
+                line = string.Format(CultureInfo.InvariantCulture, lineFormat, "reference", i);
                 io.WriteLine(line);
             }
 
@@ -352,7 +346,7 @@ namespace MonoGame.Tools.Pipeline
 
                 // Wrap content item lines with a begin comment line
                 // to make them more cohesive (for version control).                  
-                line = string.Format("#begin {0}", i.OriginalPath);
+                line = string.Format(CultureInfo.InvariantCulture, "#begin {0}", i.OriginalPath);
                 io.WriteLine(line);
 
                 if (i.BuildAction == BuildAction.Copy)
@@ -360,7 +354,7 @@ namespace MonoGame.Tools.Pipeline
                     string path = i.OriginalPath;
                     if (i.OriginalPath != i.DestinationPath)
                         path += ";" + i.DestinationPath;
-                    line = string.Format(lineFormat, "copy", path);
+                    line = string.Format(CultureInfo.InvariantCulture, lineFormat, "copy", path);
                     io.WriteLine(line);
                     io.WriteLine();
                 }
@@ -369,13 +363,13 @@ namespace MonoGame.Tools.Pipeline
 
                     // Write importer.
                     {
-                        line = string.Format(lineFormat, "importer", i.ImporterName);
+                        line = string.Format(CultureInfo.InvariantCulture, lineFormat, "importer", i.ImporterName);
                         io.WriteLine(line);
                     }
 
                     // Write processor.
                     {
-                        line = string.Format(lineFormat, "processor", i.ProcessorName);
+                        line = string.Format(CultureInfo.InvariantCulture, lineFormat, "processor", i.ProcessorName);
                         io.WriteLine(line);
                     }
 
@@ -387,7 +381,7 @@ namespace MonoGame.Tools.Pipeline
                             // If so, write the string parameters from import.
                             foreach (var j in i.ProcessorParams)
                             {
-                                line = string.Format(lineFormat, "processorParam", string.Format(processorParamFormat, j.Key, j.Value));
+                                line = string.Format(CultureInfo.InvariantCulture, lineFormat, "processorParam", string.Format(CultureInfo.InvariantCulture, processorParamFormat, j.Key, j.Value));
                                 io.WriteLine(line);
                             }
                         }
@@ -406,7 +400,7 @@ namespace MonoGame.Tools.Pipeline
                                 {
                                     var converter = PipelineTypes.FindConverter(value.GetType());
                                     var valueStr = converter.ConvertTo(null, CultureInfo.InvariantCulture, value, typeof(string));
-                                    line = string.Format(lineFormat, "processorParam", string.Format(processorParamFormat, j.Name, valueStr));
+                                    line = string.Format(CultureInfo.InvariantCulture, lineFormat, "processorParam", string.Format(CultureInfo.InvariantCulture, processorParamFormat, j.Name, valueStr));
                                     io.WriteLine(line);
                                 }
                             }
@@ -416,7 +410,7 @@ namespace MonoGame.Tools.Pipeline
                     string buildValue = i.OriginalPath;
                     if (i.OriginalPath != i.DestinationPath)
                         buildValue += ";" + i.DestinationPath;
-                    line = string.Format(lineFormat, "build", buildValue);
+                    line = string.Format(CultureInfo.InvariantCulture, lineFormat, "build", buildValue);
                     io.WriteLine(line);
                     io.WriteLine();
                 }

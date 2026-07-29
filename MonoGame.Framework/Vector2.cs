@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
@@ -87,8 +88,8 @@ namespace Microsoft.Xna.Framework
             get
             {
                 return string.Concat(
-                    this.X.ToString(), "  ",
-                    this.Y.ToString()
+                    this.X.ToString(CultureInfo.CurrentCulture), "  ",
+                    this.Y.ToString(CultureInfo.CurrentCulture)
                 );
             }
         }
@@ -704,7 +705,7 @@ namespace Microsoft.Xna.Framework
         /// <param name="amount">Weighting value(between 0.0 and 1.0).</param>
         /// <param name="result">The result of linear interpolation of the specified vectors as an output parameter.</param>
         public static void LerpPrecise(ref Vector2 value1, ref Vector2 value2, float amount, out Vector2 result)
-        { 
+        {
             result.X = MathHelper.LerpPrecise(value1.X, value2.X, amount);
             result.Y = MathHelper.LerpPrecise(value1.Y, value2.Y, amount);
         }

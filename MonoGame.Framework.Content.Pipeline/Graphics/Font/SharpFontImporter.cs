@@ -13,7 +13,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
     unsafe internal class SharpFontImporter : IFontImporter
     {
         // Properties hold the imported font data.
-        public IEnumerable<Glyph> Glyphs { get; private set; }
+        public IEnumerable<Glyph> Glyphs { get; private set; } = Array.Empty<Glyph>();
 
         public float LineSpacing { get; private set; }
 
@@ -39,13 +39,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             foreach (char character in characters)
             {
                 uint glyphIndex = FreeType.FT_Get_Char_Index(face, new CULong(character));
-                if (!glyphMaps.TryGetValue(glyphIndex, out GlyphData glyphData))
+                if (!glyphMaps.TryGetValue(glyphIndex, out GlyphData? glyphData))
                 {
                     glyphData = ImportGlyph(glyphIndex, face);
                     glyphMaps.Add(glyphIndex, glyphData);
                 }
 
-                var glyph = new Glyph(character, glyphData);
+                var glyph = new Glyph(character, glyphData ?? throw new InvalidOperationException("Glyph data import returned null."));
                 glyphList.Add(glyph);
             }
             Glyphs = glyphList;
@@ -74,6 +74,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             const uint dpi = 96;
 
             CheckError(FreeType.FT_New_Face(library, fontName, new CLong(0), out FT_Face* face));
+            if (face == null)
+                throw new InvalidOperationException("FreeType returned a null font face.");
 
             var fixedSize = ((int)options.Size) << 6;
             CheckError(FreeType.FT_Set_Char_Size(face, new CLong(0), new CLong(fixedSize), dpi, dpi));
@@ -88,7 +90,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             CheckError(FreeType.FT_Render_Glyph(face->glyph));
 
             // Render the character.
-            BitmapContent glyphBitmap = null;
+            BitmapContent? glyphBitmap = null;
             if (face->glyph->bitmap.width > 0 && face->glyph->bitmap.rows > 0)
             {
                 glyphBitmap = new PixelBitmapContent<byte>((int)face->glyph->bitmap.width, (int)face->glyph->bitmap.rows);
@@ -120,7 +122,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                 }
                 else
                 {
-                    gpixelAlphas = new Span<byte>(face->glyph->bitmap.buffer, gpixelAlphas.Length).ToArray();
+                    var buffer = face->glyph->bitmap.buffer;
+                    if (buffer == null)
+                        throw new InvalidOperationException("FreeType returned a null glyph bitmap buffer.");
+
+                    gpixelAlphas = new Span<byte>(buffer, gpixelAlphas.Length).ToArray();
                 }
                 glyphBitmap.SetPixelData(gpixelAlphas);
             }
@@ -160,7 +166,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 
 
         /// <summary>
-        /// Reads each individual bit of a byte from left to right and expands it to a full byte, 
+        /// Reads each individual bit of a byte from left to right and expands it to a full byte,
         /// ones get byte.maxvalue, and zeros get byte.minvalue.
         /// </summary>
         /// <param name="origin">Byte to expand and copy</param>

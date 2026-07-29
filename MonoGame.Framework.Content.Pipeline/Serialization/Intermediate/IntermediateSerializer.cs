@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Xml;
 
@@ -58,6 +59,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 
         private IntermediateSerializer()
         {
+            _namespaceLookup = new Dictionary<string, string>();
             _scannedObjects = new List<object>();
             _namespaceAliasHelper = new NamespaceAliasHelper(this);
         }
@@ -67,10 +69,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// </summary>
         private Dictionary<string, string> _namespaceLookup;
 
-        private Dictionary<Type, ContentTypeSerializer> _serializers;
-        private Dictionary<Type, GenericCollectionHelper> _collectionHelpers;
+        private Dictionary<Type, ContentTypeSerializer>? _serializers;
+        private Dictionary<Type, GenericCollectionHelper>? _collectionHelpers;
 
-        private Dictionary<Type, Type> _genericSerializerTypes;
+        private Dictionary<Type, Type>? _genericSerializerTypes;
 
         private readonly NamespaceAliasHelper _namespaceAliasHelper;
 
@@ -85,6 +87,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// <returns>The deserialized object of type T.</returns>
         /// <exception cref="InvalidContentException">Thrown if no content is found.</exception>
         /// <exception cref="XmlException">Thrown if an error occurs parsing the XML.</exception>
+        [return: System.Diagnostics.CodeAnalysis.MaybeNull]
         public static T Deserialize<T>(XmlReader input, string referenceRelocationPath)
         {
             var serializer = new IntermediateSerializer();
@@ -94,7 +97,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             try
             {
                 if (!reader.MoveToElement("XnaContent"))
-                    throw new InvalidContentException(string.Format("Could not find XnaContent element in '{0}'.",
+                    throw new InvalidContentException(string.Format(CultureInfo.InvariantCulture, "Could not find XnaContent element in '{0}'.",
                                                                     referenceRelocationPath));
 
                 // Initialize the namespace lookups from
@@ -143,37 +146,48 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
                 {
                     if (t.IsGenericType)
                     {
-                        var genericType = t.BaseType.GetGenericArguments()[0];
+                        var baseType = t.BaseType ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Serializer type '{0}' is missing a base type.", t.FullName));
+                        var genericType = baseType.GetGenericArguments()[0];
                         _genericSerializerTypes.Add(genericType.GetGenericTypeDefinition(), t);
                     }
                     else
                     {
-                        var cts = Activator.CreateInstance(t) as ContentTypeSerializer;
+                        var cts = Activator.CreateInstance(t) as ContentTypeSerializer
+                            ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Serializer type '{0}' could not be instantiated.", t.FullName));
                         cts.Initialize(this);
                         _serializers.Add(cts.TargetType, cts);
                     }
                 }
             }
 
+            var serializers = _serializers
+                ?? throw new InvalidOperationException("Serializer cache was not initialized.");
+            var genericSerializerTypes = _genericSerializerTypes
+                ?? throw new InvalidOperationException("Generic serializer cache was not initialized.");
+
             // Look it up.
-            ContentTypeSerializer serializer;
-            if (_serializers.TryGetValue(type, out serializer))
+            ContentTypeSerializer? serializer;
+            if (serializers.TryGetValue(type, out serializer))
                 return serializer;
 
-            Type serializerType;
+            Type? serializerType;
 
             if (type.IsArray)
             {
                 if (type.GetArrayRank() != 1)
                     throw new RankException("We only support single dimension arrays.");
 
-                var arrayType = typeof(ArraySerializer<>).MakeGenericType(new[] { type.GetElementType() });
-                serializer = (ContentTypeSerializer)Activator.CreateInstance(arrayType);
+                var elementType = type.GetElementType()
+                    ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Array type '{0}' is missing an element type.", type.FullName));
+                var arrayType = typeof(ArraySerializer<>).MakeGenericType(new[] { elementType });
+                serializer = (ContentTypeSerializer)(Activator.CreateInstance(arrayType)
+                    ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Serializer type '{0}' could not be instantiated.", arrayType.FullName)));
             }
-            else if (type.IsGenericType && _genericSerializerTypes.TryGetValue(type.GetGenericTypeDefinition(), out serializerType))
+            else if (type.IsGenericType && genericSerializerTypes.TryGetValue(type.GetGenericTypeDefinition(), out serializerType))
             {
                 serializerType = serializerType.MakeGenericType(type.GetGenericArguments());
-                serializer = (ContentTypeSerializer)Activator.CreateInstance(serializerType);
+                serializer = (ContentTypeSerializer)(Activator.CreateInstance(serializerType)
+                    ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Serializer type '{0}' could not be instantiated.", serializerType.FullName)));
             }
             else if (type.IsEnum)
             {
@@ -189,18 +203,18 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             {
                 // The reflective serializer is not for primitive types!
                 if (type.IsPrimitive)
-                    throw new NotImplementedException(string.Format("Unhandled primitive type `{0}`!", type.FullName));
+                    throw new NotImplementedException(string.Format(CultureInfo.InvariantCulture, "Unhandled primitive type `{0}`!", type.FullName));
 
-                // We still don't have a serializer then we 
+                // We still don't have a serializer then we
                 // fallback to the reflection based serializer.
                 serializer = new ReflectiveSerializer(type);
             }
 
             Debug.Assert(serializer.TargetType == type, "Target type mismatch!");
 
-            // We cache the serializer before we initialize it to 
+            // We cache the serializer before we initialize it to
             // avoid a stack overflow on recursive types.
-            _serializers.Add(type, serializer);
+            serializers.Add(type, serializer);
             serializer.Initialize(this);
 
             return serializer;
@@ -211,11 +225,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             if (_collectionHelpers == null)
                 _collectionHelpers = new Dictionary<Type, GenericCollectionHelper>();
 
-            GenericCollectionHelper result;
-            if (!_collectionHelpers.TryGetValue(type, out result))
+            var collectionHelpers = _collectionHelpers;
+
+            GenericCollectionHelper? result;
+            if (!collectionHelpers.TryGetValue(type, out result))
             {
                 result = new GenericCollectionHelper(this, type);
-                _collectionHelpers.Add(type, result);
+                collectionHelpers.Add(type, result);
             }
             return result;
         }
@@ -227,7 +243,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// <param name="output">The XML writer to write the serialized value to.</param>
         /// <param name="value">The value to serialize.</param>
         /// <param name="referenceRelocationPath">The path to relocate any relative references to.</param>
-        public static void Serialize<T>(XmlWriter output, T value, string referenceRelocationPath)
+        public static void Serialize<T>(XmlWriter output, [System.Diagnostics.CodeAnalysis.AllowNull] T value, string referenceRelocationPath)
         {
             var serializer = new IntermediateSerializer();
             var writer = new IntermediateWriter(serializer, output, referenceRelocationPath);
@@ -268,9 +284,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// <summary>
         /// Finds the type in any assembly loaded into the AppDomain.
         /// </summary>
-        internal Type FindType(string typeName)
+        internal Type? FindType(string typeName)
         {
-            Type foundType;
+            Type? foundType;
 
             typeName = typeName.Trim();
 
@@ -301,9 +317,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
                 var genericArgumentsString = typeName.Substring(openBracketIndex + 1, typeName.Length - openBracketIndex - 2);
                 var genericArgumentsArray = genericArgumentsString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                 var genericArguments = genericArgumentsArray.Select(FindType).ToArray();
+                if (genericArguments.Any(arg => arg == null))
+                    return null;
 
                 foundType = FindType(typeNameWithoutArguments + "`" + genericArguments.Length);
-                return (foundType == null) ? null : foundType.MakeGenericType(genericArguments);
+                return (foundType == null) ? null : foundType.MakeGenericType(Array.ConvertAll(genericArguments, arg => arg!));
             }
 
             foundType = (from assembly in AppDomain.CurrentDomain.GetAssemblies()
@@ -322,7 +340,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// </summary>
         internal string GetFullTypeName(Type type)
         {
-            string typeName;
+            string? typeName = null;
 
             // Shortcut for friendly C# names
             if (_typeAliasesReverse.TryGetValue(type, out typeName))
@@ -336,6 +354,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             var typeNamespace = type.Namespace;
             if (!string.IsNullOrEmpty(typeNamespace))
                 typeName = typeNamespace + ".";
+            typeName ??= string.Empty;
             typeName += GetTypeName(type);
 
             return typeName;
@@ -362,10 +381,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             }
 
             if (type.IsArray)
-                return GetTypeName(type.GetElementType()) + "[]";
+                return GetTypeName(type.GetElementType()!) + "[]";
 
             if (type.IsNested)
-                return type.DeclaringType.Name + "+" + type.Name;
+                return type.DeclaringType!.Name + "+" + type.Name;
 
             return type.Name;
         }

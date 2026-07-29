@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 {
@@ -30,35 +31,37 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         }
 
         /// <summary/>
-        protected internal abstract T Deserialize(IntermediateReader input, ContentSerializerAttribute format, T existingInstance);
+        [return: MaybeNull]
+        protected internal abstract T Deserialize(IntermediateReader input, ContentSerializerAttribute format, [AllowNull] T existingInstance);
 
         /// <summary/>
-        protected internal override object Deserialize(IntermediateReader input, ContentSerializerAttribute format, object existingInstance)
+        [return: MaybeNull]
+        protected internal override object Deserialize(IntermediateReader input, ContentSerializerAttribute format, [AllowNull] object existingInstance)
         {
             var cast = existingInstance == null ? default(T) : (T)existingInstance;
             return Deserialize(input, format, cast);
         }
 
         /// <inheritdoc cref="ContentTypeSerializer.ObjectIsEmpty"/>
-        public virtual bool ObjectIsEmpty(T value)
+        public virtual bool ObjectIsEmpty([AllowNull] T value)
         {
             return base.ObjectIsEmpty(value);
         }
 
         /// <inheritdoc cref="ContentTypeSerializer.ObjectIsEmpty"/>
-        public override bool ObjectIsEmpty(object value)
+        public override bool ObjectIsEmpty([AllowNull] object value)
         {
             var cast = value == null ? default(T) : (T)value;
             return ObjectIsEmpty(cast);
         }
 
         /// <summary/>
-        protected internal virtual void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, T value)
+        protected internal virtual void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, [AllowNull] T value)
         {
         }
 
         /// <summary/>
-        protected internal override void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, object value)
+        protected internal override void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, [AllowNull] object value)
         {
             if (value == null)
                 return;
@@ -66,10 +69,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         }
 
         /// <summary/>
-        protected internal abstract void Serialize(IntermediateWriter output, T value, ContentSerializerAttribute format);
+        protected internal abstract void Serialize(IntermediateWriter output, [AllowNull] T value, ContentSerializerAttribute format);
 
         /// <summary/>
-        protected internal override void Serialize(IntermediateWriter output, object value, ContentSerializerAttribute format)
+        protected internal override void Serialize(IntermediateWriter output, [AllowNull] object value, ContentSerializerAttribute format)
         {
             var cast = value == null ? default(T) : (T)value;
             Serialize(output, cast, format);

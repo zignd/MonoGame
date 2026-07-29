@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using System.IO;
 using MonoGame.OpenAL;
 
@@ -52,7 +53,7 @@ namespace Microsoft.Xna.Framework.Audio
                         default: throw new NotSupportedException("The specified channel count is not supported.");
                     }
                 default:
-                    throw new NotSupportedException("The specified sound format (" + format.ToString() + ") is not supported.");
+                    throw new NotSupportedException("The specified sound format (" + format.ToString(CultureInfo.InvariantCulture) + ") is not supported.");
             }
         }
 

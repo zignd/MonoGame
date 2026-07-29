@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using System.Runtime.Serialization;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline
@@ -65,7 +66,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
             string message,
             params Object[] messageArgs
             )
-            : base(String.Format(message, messageArgs))
+            : base(string.Format(CultureInfo.InvariantCulture, message, messageArgs))
         {
         }
     }

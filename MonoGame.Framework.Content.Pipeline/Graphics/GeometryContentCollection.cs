@@ -19,7 +19,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="child">The child of the parent being retrieved.</param>
         /// <returns>The parent of the child object.</returns>
-        protected override MeshContent GetParent(GeometryContent child)
+        protected override MeshContent? GetParent(GeometryContent child)
         {
             return child.Parent;
         }
@@ -29,7 +29,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="child">The child of the parent being set.</param>
         /// <param name="parent">The parent of the child object.</param>
-        protected override void SetParent(GeometryContent child, MeshContent parent)
+        protected override void SetParent(GeometryContent child, MeshContent? parent)
         {
             child.Parent = parent;
         }

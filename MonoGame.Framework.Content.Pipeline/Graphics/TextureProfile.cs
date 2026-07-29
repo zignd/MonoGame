@@ -79,18 +79,18 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             }
             catch (EntryPointNotFoundException ex)
             {
-                context.Logger.LogImportantMessage("Could not find the entry point to compress the texture. " + ex.ToString());
-                throw ex;
+                context.Logger.Log(LogLevel.Error, "Could not find the entry point to compress the texture. " + ex.ToString());
+                throw;
             }
             catch (DllNotFoundException ex)
             {
-                context.Logger.LogImportantMessage("Could not compress texture. Required shared lib is missing. " + ex.ToString());
-                throw ex;
+                context.Logger.Log(LogLevel.Error, "Could not compress texture. Required shared lib is missing. " + ex.ToString());
+                throw;
             }
             catch (Exception ex)
             {
-                context.Logger.LogImportantMessage("Could not convert texture. " + ex.ToString());
-                throw ex;
+                context.Logger.Log(LogLevel.Error, "Could not convert texture. " + ex.ToString());
+                throw;
             }
         }
 

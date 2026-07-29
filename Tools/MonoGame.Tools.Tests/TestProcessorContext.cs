@@ -79,6 +79,7 @@ namespace MonoGame.Tests.ContentPipeline
         {
         }
 
+        [Obsolete("Please pass importer and processor as instances instead of just their names.")]
         public override TOutput BuildAndLoadAsset<TInput, TOutput>(ExternalReference<TInput> sourceAsset, string processorName, OpaqueDataDictionary processorParameters, string importerName)
         {
             return default(TOutput);
@@ -89,6 +90,7 @@ namespace MonoGame.Tests.ContentPipeline
             return default(TOutput);
         }
 
+        [Obsolete("Please pass importer and processor as instances instead of just their names.")]
         public override ExternalReference<TOutput> BuildAsset<TInput, TOutput>(ExternalReference<TInput> sourceAsset, string processorName, OpaqueDataDictionary processorParameters, string importerName, string assetName)
         {
             throw new NotImplementedException();
@@ -99,6 +101,7 @@ namespace MonoGame.Tests.ContentPipeline
             throw new NotImplementedException();
         }
 
+        [Obsolete("Please pass importer and processor as instances instead of just their names.")]
         public override TOutput Convert<TInput, TOutput>(TInput input, string processorName, OpaqueDataDictionary processorParameters)
         {
             // MaterialProcessor essentially transforms its

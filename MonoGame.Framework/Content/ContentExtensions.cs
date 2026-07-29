@@ -3,11 +3,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Linq;
 
+#nullable enable
+
 namespace Microsoft.Xna.Framework.Content
 {
     internal static class ContentExtensions
     {
-        public static ConstructorInfo GetDefaultConstructor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] this Type type)
+        public static ConstructorInfo? GetDefaultConstructor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] this Type type)
         {
 #if NET45
             var typeInfo = type.GetTypeInfo();
@@ -22,7 +24,7 @@ namespace Microsoft.Xna.Framework.Content
         public static PropertyInfo[] GetAllProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicProperties | DynamicallyAccessedMemberTypes.PublicProperties)] this Type type)
         {
 
-            // Sometimes, overridden properties of abstract classes can show up even with 
+            // Sometimes, overridden properties of abstract classes can show up even with
             // BindingFlags.DeclaredOnly is passed to GetProperties. Make sure that
             // all properties in this list are defined in this class by comparing
             // its get method with that of it's base class. If they're the same
@@ -37,7 +39,11 @@ namespace Microsoft.Xna.Framework.Content
 #else
             const BindingFlags attrs = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
             var allProps = type.GetProperties(attrs).ToList();
-            var props = allProps.FindAll(p => p.GetGetMethod(true) != null && p.GetGetMethod(true) == p.GetGetMethod(true).GetBaseDefinition()).ToArray();
+                        var props = allProps.FindAll(p =>
+                        {
+                                var getter = p.GetGetMethod(true);
+                                return getter != null && getter == getter.GetBaseDefinition();
+                        }).ToArray();
             return props;
 #endif
         }

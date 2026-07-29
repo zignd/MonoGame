@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 {
@@ -42,11 +43,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         public string XmlTypeName { get; private set; }
 
         /// <summary/>
-        protected internal abstract object Deserialize(IntermediateReader input, ContentSerializerAttribute format, object existingInstance);
+        [return: MaybeNull]
+        protected internal abstract object Deserialize(IntermediateReader input, ContentSerializerAttribute format, [AllowNull] object existingInstance);
 
         /// <summary/>
         protected internal virtual void Initialize(IntermediateSerializer serializer)
-        {     
+        {
         }
 
         /// <summary>
@@ -54,20 +56,20 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         /// </summary>
         /// <param name="value">The object to test.</param>
         /// <returns><c>true</c> if the object is empty; otherwise, <c>false</c>.</returns>
-        public virtual bool ObjectIsEmpty(object value)
+        public virtual bool ObjectIsEmpty([AllowNull] object value)
         {
             return false;
         }
 
         /// <summary/>
-        protected internal virtual void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, object value)
+        protected internal virtual void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, [AllowNull] object value)
         {
         }
 
         /// <summary/>
-        protected internal abstract void Serialize(IntermediateWriter output, object value, ContentSerializerAttribute format);
+        protected internal abstract void Serialize(IntermediateWriter output, [AllowNull] object value, ContentSerializerAttribute format);
 
         /// <summary/>
-        internal protected delegate void ChildCallback(ContentTypeSerializer typeSerializer, object value);
+        internal protected delegate void ChildCallback(ContentTypeSerializer typeSerializer, [AllowNull] object value);
     }
 }

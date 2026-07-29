@@ -9,15 +9,15 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
     /// </summary>
     public sealed class ModelBoneContent
     {
-        private ModelBoneContentCollection _children;
+        private ModelBoneContentCollection _children = new ModelBoneContentCollection(new System.Collections.Generic.List<ModelBoneContent>());
         private int _index;
-        private string _name;
-        private ModelBoneContent _parent;
+        private string _name = string.Empty;
+        private ModelBoneContent? _parent;
         private Matrix _transform;
 
         internal ModelBoneContent() { }
 
-        internal ModelBoneContent(string name, int index, Matrix transform, ModelBoneContent parent)
+        internal ModelBoneContent(string name, int index, Matrix transform, ModelBoneContent? parent)
         {
             _name = name;
             _index = index;
@@ -53,7 +53,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <summary>
         /// Returns teh parent of this bone content.
         /// </summary>
-        public ModelBoneContent Parent
+        public ModelBoneContent? Parent
         {
             get { return _parent; }
         }

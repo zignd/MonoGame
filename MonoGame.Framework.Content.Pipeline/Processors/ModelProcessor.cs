@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using Microsoft.Xna.Framework.Content.Pipeline.Graphics;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,7 +19,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
     [ContentProcessor(DisplayName = "Model - MonoGame")]
     public class ModelProcessor : ContentProcessor<NodeContent, ModelContent>
     {
-        private ContentIdentity _identity;
+        private ContentIdentity? _identity;
 
         #region Fields for default values
 
@@ -155,7 +156,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <returns>The model content.</returns>
         public override ModelContent Process(NodeContent input, ContentProcessorContext context)
         {
-            _identity = input.Identity;
+            _identity = input.Identity ?? new ContentIdentity(input.Name ?? string.Empty);
 
             // Perform the processor transforms.
             if (RotationX != 0.0f || RotationY != 0.0f || RotationZ != 0.0f || Scale != 1.0f)
@@ -179,7 +180,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             foreach (var inputMaterial in distinctMaterials)
             {
                 var geomsWithMaterial = geometries.Where(g => g.Material == inputMaterial).ToList();
-                var material = ConvertMaterial(inputMaterial, context);
+                var material = inputMaterial == null ? null : ConvertMaterial(inputMaterial, context);
 
                 ProcessGeometryUsingMaterial(material, geomsWithMaterial, context);
             }
@@ -191,13 +192,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             return new ModelContent(rootNode, boneList, meshList);
         }
 
-        private ModelBoneContent ProcessNode(NodeContent node, ModelBoneContent parent, List<ModelBoneContent> boneList, List<ModelMeshContent> meshList, ContentProcessorContext context)
+        private ModelBoneContent ProcessNode(NodeContent node, ModelBoneContent? parent, List<ModelBoneContent> boneList, List<ModelMeshContent> meshList, ContentProcessorContext context)
         {
-            var result = new ModelBoneContent(node.Name, boneList.Count, node.Transform, parent);
+            var result = new ModelBoneContent(node.Name ?? string.Empty, boneList.Count, node.Transform, parent);
             boneList.Add(result);
 
-            if (node is MeshContent)
-                meshList.Add(ProcessMesh(node as MeshContent, result, context));
+            if (node is MeshContent mesh)
+                meshList.Add(ProcessMesh(mesh, result, context));
 
             var children = new List<ModelBoneContent>();
             foreach (var child in node.Children)
@@ -215,7 +216,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
 
 			if (GenerateTangentFrames)
             {
-                context.Logger.LogMessage("Generating tangent frames.");
+                context.Logger.Log("Generating tangent frames.");
                 foreach (GeometryContent geom in mesh.Geometry)
                 {
                     if (!geom.Vertices.Channels.Contains(VertexChannelNames.Normal(0)))
@@ -264,7 +265,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             if (mesh.Positions.Count > 0)
                 bounds = BoundingSphere.CreateFromPoints(mesh.Positions);
 
-            return new ModelMeshContent(mesh.Name, mesh, parent, bounds, parts);
+            return new ModelMeshContent(mesh.Name ?? string.Empty, mesh, parent, bounds, parts);
         }
 
         /// <summary />
@@ -280,12 +281,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
                 TextureFormat = TextureFormat,
                 DefaultEffect = DefaultEffect
             };
-            
+
             return context.Convert<MaterialContent, MaterialContent>(material, processor);
         }
 
         /// <summary />
-        protected virtual void ProcessGeometryUsingMaterial(MaterialContent material,
+        protected virtual void ProcessGeometryUsingMaterial(MaterialContent? material,
                                                             IEnumerable<GeometryContent> geometryCollection,
                                                             ContentProcessorContext context)
         {
@@ -340,8 +341,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
                 {
                     if (!geometry.Vertices.Channels.Contains(VertexChannelNames.TextureCoordinate(i)))
                         throw new InvalidContentException(
-                            string.Format("The mesh \"{0}\", using {1}, contains geometry that is missing texture coordinates for channel {2}.",
-                            geometry.Parent.Name,
+                            string.Format(CultureInfo.InvariantCulture, "The mesh \"{0}\", using {1}, contains geometry that is missing texture coordinates for channel {2}.",
+                            geometry.Parent?.Name,
                             MaterialProcessor.GetDefaultEffect(material),
                             i),
                             _identity);
@@ -359,7 +360,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
                     var weightsName = VertexChannelNames.EncodeName(VertexElementUsage.BlendWeight, 0);
                     if (!geometry.Vertices.Channels.Contains(weightsName))
                         throw new InvalidContentException(
-                            string.Format("The skinned mesh \"{0}\" contains geometry without any vertex weights.", geometry.Parent.Name),
+                            string.Format(CultureInfo.InvariantCulture, "The skinned mesh \"{0}\" contains geometry without any vertex weights.", geometry.Parent?.Name),
                             _identity);
                 }
             }
@@ -376,7 +377,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
 
             // Channels[VertexChannelNames.Weights] -> { Byte4 boneIndices, Color boneWeights }
             if (channel.Name.StartsWith(VertexChannelNames.Weights()))
-                ProcessWeightsChannel(geometry, vertexChannelIndex, _identity);
+                ProcessWeightsChannel(geometry, vertexChannelIndex, _identity ?? new ContentIdentity());
         }
 
         private static void ProcessWeightsChannel(GeometryContent geometry, int vertexChannelIndex, ContentIdentity identity)
@@ -396,7 +397,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             var boneIndices = new Dictionary<string, int>();
             var flattenedBones = MeshHelper.FlattenSkeleton(skeleton);
             for (var i = 0; i < flattenedBones.Count; i++)
-                boneIndices.Add(flattenedBones[i].Name, i);
+                boneIndices.Add(flattenedBones[i].Name ?? throw new InvalidContentException("A flattened skeleton bone did not have a name."), i);
 
             var vertexChannel = geometry.Vertices.Channels[vertexChannelIndex];
             var inputWeights = vertexChannel as VertexChannel<BoneWeightCollection>;
@@ -404,9 +405,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             {
                 throw new InvalidContentException(
                     string.Format(
+                        CultureInfo.InvariantCulture,
                         "Vertex channel \"{0}\" is the wrong type. It has element type {1}. Type {2} is expected.",
                         vertexChannel.Name,
-                        vertexChannel.ElementType.FullName,
+                        vertexChannel.ElementType.FullName ?? vertexChannel.ElementType.Name,
                         "Microsoft.Xna.Framework.Content.Pipeline.Graphics.BoneWeightCollection"),
                     identity);
             }
@@ -445,14 +447,15 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             for (var i = 0; i < weights.Count; i++)
             {
                 var weight = weights[i];
+                var boneName = weight.BoneName ?? throw new InvalidOperationException("Encountered a bone weight with no bone name.");
 
-                if (!boneIndices.ContainsKey(weight.BoneName))
+                if (!boneIndices.ContainsKey(boneName))
                 {
-                    var errorMessage = string.Format("Bone '{0}' was not found in the skeleton! Skeleton bones are: '{1}'.", weight.BoneName, string.Join("', '", boneIndices.Keys));
+                    var errorMessage = string.Format(CultureInfo.InvariantCulture, "Bone '{0}' was not found in the skeleton! Skeleton bones are: '{1}'.", boneName, string.Join("', '", boneIndices.Keys));
                     throw new Exception(errorMessage);
                 }
 
-                tempIndices[i] = boneIndices[weight.BoneName];
+                tempIndices[i] = boneIndices[boneName];
                 tempWeights[i] = weight.Weight;
             }
 

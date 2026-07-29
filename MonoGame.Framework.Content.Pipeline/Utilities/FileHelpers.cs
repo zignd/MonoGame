@@ -42,7 +42,7 @@ internal static class PngFileHelper
         pngFileName = $"tempImage_{Guid.NewGuid().ToString()}.png"; // TODO: get a project relative path.
         pngFileName = Path.Combine(context.IntermediateDirectory, pngFileName);
         var directory = Path.GetDirectoryName(pngFileName);
-        if (!Directory.Exists(directory))
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
         {
             Directory.CreateDirectory(directory);
         }
@@ -69,7 +69,7 @@ internal static class PngFileHelper
             IntPtr err = MGCP.MP_ExportBitmap(ref bitmap, pngFileName);
             if (err != IntPtr.Zero)
             {
-                string errorMsg = System.Runtime.InteropServices.Marshal.PtrToStringUTF8(err);
+                var errorMsg = System.Runtime.InteropServices.Marshal.PtrToStringUTF8(err) ?? "unknown error";
                 throw new InvalidContentException($"Unable to write PNG file '{pngFileName}': {errorMsg}");
             }
         }

@@ -3,14 +3,16 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 {
     [ContentTypeSerializer]
     class ListSerializer<T> : ContentTypeSerializer<List<T>>
     {
-        private ContentTypeSerializer _itemSerializer;
+        private ContentTypeSerializer? _itemSerializer;
 
         public ListSerializer() :
             base("list")
@@ -27,22 +29,27 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             _itemSerializer = serializer.GetTypeSerializer(typeof(T));
         }
 
-        public override bool ObjectIsEmpty(List<T> value)
+        public override bool ObjectIsEmpty([AllowNull] List<T> value)
         {
-            return value.Count == 0;
+            return value == null || value.Count == 0;
         }
 
-        protected internal override void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, List<T> value)
+        protected internal override void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, [AllowNull] List<T> value)
         {
+            if (value == null || _itemSerializer == null)
+                return;
+
             foreach (var item in value)
                 callback(_itemSerializer, item);
         }
 
-        protected internal override List<T> Deserialize(IntermediateReader input, ContentSerializerAttribute format, List<T> existingInstance)
+        [return: MaybeNull]
+        protected internal override List<T> Deserialize(IntermediateReader input, ContentSerializerAttribute format, [AllowNull] List<T> existingInstance)
         {
+            var itemSerializer = _itemSerializer ?? throw new InvalidOperationException("List serializer has not been initialized.");
             var result = existingInstance ?? new List<T>();
 
-            var elementSerializer = _itemSerializer as ElementSerializer<T>;
+            var elementSerializer = itemSerializer as ElementSerializer<T>;
             if (elementSerializer != null)
                 elementSerializer.Deserialize(input, result);
             else
@@ -54,17 +61,21 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
                 // Read all the items.
                 while (input.MoveToElement(itemFormat.ElementName))
                 {
-                    var value = input.ReadObject<T>(itemFormat, _itemSerializer);
-                    result.Add(value);
+                    var value = input.ReadObject<T>(itemFormat, itemSerializer);
+                    ((IList)result).Add(value);
                 }
             }
 
             return result;
         }
 
-        protected internal override void Serialize(IntermediateWriter output, List<T> value, ContentSerializerAttribute format)
+        protected internal override void Serialize(IntermediateWriter output, [AllowNull] List<T> value, ContentSerializerAttribute format)
         {
-            var elementSerializer = _itemSerializer as ElementSerializer<T>;
+            if (value == null)
+                return;
+
+            var itemSerializer = _itemSerializer ?? throw new InvalidOperationException("List serializer has not been initialized.");
+            var elementSerializer = itemSerializer as ElementSerializer<T>;
             if (elementSerializer != null)
                 elementSerializer.Serialize(output, value);
             else
@@ -75,7 +86,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 
                 // Read all the items.
                 foreach (var item in value)
-                    output.WriteObject(item, itemFormat, _itemSerializer);
+                    output.WriteObject(item, itemFormat, itemSerializer);
             }
         }
     }

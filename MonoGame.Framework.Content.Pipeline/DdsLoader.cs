@@ -247,7 +247,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         static internal TextureContent Import(string filename, ContentImporterContext context)
         {
             var identity = new ContentIdentity(filename);
-            TextureContent output = null;
+            TextureContent? output = null;
 
             using (var reader = new BinaryReader(new FileStream(filename, FileMode.Open, FileAccess.Read)))
             {
@@ -369,7 +369,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
                 }
             }
 
-            return output;
+            return output ?? throw new InvalidContentException($"DDS import of '{filename}' returned null.", identity);
         }
 
         static void ByteFillAlpha(byte[] bytes)
@@ -466,7 +466,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
                 header.dwPitchOrLinearSize = (uint)(bitmapContent.Width * 4);
                 header.dwDepth = (uint)0;
                 header.dwMipMapCount = (uint)0;
-                
+
                 writer.Write((uint)header.dwSize);
                 writer.Write((uint)header.dwFlags);
                 writer.Write((uint)header.dwHeight);

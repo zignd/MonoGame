@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using Eto.Forms;
 
 namespace MonoGame.Tools.Pipeline
@@ -27,7 +28,7 @@ namespace MonoGame.Tools.Pipeline
             char value;
             char.TryParse(Value.ToString(), out value);
 
-            editText.Text = ((int)value).ToString();
+            editText.Text = ((int)value).ToString(CultureInfo.InvariantCulture);
 
             control.Add(editText, _lastRec.X, _lastRec.Y);
 

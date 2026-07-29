@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Reflection;
@@ -24,7 +25,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
             string stdout, stderr;
             var result = Run(command, arguments, out stdout, out stderr);
             if (result < 0)
-                throw new Exception(string.Format("{0} returned exit code {1}", command, result));
+                throw new Exception(string.Format(CultureInfo.InvariantCulture, "{0} returned exit code {1}", command, result));
 
             return result;
         }
@@ -49,21 +50,22 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <summary>
         /// Run a dotnet tool. The tool should be installed in a .config/dotnet-tools.json file somewhere in the project lineage.
         /// </summary>
-        public static int RunDotnetTool(string toolName, string args, out string stdOut, out string stdErr, string stdIn = null, string workingDirectory = null)
+        public static int RunDotnetTool(string toolName, string args, out string stdOut, out string stdErr, string? stdIn = null, string? workingDirectory = null)
         {
-            var exe = FindCommand(toolName);
+            var exe = FindCommand(toolName)
+                ?? throw new Exception(string.Format(CultureInfo.InvariantCulture, "Couldn't locate external tool '{0}'.", toolName));
             var finalizedArgs = args;
             return ExternalTool.Run(exe, finalizedArgs, out stdOut, out stdErr, stdIn, workingDirectory);
         }
 
-        public static int Run(string command, string arguments, out string stdout, out string stderr, string stdin = null, string workingDirectory = null)
+        public static int Run(string command, string arguments, out string stdout, out string stderr, string? stdin = null, string? workingDirectory = null)
         {
             // This particular case is likely to be the most common and thus
             // warrants its own specific error message rather than falling
             // back to a general exception from Process.Start()
             var fullPath = FindCommand(command);
             if (string.IsNullOrEmpty(fullPath))
-                throw new Exception(string.Format("Couldn't locate external tool '{0}'.", command));
+                throw new Exception(string.Format(CultureInfo.InvariantCulture, "Couldn't locate external tool '{0}'.", command));
 
             // We can't reference ref or out parameters from within
             // lambdas (for the thread functions), so we have to store
@@ -153,7 +155,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <remarks>
         /// It's apparently necessary to use the full path when running on some systems.
         /// </remarks>
-        private static string FindCommand(string command)
+        private static string? FindCommand(string command)
         {
             // Expand any environment variables.
             command = Environment.ExpandEnvironmentVariables(command);
@@ -192,6 +194,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
             var justTheName = Path.GetFileName(command);
             foreach (var path in paths.Split(Path.PathSeparator))
             {
+                if (string.IsNullOrEmpty(path))
+                    continue;
+
                 var fullName = Path.Combine(path, justTheName);
                 if (File.Exists(fullName))
                     return fullName;

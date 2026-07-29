@@ -58,7 +58,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <summary>
         /// Gets or sets the environment map property.
         /// </summary>
-        public ExternalReference<TextureContent> EnvironmentMap
+        public ExternalReference<TextureContent>? EnvironmentMap
         {
             get { return GetTexture(EnvironmentMapKey); }
             set { SetTexture(EnvironmentMapKey, value); }
@@ -92,7 +92,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         }
 
         /// <inheritdoc cref="BasicMaterialContent.Texture"/>
-        public ExternalReference<TextureContent> Texture
+        public ExternalReference<TextureContent>? Texture
         {
             get { return GetTexture(TextureKey); }
             set { SetTexture(TextureKey, value); }

@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
@@ -175,12 +176,18 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                 // If you got this exception, check out the static constructor above
                 // to make sure your type is registered.
                 throw new NotImplementedException(
-                    string.Format("TypeConverter for {0} -> {1} is not implemented.",
+                    string.Format(CultureInfo.InvariantCulture, "TypeConverter for {0} -> {1} is not implemented.",
                     typeof(T).Name, typeof(TargetType).Name));
             }
 
             foreach (var item in items)
-                yield return (TargetType)converter.ConvertTo(item, typeof(TargetType));
+            {
+                var converted = converter.ConvertTo(item, typeof(TargetType));
+                if (converted == null)
+                    throw new InvalidOperationException($"TypeConverter returned null converting {typeof(T).Name} to {typeof(TargetType).Name}.");
+
+                yield return (TargetType)converted;
+            }
         }
 
         /// <summary>

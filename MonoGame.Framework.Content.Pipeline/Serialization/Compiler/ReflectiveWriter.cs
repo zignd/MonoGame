@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using MonoGame.Framework.Utilities;
@@ -13,13 +14,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 {
     class ReflectiveWriter<T> : ContentTypeWriter
     {
-        private PropertyInfo[] _properties;
-        private FieldInfo[] _fields;
+        private PropertyInfo[] _properties = Array.Empty<PropertyInfo>();
+        private FieldInfo[] _fields = Array.Empty<FieldInfo>();
 
-        private Type _baseType;
+        private Type? _baseType;
 
-        private string _runtimeType;
-        private ContentCompiler _compiler;
+        private string? _runtimeType;
+        private ContentCompiler? _compiler;
         private static HashSet<MemberInfo> _sharedResources = new HashSet<MemberInfo>();
 
         public ReflectiveWriter()
@@ -35,7 +36,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         protected override void Initialize(ContentCompiler compiler)
         {
             _compiler = compiler;
-            var type = ReflectionHelpers.GetBaseType(TargetType);                
+            var type = ReflectionHelpers.GetBaseType(TargetType);
             if (type != null && type != typeof(object) && !TargetType.IsValueType)
                 _baseType = type;
 
@@ -89,7 +90,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
                 // deserialize into the existing type.
                 if (!property.CanWrite)
                 {
-                    if (!_compiler.GetTypeWriter(property.PropertyType).CanDeserializeIntoExistingObject)
+                    var compiler = _compiler ?? throw new InvalidOperationException("Reflective writer has not been initialized.");
+                    if (!compiler.GetTypeWriter(property.PropertyType).CanDeserializeIntoExistingObject)
                         return false;
                 }
             }
@@ -134,7 +136,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
             Debug.Assert(field != null || property != null);
 
             Type elementType;
-            object memberObject;
+            object? memberObject;
 
             if (property != null)
             {
@@ -143,8 +145,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
             }
             else
             {
-                elementType = field.FieldType;
-                memberObject = field.GetValue(parent);
+                var actualField = field ?? throw new InvalidOperationException("Member must be a field or property.");
+                elementType = actualField.FieldType;
+                memberObject = actualField.GetValue(parent);
             }
 
             if (_sharedResources.Contains(member))
@@ -169,13 +172,16 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 
         public override string GetRuntimeReader(TargetPlatform targetPlatform)
         {
-            return "Microsoft.Xna.Framework.Content.ReflectiveReader`1[[" + 
-                        GetRuntimeType(targetPlatform) 
+            return "Microsoft.Xna.Framework.Content.ReflectiveReader`1[[" +
+                        GetRuntimeType(targetPlatform)
                     + "]]";
         }
 
-        protected internal override void Write(ContentWriter output, object value)
+        protected internal override void Write(ContentWriter output, [AllowNull] object value)
         {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
             if (_baseType != null)
             {
                 var baseTypeWriter = output.GetTypeWriter(_baseType);

@@ -61,7 +61,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         }
 
         /// <inheritdoc cref="BasicMaterialContent.Texture"/>
-        public ExternalReference<TextureContent> Texture
+        public ExternalReference<TextureContent>? Texture
         {
             get { return GetTexture(TextureKey); }
             set { SetTexture(TextureKey, value); }

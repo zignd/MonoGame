@@ -9,7 +9,7 @@ using System.Collections.ObjectModel;
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 {
     /// <summary>
-    /// Used to identify custom ContentTypeSerializer classes. 
+    /// Used to identify custom ContentTypeSerializer classes.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public sealed class ContentTypeSerializerAttribute : Attribute
@@ -24,7 +24,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 
         private static readonly object _lock = new object();
 
-        private static ReadOnlyCollection<Type> _types;
+        private static ReadOnlyCollection<Type>? _types;
 
         static internal ReadOnlyCollection<Type> GetTypes()
         {

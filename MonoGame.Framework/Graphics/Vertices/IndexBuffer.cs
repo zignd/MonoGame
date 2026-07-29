@@ -158,17 +158,18 @@ namespace Microsoft.Xna.Framework.Graphics
         /// <returns>The IndexElementSize enum value that matches the type</returns>
         static IndexElementSize SizeForType(GraphicsDevice graphicsDevice, Type type)
         {
-            switch (ReflectionHelpers.FastManagedSizeOf(type))
+            if (type == typeof(short) || type == typeof(ushort))
+                return IndexElementSize.SixteenBits;
+
+            if (type == typeof(int) || type == typeof(uint))
             {
-                case 2:
-                    return IndexElementSize.SixteenBits;
-                case 4:
-                    if (graphicsDevice.GraphicsProfile == GraphicsProfile.Reach)
-                        throw new NotSupportedException("The profile does not support an elementSize of IndexElementSize.ThirtyTwoBits; use IndexElementSize.SixteenBits or a type that has a size of two bytes.");
-                    return IndexElementSize.ThirtyTwoBits;
-                default:
-                    throw new ArgumentOutOfRangeException("type","Index buffers can only be created for types that are sixteen or thirty two bits in length");
+                if (graphicsDevice.GraphicsProfile == GraphicsProfile.Reach)
+                    throw new NotSupportedException("The profile does not support an elementSize of IndexElementSize.ThirtyTwoBits; use IndexElementSize.SixteenBits or a type that has a size of two bytes.");
+
+                return IndexElementSize.ThirtyTwoBits;
             }
+
+            throw new ArgumentOutOfRangeException("type","Index buffers can only be created for types that are sixteen or thirty two bits in length");
         }
 
         /// <summary>

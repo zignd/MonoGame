@@ -51,9 +51,9 @@ namespace MonoGame.InteractiveTests
             {
                 foreach (var testName in args)
                 {
-                    var name = testName.ToLower();
-                    if (test.Category.ToLower().Contains(name)) { _filteredTests.Add(test); }
-                    else if (test.Name.ToLower().Contains(name)) { _filteredTests.Add(test); }
+                    var name = testName.ToLowerInvariant();
+                    if (test.Category.ToLowerInvariant().Contains(name)) { _filteredTests.Add(test); }
+                    else if (test.Name.ToLowerInvariant().Contains(name)) { _filteredTests.Add(test); }
                 }
             }
 

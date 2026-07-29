@@ -13,7 +13,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
     /// </summary>
     public abstract class PvrtcBitmapContent : BitmapContent
     {
-        internal byte[] _bitmapData;
+        internal byte[]? _bitmapData;
 
         /// <inheritdoc/>
         public PvrtcBitmapContent(int width, int height)

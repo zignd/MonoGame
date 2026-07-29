@@ -448,8 +448,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Utilities.LZ4
 		{
 			public byte* src_base;
 			public byte* nextToUpdate;
-			public int[] hashTable;
-			public ushort[] chainTable;
+			public int[] hashTable = Array.Empty<int>();
+			public ushort[] chainTable = Array.Empty<ushort>();
 		};
 
 		// ReSharper restore InconsistentNaming

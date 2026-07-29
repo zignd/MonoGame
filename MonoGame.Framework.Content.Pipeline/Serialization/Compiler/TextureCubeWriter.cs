@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework.Content.Pipeline.Graphics;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -11,8 +12,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     internal class TextureCubeWriter : BuiltInContentWriter<TextureCubeContent>
     {
-        protected internal override void Write(ContentWriter output, TextureCubeContent value)
+        protected internal override void Write(ContentWriter output, [AllowNull] TextureCubeContent value)
         {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
             var mipmaps0 = value.Faces[0];  // Mipmap chain of face 0 (+X).
             var level0 = mipmaps0[0];       // Most detailed mipmap level of face 0.
 

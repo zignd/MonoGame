@@ -9,8 +9,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     class SkinnedEffectWriter : BuiltInContentWriter<SkinnedMaterialContent>
     {
-        protected internal override void Write(ContentWriter output, SkinnedMaterialContent value)
+        protected internal override void Write(ContentWriter output, SkinnedMaterialContent? value)
         {
+            if (value == null)
+                throw new ArgumentNullException("value");
+
             output.WriteExternalReference(value.Textures.ContainsKey(SkinnedMaterialContent.TextureKey) ? value.Texture : null);
             output.Write(value.WeightsPerVertex.GetValueOrDefault(4));
             output.Write(value.DiffuseColor.HasValue ? value.DiffuseColor.Value : Vector3.One);

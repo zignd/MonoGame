@@ -26,10 +26,8 @@ namespace MonoGame.Tools.Pipeline
     partial class MainWindow : Form, IView
     {
 #endif
-#pragma warning disable 649
-        public EventHandler<EventArgs> RecentChanged;
-        public EventHandler<EventArgs> TitleChanged;
-#pragma warning restore 649
+    public event EventHandler<EventArgs> RecentChanged;
+    public event EventHandler<EventArgs> TitleChanged;
         public const string TitleBase = "MGCB Editor";
         public static MainWindow Instance;
 

@@ -12,6 +12,9 @@ using Android.Views;
 
 namespace Microsoft.Xna.Framework
 {
+    /// <summary>
+    /// Manages graphics device creation and presentation settings for a <see cref="Game"/>.
+    /// </summary>
     public class GraphicsDeviceManager : IGraphicsDeviceService, IDisposable, IGraphicsDeviceManager
     {
         private Game _game;
@@ -33,9 +36,20 @@ namespace Microsoft.Xna.Framework
 #endif
 
         private bool _wantFullScreen = false;
+        /// <summary>
+        /// The default back-buffer height.
+        /// </summary>
         public static readonly int DefaultBackBufferHeight = 480;
+
+        /// <summary>
+        /// The default back-buffer width.
+        /// </summary>
         public static readonly int DefaultBackBufferWidth = 800;
 
+        /// <summary>
+        /// Initializes a new graphics device manager for the provided game.
+        /// </summary>
+        /// <param name="game">The game instance.</param>
         public GraphicsDeviceManager(Game game)
         {
             if (game == null)
@@ -71,11 +85,17 @@ namespace Microsoft.Xna.Framework
             _game.Services.AddService(typeof(IGraphicsDeviceService), this);
         }
 
+        /// <summary>
+        /// Finalizes the graphics device manager.
+        /// </summary>
         ~GraphicsDeviceManager()
         {
             Dispose(false);
         }
 
+        /// <summary>
+        /// Creates and initializes the graphics device.
+        /// </summary>
         public void CreateDevice()
         {
             Initialize();
@@ -83,6 +103,10 @@ namespace Microsoft.Xna.Framework
             OnDeviceCreated(EventArgs.Empty);
         }
 
+        /// <summary>
+        /// Prepares the graphics device for drawing.
+        /// </summary>
+        /// <returns><see langword="true"/> if drawing can begin; otherwise <see langword="false"/>.</returns>
         public bool BeginDraw()
         {
             if (_graphicsDevice == null)
@@ -92,6 +116,9 @@ namespace Microsoft.Xna.Framework
             return true;
         }
 
+        /// <summary>
+        /// Presents the back buffer when drawing has begun.
+        /// </summary>
         public void EndDraw()
         {
             if (_graphicsDevice != null && _drawBegun)
@@ -103,10 +130,29 @@ namespace Microsoft.Xna.Framework
 
         #region IGraphicsDeviceService Members
 
+        /// <summary>
+        /// Raised when the graphics device is created.
+        /// </summary>
         public event EventHandler<EventArgs> DeviceCreated;
+
+        /// <summary>
+        /// Raised before the graphics device is disposed.
+        /// </summary>
         public event EventHandler<EventArgs> DeviceDisposing;
+
+        /// <summary>
+        /// Raised after the graphics device is reset.
+        /// </summary>
         public event EventHandler<EventArgs> DeviceReset;
+
+        /// <summary>
+        /// Raised before the graphics device is reset.
+        /// </summary>
         public event EventHandler<EventArgs> DeviceResetting;
+
+        /// <summary>
+        /// Raised before device settings are used to create the graphics device.
+        /// </summary>
         public event EventHandler<PreparingDeviceSettingsEventArgs> PreparingDeviceSettings;
 
         // FIXME: Why does the GraphicsDeviceManager not know enough about the
@@ -141,12 +187,17 @@ namespace Microsoft.Xna.Framework
 
         #region IDisposable Members
 
+        /// <inheritdoc cref="IDisposable.Dispose()"/>
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Releases managed and unmanaged resources.
+        /// </summary>
+        /// <param name="disposing"><see langword="true"/> to release managed resources; otherwise <see langword="false"/>.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposed)
@@ -165,6 +216,9 @@ namespace Microsoft.Xna.Framework
 
         #endregion
 
+        /// <summary>
+        /// Applies the current graphics device settings.
+        /// </summary>
         public void ApplyChanges()
         {
             // Calling ApplyChanges() before CreateDevice() should have no effect
@@ -331,6 +385,9 @@ namespace Microsoft.Xna.Framework
             TouchPanel.DisplayOrientation = _graphicsDevice.PresentationParameters.DisplayOrientation;
         }
 
+        /// <summary>
+        /// Toggles fullscreen mode.
+        /// </summary>
         public void ToggleFullScreen()
         {
             IsFullScreen = !IsFullScreen;
@@ -340,8 +397,14 @@ namespace Microsoft.Xna.Framework
 #endif
         }
 
+        /// <summary>
+        /// Gets or sets the graphics profile used when creating the graphics device.
+        /// </summary>
         public GraphicsProfile GraphicsProfile { get; set; }
 
+        /// <summary>
+        /// Gets the active graphics device.
+        /// </summary>
         public GraphicsDevice GraphicsDevice
         {
             get
@@ -350,6 +413,9 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Gets or sets whether fullscreen mode is enabled.
+        /// </summary>
         public bool IsFullScreen
         {
             get
@@ -380,7 +446,7 @@ namespace Microsoft.Xna.Framework
         {
             if (IsFullScreen)
 			{
-				Game.Activity.Window.ClearFlags(Android.Views.WindowManagerFlags.ForceNotFullscreen);
+                Game.Activity.Window.ClearFlags(global::Android.Views.WindowManagerFlags.ForceNotFullscreen);
                 Game.Activity.Window.SetFlags(WindowManagerFlags.Fullscreen, WindowManagerFlags.Fullscreen);
 			}
             else
@@ -427,6 +493,9 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Gets or sets whether multisampling is preferred.
+        /// </summary>
         public bool PreferMultiSampling
         {
             get
@@ -439,6 +508,9 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Gets or sets the preferred back-buffer surface format.
+        /// </summary>
         public SurfaceFormat PreferredBackBufferFormat
         {
             get
@@ -451,6 +523,9 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Gets or sets the preferred back-buffer height.
+        /// </summary>
         public int PreferredBackBufferHeight
         {
             get
@@ -463,6 +538,9 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Gets or sets the preferred back-buffer width.
+        /// </summary>
         public int PreferredBackBufferWidth
         {
             get
@@ -475,6 +553,9 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Gets or sets the preferred depth-stencil format.
+        /// </summary>
         public DepthFormat PreferredDepthStencilFormat
         {
             get
@@ -487,6 +568,9 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Gets or sets whether vertical retrace synchronization is enabled.
+        /// </summary>
         public bool SynchronizeWithVerticalRetrace
         {
             get
@@ -499,6 +583,9 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Gets or sets the supported display orientations.
+        /// </summary>
         public DisplayOrientation SupportedOrientations
         {
             get
@@ -580,7 +667,7 @@ namespace Microsoft.Xna.Framework
             TouchPanel.DisplayWidth = newClientBounds.Width;
             TouchPanel.DisplayHeight = newClientBounds.Height;
 
-            Android.Util.Log.Debug("MonoGame", "GraphicsDeviceManager.ResetClientBounds: newClientBounds=" + newClientBounds.ToString());
+            global::Android.Util.Log.Debug("MonoGame", "GraphicsDeviceManager.ResetClientBounds: newClientBounds=" + newClientBounds.ToString());
 #endif
         }
 

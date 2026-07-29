@@ -150,7 +150,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             if (input is BasicMaterialContent && DefaultEffect != MaterialProcessorDefaultEffect.BasicEffect)
             {
                 var newMaterial = CreateDefaultMaterial(DefaultEffect);
-                
+
                 // Preserve material properties.
                 newMaterial.Name = input.Name;
                 newMaterial.Identity = input.Identity;
@@ -158,7 +158,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
                     newMaterial.OpaqueData.Add(item.Key, item.Value);
                 foreach (var item in input.Textures)
                     newMaterial.Textures.Add(item.Key, item.Value);
-                
+
                 input = newMaterial;
             }
 
@@ -166,8 +166,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             var basic = input as BasicMaterialContent;
             if (basic != null)
             {
-                ExternalReference<TextureContent> texture;
-                if (basic.Textures.TryGetValue(BasicMaterialContent.TextureKey, out texture))
+                ExternalReference<TextureContent>? texture;
+                if (basic.Textures.TryGetValue(BasicMaterialContent.TextureKey, out texture) && texture != null)
                     basic.Texture = BuildTexture(texture.Filename, texture, context);
 
                 return basic;

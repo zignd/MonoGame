@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Content.Pipeline;
 using MonoGame.Framework.Content.Pipeline.Builder.Server;
 using MonoGame.Framework.Utilities;
 using System.Collections;
+using System.Globalization;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using YamlDotNet.Core;
@@ -28,10 +29,10 @@ static class ContentBuilderHelper
             var color = new Color();
             var split = scalar.Value.Split(",");
 
-            color.R = byte.Parse(split[0]);
-            color.G = byte.Parse(split[1]);
-            color.B = byte.Parse(split[2]);
-            color.A = byte.Parse(split[3]);
+            color.R = byte.Parse(split[0], CultureInfo.InvariantCulture);
+            color.G = byte.Parse(split[1], CultureInfo.InvariantCulture);
+            color.B = byte.Parse(split[2], CultureInfo.InvariantCulture);
+            color.A = byte.Parse(split[3], CultureInfo.InvariantCulture);
 
             return color;
         }

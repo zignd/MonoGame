@@ -15,7 +15,7 @@ namespace Microsoft.Xna.Framework.Content
 	{
 		protected internal override EffectMaterial Read (ContentReader input, EffectMaterial existingInstance)
 		{
-			var effect = input.ReadExternalReference<Effect> ();
+			var effect = input.ReadExternalReferenceCore<Effect> ();
 			var effectMaterial = new EffectMaterial (effect);
 
 			var dict = input.ReadObject<Dictionary<string, object>> ();

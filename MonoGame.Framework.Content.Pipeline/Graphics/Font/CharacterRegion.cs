@@ -4,14 +4,27 @@ using System.Collections.Generic;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 {
-    // Describes a range of consecutive characters that should be included in the font.
+    /// <summary>
+    /// Describes a contiguous range of characters to include in a font.
+    /// </summary>
     [TypeConverter(typeof(CharacterRegionTypeConverter))]
     public struct CharacterRegion
     {
+        /// <summary>
+        /// The first character in the region.
+        /// </summary>
         public char Start;
+
+        /// <summary>
+        /// The last character in the region.
+        /// </summary>
         public char End;
 
         // Enumerates all characters within the region.
+        /// <summary>
+        /// Enumerates all characters within the region.
+        /// </summary>
+        /// <returns>The characters from <see cref="Start"/> to <see cref="End"/>, inclusive.</returns>
         public IEnumerable<char> Characters()
         {
             for (var c = Start; c <= End; c++)
@@ -21,6 +34,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         }
 
         // Constructor.
+        /// <summary>
+        /// Initializes a character region.
+        /// </summary>
+        /// <param name="start">The first character in the region.</param>
+        /// <param name="end">The last character in the region.</param>
         public CharacterRegion(char start, char end)
         {
             if (start > end)
@@ -31,6 +49,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         }
 
         // Default to just the base ASCII character set.
+        /// <summary>
+        /// Gets the default printable ASCII character range.
+        /// </summary>
         public static CharacterRegion Default = new CharacterRegion(' ', '~');
 
 
@@ -70,20 +91,32 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <param name="source">The source.</param>
         /// <param name="comparer">The comparer.</param>
         /// <returns>A enumeration of selected values</returns>
-        public static IEnumerable<TSource> Distinct<TSource>(IEnumerable<TSource> source, IEqualityComparer<TSource> comparer = null)
+        public static IEnumerable<TSource> Distinct<TSource>(IEnumerable<TSource> source, IEqualityComparer<TSource>? comparer = null)
         {
-            if (comparer == null)
-                comparer = EqualityComparer<TSource>.Default;
+            comparer ??= EqualityComparer<TSource>.Default;
 
-            // using Dictionary is not really efficient but easy to implement
-            var values = new Dictionary<TSource, object>(comparer);
+            var values = new List<TSource>();
             foreach (TSource sourceItem in source)
             {
-                if (!values.ContainsKey(sourceItem))
+                var seen = false;
+                foreach (var existing in values)
                 {
-                    values.Add(sourceItem, null);
-                    yield return sourceItem;
+                    if (!comparer.Equals(existing, sourceItem))
+                    {
+                        continue;
+                    }
+
+                    seen = true;
+                    break;
                 }
+
+                if (seen)
+                {
+                    continue;
+                }
+
+                values.Add(sourceItem);
+                yield return sourceItem;
             }
         }
     }

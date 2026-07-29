@@ -13,7 +13,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
     /// </summary>
     /// <remarks>
     /// This class is designed to collect the vertex positions for a VertexContent object. Use the contents
-    /// of the PositionIndices property (of the contained VertexContent object) to index into the Positions 
+    /// of the PositionIndices property (of the contained VertexContent object) to index into the Positions
     /// property of the parent mesh.
     /// </remarks>
     public sealed class IndirectPositionCollection : IList<Vector3>
@@ -39,8 +39,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             get
             {
                 var remap = _positionIndices[index];
-                return _geometry.Parent.Positions[remap];
-            } 
+                return (_geometry.Parent ?? throw new InvalidOperationException("Geometry is not attached to a parent mesh.")).Positions[remap];
+            }
             set
             {
                 throw Readonly();

@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Graphics.PackedVector
@@ -80,7 +81,7 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
         /// <inheritdoc />
         public override string ToString()
         {
-            return (packedValue / 255.0f).ToString();
+            return (packedValue / 255.0f).ToString(CultureInfo.CurrentCulture);
         }
 
         /// <inheritdoc />

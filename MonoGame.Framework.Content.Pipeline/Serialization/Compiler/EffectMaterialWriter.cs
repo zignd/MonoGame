@@ -10,10 +10,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     class EffectMaterialWriter : BuiltInContentWriter<EffectMaterialContent>
     {
-        protected internal override void Write(ContentWriter output, EffectMaterialContent value)
+        protected internal override void Write(ContentWriter output, EffectMaterialContent? value)
         {
+            if (value == null)
+                throw new ArgumentNullException("value");
+
             output.WriteExternalReference(value.CompiledEffect);
-            var dict = new Dictionary<string, object>();
+            var dict = new Dictionary<string, object?>();
             foreach (var item in value.Textures)
             {
                 dict.Add(item.Key, item.Value);

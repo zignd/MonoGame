@@ -29,7 +29,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         protected internal override void Serialize(Color value, List<string> results)
         {
             // NOTE: The value is serialized in ARGB format.
-            results.Add(string.Format("{0:X2}{1:X2}{2:X2}{3:X2}", value.A, value.R, value.G, value.B));
+            results.Add(string.Format(CultureInfo.InvariantCulture, "{0:X2}{1:X2}{2:X2}{3:X2}", value.A, value.R, value.G, value.B));
         }
     }
 }

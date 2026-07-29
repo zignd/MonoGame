@@ -5,6 +5,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline
 {
@@ -28,9 +29,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// </summary>
         /// <param name="key">Identity of the key of the new data pair.</param>
         /// <param name="value">The value of the new data pair.</param>
-        public void Add(string key, T value)
+        public void Add(string key, [AllowNull] T value)
         {
-            dict.Add(key, value);
+            ((IDictionary)dict).Add(key, value);
         }
 
         /// <summary>
@@ -67,7 +68,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <param name="key">Identity of the key of the element whose value is to be retrieved.</param>
         /// <param name="value">The current value of the element.</param>
         /// <returns>true if the value is present; false otherwise.</returns>
-        public bool TryGetValue(string key, out T value)
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out T value)
         {
             return dict.TryGetValue(key, out value);
         }
@@ -100,7 +101,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
             }
             set
             {
-                dict[key] = value;
+                ((IDictionary)dict)[key] = value;
             }
         }
 
@@ -190,9 +191,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// </summary>
         /// <param name="key">Identity of the key of the new element.</param>
         /// <param name="value">The value of the new element.</param>
-        protected virtual void AddItem(string key, T value)
+        protected virtual void AddItem(string key, [AllowNull] T value)
         {
-            dict.Add(key, value);
+            ((IDictionary)dict).Add(key, value);
         }
 
         /// <summary>

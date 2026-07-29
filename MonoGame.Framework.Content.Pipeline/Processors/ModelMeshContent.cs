@@ -13,14 +13,14 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
     public sealed class ModelMeshContent
     {
         private BoundingSphere _boundingSphere;
-        private ModelMeshPartContentCollection _meshParts;
-        private string _name;
-        private ModelBoneContent _parentBone;
-        private MeshContent _sourceMesh;
+        private ModelMeshPartContentCollection _meshParts = new ModelMeshPartContentCollection(new List<ModelMeshPartContent>());
+        private string _name = string.Empty;
+        private ModelBoneContent? _parentBone;
+        private MeshContent? _sourceMesh;
 
         internal ModelMeshContent() { }
 
-        internal ModelMeshContent(string name, MeshContent sourceMesh, ModelBoneContent parentBone,
+        internal ModelMeshContent(string name, MeshContent sourceMesh, ModelBoneContent? parentBone,
                                   BoundingSphere boundingSphere, IList<ModelMeshPartContent> meshParts)
         {
             _name = name;
@@ -57,7 +57,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <summary>
         /// Gets the parent bone model.
         /// </summary>
-        public ModelBoneContent ParentBone
+        public ModelBoneContent? ParentBone
         {
             get { return _parentBone; }
         }
@@ -65,7 +65,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <summary>
         /// Gets the source mesh.
         /// </summary>
-        public MeshContent SourceMesh
+        public MeshContent? SourceMesh
         {
             get { return _sourceMesh; }
         }
@@ -73,6 +73,6 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <summary>
         /// Gets or sets the tag associated with the mesh.
         /// </summary>
-        public object Tag { get; set; }
+        public object? Tag { get; set; }
     }
 }

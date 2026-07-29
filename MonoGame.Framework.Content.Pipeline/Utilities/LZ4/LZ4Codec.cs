@@ -71,9 +71,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Utilities.LZ4
 		#region consts
 
 		private const int MINMATCH = 4;
-#pragma warning disable 162
-		private const int SKIPSTRENGTH = NOTCOMPRESSIBLE_DETECTIONLEVEL > 2 ? NOTCOMPRESSIBLE_DETECTIONLEVEL : 2;
-#pragma warning restore 162
+		private const int SKIPSTRENGTH = NOTCOMPRESSIBLE_DETECTIONLEVEL;
 		private const int COPYLENGTH = 8;
 		private const int LASTLITERALS = 5;
 		private const int MFLIMIT = COPYLENGTH + MINMATCH;

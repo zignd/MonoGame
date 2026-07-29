@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using System.IO;
 using Microsoft.Xna.Framework.Content.Pipeline.Utilities.LZ4;
 using Microsoft.Xna.Framework.Graphics;
@@ -36,7 +37,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         List<object> sharedResources = new List<object>();
         Dictionary<object, int> sharedResourceMap = new Dictionary<object, int>();
         Stream outputStream;
-        Stream bodyStream;
+        Stream? bodyStream;
 
         // This array must remain in sync with TargetPlatform
         static char[] targetPlatformIdentifiers = new[]
@@ -112,7 +113,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
                     // Dispose managed resources we allocated
                     if (bodyStream != null)
                         bodyStream.Dispose();
-                    bodyStream = null;
+                        bodyStream = null;
                 }
                 disposed = true;
             }
@@ -132,13 +133,15 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
             {
                 this.OutStream = contentStream;
                 WriteTypeWriters();
-                bodyStream.Position = 0;
-                bodyStream.CopyTo(contentStream);
+                var currentBodyStream = bodyStream
+                    ?? throw new InvalidOperationException("Content body stream has already been disposed.");
+                currentBodyStream.Position = 0;
+                currentBodyStream.CopyTo(contentStream);
                 contentStream.Position = 0;
 
                 // Before we write the header, try to compress the body stream. If compression fails, we want to
                 // turn off the compressContent flag so the correct flags are written in the header
-                Stream compressedStream = null;
+                Stream? compressedStream = null;
                 try
                 {
                     if (compressContent)
@@ -256,7 +259,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         /// <returns>The ContentTypeWriter for the type.</returns>
         internal ContentTypeWriter GetTypeWriter(Type type)
         {
-            ContentTypeWriter typeWriter = null;
+            ContentTypeWriter? typeWriter = null;
             if (!typeMap.TryGetValue(type, out typeWriter))
             {
                 int index = typeWriters.Count;
@@ -278,7 +281,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         /// </summary>
         /// <typeparam name="T">The type of reference.</typeparam>
         /// <param name="reference">External reference to a data file for the content item.</param>
-        public void WriteExternalReference<T>(ExternalReference<T> reference)
+        public void WriteExternalReference<T>(ExternalReference<T>? reference)
         {
             if (reference == null)
             {
@@ -295,10 +298,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
                 {
                     // Make sure the filename ends with .xnb
                     if (!fileName.EndsWith(".xnb"))
-                        throw new ArgumentException(string.Format("ExternalReference '{0}' must reference a .xnb file", fileName));
+                        throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, "ExternalReference '{0}' must reference a .xnb file", fileName));
                     // Make sure it is in the same root directory
                     if (!fileName.StartsWith(rootDirectory, StringComparison.OrdinalIgnoreCase))
-                        throw new ArgumentException(string.Format("ExternalReference '{0}' must be in the root directory '{1}'", fileName, rootDirectory));
+                        throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, "ExternalReference '{0}' must be in the root directory '{1}'", fileName, rootDirectory));
                     // Strip the .xnb extension
                     fileName = fileName.Substring(0, fileName.Length - 4);
                     // Get the relative directory
@@ -322,12 +325,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
             {
                 var typeWriter = GetTypeWriter(value.GetType());
 
-                // Because zero means null object, we add one to 
+                // Because zero means null object, we add one to
                 // the index before writing it to the file.
                 var index = typeWriterMap[typeWriter.GetType()];
                 Write7BitEncodedInt(index + 1);
 
-                typeWriter.Write(this, value);                
+                typeWriter.Write(this, value);
             }
         }
 

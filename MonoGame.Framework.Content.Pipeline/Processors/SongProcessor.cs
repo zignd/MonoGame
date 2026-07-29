@@ -21,10 +21,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// Gets or sets the target format quality of the audio content.
         /// </summary>
         /// <value>The ConversionQuality of this audio data.</value>
-        public ConversionQuality Quality 
-        { 
-            get { return _quality; } 
-            set { _quality = value; } 
+        public ConversionQuality Quality
+        {
+            get { return _quality; }
+            set { _quality = value; }
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             // Let the pipeline know about the song file so it can clean things up.
             context.AddOutputFile(songFileName);
             if (_quality != finalQuality)
-                context.Logger.LogMessage("Failed to convert using \"{0}\" quality, used \"{1}\" quality", _quality, finalQuality);
+                context.Logger.Log("Failed to convert using \"{0}\" quality, used \"{1}\" quality", _quality, finalQuality);
 
             // Return the XNB song content.
             return new SongContent(PathHelper.GetRelativePath(Path.GetDirectoryName(context.OutputFilename) + Path.DirectorySeparatorChar, songFileName), input.Duration);

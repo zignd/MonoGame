@@ -12,12 +12,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
     /// </summary>
     public sealed class ModelMeshPartContent
     {
-        private IndexCollection _indexBuffer;
-        private MaterialContent _material;
+        private IndexCollection? _indexBuffer;
+        private MaterialContent? _material;
         private int _numVertices;
         private int _primitiveCount;
         private int _startIndex;
-        private VertexBufferContent _vertexBuffer;
+        private VertexBufferContent? _vertexBuffer;
         private int _vertexOffset;
 
         internal ModelMeshPartContent() { }
@@ -37,7 +37,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <summary>
         /// Gets the collection of indices for this mesh part.
         /// </summary>
-        public IndexCollection IndexBuffer
+        public IndexCollection? IndexBuffer
         {
             get { return _indexBuffer; }
         }
@@ -45,7 +45,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <summary>
         /// Gets the material of this mesh part.
         /// </summary>
-        public MaterialContent Material
+        public MaterialContent? Material
         {
             get { return _material; }
             set { _material = value; }
@@ -78,12 +78,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <summary>
         /// Gets a user-defined tag object.
         /// </summary>
-        public object Tag { get; set; }
+        public object? Tag { get; set; }
 
         /// <summary>
         /// Gets the collection of vertices for this mesh part.
         /// </summary>
-        public VertexBufferContent VertexBuffer
+        public VertexBufferContent? VertexBuffer
         {
             get { return _vertexBuffer; }
         }

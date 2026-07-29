@@ -9,8 +9,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     class EnvironmentMapEffectWriter : BuiltInContentWriter<EnvironmentMapMaterialContent>
     {
-        protected internal override void Write(ContentWriter output, EnvironmentMapMaterialContent value)
+        protected internal override void Write(ContentWriter output, EnvironmentMapMaterialContent? value)
         {
+            if (value == null)
+                throw new ArgumentNullException("value");
+
             output.WriteExternalReference(value.Textures.ContainsKey(EnvironmentMapMaterialContent.TextureKey) ? value.Texture : null);
             output.WriteExternalReference(value.Textures.ContainsKey(EnvironmentMapMaterialContent.EnvironmentMapKey) ? value.EnvironmentMap : null);
             output.Write(value.EnvironmentMapAmount.HasValue ? value.EnvironmentMapAmount.Value : 1.0f);

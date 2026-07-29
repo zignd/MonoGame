@@ -18,8 +18,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     public class SpriteFontContentWriter : ContentTypeWriter<SpriteFontContent>
     {
         /// <inheritdoc/>
-        protected internal override void Write(ContentWriter output, SpriteFontContent value)
+        protected internal override void Write(ContentWriter output, SpriteFontContent? value)
         {
+            if (value == null)
+                throw new ArgumentNullException("value");
+
             output.WriteObject(value.Texture);
             output.WriteObject(value.Glyphs);
             output.WriteObject(value.Cropping);
@@ -30,7 +33,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
             var hasDefChar = value.DefaultCharacter.HasValue;
             output.Write(hasDefChar);
             if (hasDefChar)
-                output.Write(value.DefaultCharacter.Value);
+                output.Write(value.DefaultCharacter.GetValueOrDefault());
         }
 
         /// <summary>
@@ -70,7 +73,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         /// from a general-purpose lossless compression algorithm.
         /// The implementations for Song Class and SoundEffect Class data return false because data for these
         /// content types is already in compressed form.</remarks>
-        protected internal override bool ShouldCompressContent(TargetPlatform targetPlatform, object value)
+        protected internal override bool ShouldCompressContent(TargetPlatform targetPlatform, object? value)
         {
             return false;
         }

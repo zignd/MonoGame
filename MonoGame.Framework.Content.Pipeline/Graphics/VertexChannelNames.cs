@@ -26,7 +26,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             string[] names = Enum.GetNames(typeof(VertexElementUsage));
             Array values = Enum.GetValues(typeof(VertexElementUsage));
             for (int i = 0; i < names.Length; ++i)
-                usages.Add(names[i], (VertexElementUsage)values.GetValue(i));
+                usages.Add(names[i], (VertexElementUsage)(values.GetValue(i) ?? throw new InvalidOperationException("Vertex element usage lookup returned null.")));
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                 throw new InvalidOperationException("encodedName");
 
             // Subtract the base name from the string and convert the remainder to an integer.
-            // TryParse solves the problem when name is just 'BlendIndicies' for example, in 
+            // TryParse solves the problem when name is just 'BlendIndicies' for example, in
             // which case we default to index 0, assuming only 1 index.
             int index = 0;
             int.TryParse(encodedName.Substring(baseName.Length), NumberStyles.Integer, CultureInfo.InvariantCulture, out index);

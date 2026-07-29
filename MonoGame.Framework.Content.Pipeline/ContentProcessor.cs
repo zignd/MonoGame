@@ -60,7 +60,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
                 throw new ArgumentNullException("context");
             if (!(input is TInput))
                 throw new InvalidOperationException("input is not of the expected type");
-            return Process((TInput)input, context);
+
+            object? processed = Process((TInput)input, context);
+            return processed ?? throw new InvalidOperationException($"Processor '{GetType().FullName}' returned null.");
         }
     }
 }

@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Microsoft.Xna.Framework.Content.Pipeline.Processors;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
@@ -155,11 +156,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                 else if (channel.ElementType == typeof(HalfVector4))
                     format = VertexElementFormat.HalfVector4;
                 else
-                    throw new InvalidContentException(string.Format("Unrecognized vertex content type: '{0}'", channel.ElementType));
+                    throw new InvalidContentException(string.Format(CultureInfo.InvariantCulture, "Unrecognized vertex content type: '{0}'", channel.ElementType));
 
                 // Try to determine the vertex usage
                 if (!VertexChannelNames.TryDecodeUsage(channel.Name, out usage))
-                    throw new InvalidContentException(string.Format("Unknown vertex element usage for channel '{0}'", channel.Name));
+                    throw new InvalidContentException(string.Format(CultureInfo.InvariantCulture, "Unknown vertex element usage for channel '{0}'", channel.Name));
 
                 // Try getting the usage index
                 var usageIndex = VertexChannelNames.DecodeUsageIndex(channel.Name);

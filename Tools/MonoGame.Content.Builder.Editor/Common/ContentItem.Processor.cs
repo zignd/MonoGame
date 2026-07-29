@@ -85,7 +85,7 @@ namespace MonoGame.Tools.Pipeline
                 if (processor == PipelineTypes.MissingProcessor)
                 {
                     var contentItem = context.Instance as ContentItem;
-                    return string.Format("[missing] {0}", contentItem.ProcessorName);
+                    return string.Format(CultureInfo.InvariantCulture, "[missing] {0}", contentItem.ProcessorName);
                 }
 
                 return ((ProcessorTypeDescription)value).DisplayName;

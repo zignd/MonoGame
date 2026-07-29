@@ -67,7 +67,6 @@
   <ItemGroup>
     <PackageReference Include="AssimpNetter" Version="6.0.4.0" />
     <PackageReference Include="BCnEncoder.Net" Version="2.1.0" />
-    <PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
     <PackageReference Include="MonoGame.Library.FreeType" Version="2.13.2.3" />
     <PackageReference Include="MonoGame.Library.MojoShader" Version="1.0.0.5" />
     <PackageReference Include="MonoGame.Tool.Basisu" Version="2.0.2.1" />
@@ -75,10 +74,10 @@
     <PackageReference Include="MonoGame.Tool.Dxc" Version="1.8.2505.11" />
     <PackageReference Include="MonoGame.Tool.FFmpeg" Version="7.0.0.10" />
     <PackageReference Include="MonoGame.Tool.FFprobe" Version="7.0.0.10" />
-    <PackageReference Include="SharpDX" Version="4.0.1" />
-    <PackageReference Include="SharpDX.D3DCompiler" Version="4.0.1" />
+    <PackageReference Include="SharpDX" Version="4.2.0" />
+    <PackageReference Include="SharpDX.D3DCompiler" Version="4.2.0" />
     <PackageReference Include="LibKTX" Version="0.9.2" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.10" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 
@@ -114,13 +113,11 @@
     </Content>
   </ItemGroup>
 
-  <PropertyGroup>
-    <!-- NU5100 - NuGet warns if we copy assemblies but don't reference them; we suppress those warnings. -->
-    <!-- CS1591 - Disable XML documentation warnings. -->
-    <NoWarn>NU5100;CS1591</NoWarn>
-  </PropertyGroup>
-  
-  <Import Project="..\external\CppNet\CppNet.targets" />
+  <Target Name="RemoveMonoGameToolAssetsFromPackage" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <Content Remove="@(Content)" Condition="$([System.String]::Copy('%(Content.DefiningProjectFullPath)').ToLowerInvariant().Contains('monogame.tool.'))" />
+    </ItemGroup>
+  </Target>
 
   <Import Project="..\Switch\MonoGame.Framework.Content.Pipeline.targets" Condition="exists('..\Switch\MonoGame.Framework.Content.Pipeline.targets')" />
   <Import Project="..\XBoxOne\MonoGame.Framework.Content.Pipeline.targets" Condition="exists('..\XBoxOne\MonoGame.Framework.Content.Pipeline.targets')" />

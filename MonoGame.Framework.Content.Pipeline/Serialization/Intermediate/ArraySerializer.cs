@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 {
@@ -22,26 +23,36 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             _listSerializer.Initialize(serializer);
         }
 
-        public override bool ObjectIsEmpty(T[] value)
+        public override bool ObjectIsEmpty([AllowNull] T[] value)
         {
-            return value.Length == 0;
+            return value == null || value.Length == 0;
         }
 
-        protected internal override void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, T[] value)
+        protected internal override void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, [AllowNull] T[] value)
         {
+            if (value == null)
+                return;
+
             _listSerializer.ScanChildren(serializer, callback, new List<T>(value));
         }
 
-        protected internal override T[] Deserialize(IntermediateReader input, ContentSerializerAttribute format, T[] existingInstance)
+        [return: MaybeNull]
+        protected internal override T[] Deserialize(IntermediateReader input, ContentSerializerAttribute format, [AllowNull] T[] existingInstance)
         {
             if (existingInstance != null)
                 throw new InvalidOperationException("You cannot deserialize an array into a getter-only property.");
             var result = _listSerializer.Deserialize(input, format, null);
+            if (result == null)
+                return null;
+
             return result.ToArray();
         }
 
-        protected internal override void Serialize(IntermediateWriter output, T[] value, ContentSerializerAttribute format)
+        protected internal override void Serialize(IntermediateWriter output, [AllowNull] T[] value, ContentSerializerAttribute format)
         {
+            if (value == null)
+                return;
+
             _listSerializer.Serialize(output, new List<T>(value), format);
         }
     }

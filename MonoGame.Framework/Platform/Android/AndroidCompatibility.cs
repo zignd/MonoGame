@@ -20,7 +20,14 @@ namespace Microsoft.Xna.Framework
 		/// </summary>
         private static readonly string[] Kindles = new[] { "KFTT", "KFJWI", "KFJWA", "KFSOWI", "KFTHWA", "KFTHWI", "KFAPWA", "KFAPWI" };
 
+        /// <summary>
+        /// Gets whether landscape left/right should be flipped for the current device.
+        /// </summary>
         public static bool FlipLandscape { get; private set; }
+
+        /// <summary>
+        /// Gets the device natural orientation.
+        /// </summary>
         public static Lazy<Orientation> NaturalOrientation { get; private set; }
 
         static AndroidCompatibility()

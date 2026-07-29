@@ -39,7 +39,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <param name="geom">The geometry which will receive the normals.</param>
         /// <param name="overwriteExistingNormals">Overwrite or skip over geometry with existing normals.</param>
         /// <remarks>
-        /// We use a "Mean Weighted Equally" method generate vertex normals from triangle 
+        /// We use a "Mean Weighted Equally" method generate vertex normals from triangle
         /// face normals.  If normal cannot be calculated from the geometry we set it to zero.
         /// </remarks>
         public static void CalculateNormals(GeometryContent geom, bool overwriteExistingNormals)
@@ -89,7 +89,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                     // to look best in most cases, but is more expensive to calculate.
                     //
                     // There is also an idea of weighting by triangle area, but IMO the
-                    // triangle area doesn't always have a direct relationship to the 
+                    // triangle area doesn't always have a direct relationship to the
                     // shape of a mesh.
                     //
                     // For more ideas see:
@@ -170,7 +170,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             Vector3[] tangents, bitangents;
             CalculateTangentFrames(verts.Positions, indices, normals, uvs, out tangents, out bitangents);
 
-            // All the indices are 1:1 with the others, so we 
+            // All the indices are 1:1 with the others, so we
             // can just add the new channels in place.
 
             if (!string.IsNullOrEmpty(tangentChannelName))
@@ -196,11 +196,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                                                   out Vector3[] tangents,
                                                   out Vector3[] bitangents)
         {
-            // Lengyel, Eric. “Computing Tangent Space Basis Vectors for an Arbitrary Mesh”. 
+            // Lengyel, Eric. “Computing Tangent Space Basis Vectors for an Arbitrary Mesh”.
             // Terathon Software 3D Graphics Library, 2001.
             // http://www.terathon.com/code/tangent.html
 
-            // Hegde, Siddharth. "Messing with Tangent Space". Gamasutra, 2007. 
+            // Hegde, Siddharth. "Messing with Tangent Space". Gamasutra, 2007.
             // http://www.gamasutra.com/view/feature/129939/messing_with_tangent_space.php
 
             var numVerts = positions.Count;
@@ -298,7 +298,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                     // We couldn't find a good tanget for this vertex.
                     //
                     // Rather than set them to zero which could produce
-                    // errors in other parts of the pipeline, we just take        
+                    // errors in other parts of the pipeline, we just take
                     // a guess at something that may look ok.
 
                     t = Vector3.Cross(n, Vector3.UnitX);
@@ -311,7 +311,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                 }
 
                 // Gram-Schmidt orthogonalize
-                // TODO: This can be zero can cause NaNs on 
+                // TODO: This can be zero can cause NaNs on
                 // normalize... how do we fix this?
                 var tangent = t - n * Vector3.Dot(n, t);
                 tangent = Vector3.Normalize(tangent);
@@ -334,7 +334,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="node">The node from which to begin the search for the skeleton.</param>
         /// <returns>The root bone of the skeletion or null if none is found.</returns>
-        public static BoneContent FindSkeleton(NodeContent node)
+        public static BoneContent? FindSkeleton(NodeContent? node)
         {
             // We should always get a node to search!
             if (node == null)
@@ -407,7 +407,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// from each other.
         /// </summary>
         /// <param name="mesh">Mesh to be processed.</param>
-        /// <param name="tolerance">Tolerance value that determines how close 
+        /// <param name="tolerance">Tolerance value that determines how close
         /// positions must be to each other to be merged.</param>
         /// <remarks>
         /// This method will also update the <see cref="VertexContent.PositionIndices"/>
@@ -475,7 +475,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                 var hash = iData.ComputeHash();
 
                 var merged = false;
-                List<VertexData> candidates;
+                List<VertexData>? candidates;
                 if (hashMap.TryGetValue(hash, out candidates))
                 {
                     for (var candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
@@ -509,7 +509,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <summary>
         /// Merge vertices with the same <see cref="VertexContent.PositionIndices"/> and
         /// <see cref="VertexChannel"/> data within the <see cref="MeshContent.Geometry"/>
-        /// of this mesh. If you want to merge positions too, call 
+        /// of this mesh. If you want to merge positions too, call
         /// <see cref="MergeDuplicatePositions"/> on your mesh before this function.
         /// </summary>
         /// <param name="mesh">Mesh to be processed</param>
@@ -642,14 +642,14 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
             public int Index;
             public int PositionIndex;
-            public object[] ChannelData;
+            public object?[] ChannelData = Array.Empty<object?>();
 
             // Compute a hash based on PositionIndex and ChannelData
             public int ComputeHash()
             {
                 var hash = PositionIndex;
                 foreach (var channel in ChannelData)
-                    hash ^= channel.GetHashCode();
+                    hash ^= channel?.GetHashCode() ?? 0;
 
                 return hash;
             }

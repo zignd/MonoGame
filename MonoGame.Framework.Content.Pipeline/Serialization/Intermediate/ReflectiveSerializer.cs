@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
@@ -19,14 +21,14 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
         {
             public ContentSerializerAttribute Attribute;
             public ContentTypeSerializer Serializer;
-            public Action<object, object> Setter;
-            public Func<object, object> Getter;
+            public Action<object, object?>? Setter;
+            public Func<object, object?> Getter;
         };
 
         private readonly List<ElementInfo> _elements = new List<ElementInfo>();
 
-        private ContentTypeSerializer _baseSerializer;
-        private GenericCollectionHelper _collectionHelper;
+        private ContentTypeSerializer? _baseSerializer;
+        private GenericCollectionHelper? _collectionHelper;
 
         private bool GetElementInfo(IntermediateSerializer serializer, MemberInfo member, out ElementInfo info)
         {
@@ -56,7 +58,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 
                 if (prop != null)
                 {
-                    // If we don't have at least a public getter then this 
+                    // If we don't have at least a public getter then this
                     // property can't be serialized or deserialized in any way.
                     if (prop.GetGetMethod() == null)
                         return false;
@@ -68,8 +70,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
                     if (setter != null && !setter.IsPublic)
                         return false;
 
-                    // If there is no setter, and we don't have a type serializer 
-                    // that can deserialize into an existing object, then we have no way 
+                    // If there is no setter, and we don't have a type serializer
+                    // that can deserialize into an existing object, then we have no way
                     // for it to be deserialized.
                     if (setter == null && !serializer.GetTypeSerializer(prop.PropertyType).CanDeserializeIntoExistingObject)
                         return false;
@@ -131,7 +133,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             {
                 ElementInfo info;
                 if (GetElementInfo(serializer, field, out info))
-                    _elements.Add(info);                
+                    _elements.Add(info);
             }
 
             if (GenericCollectionHelper.IsGenericCollectionType(TargetType, false))
@@ -143,7 +145,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             get { return TargetType.IsClass && TargetType.BaseType != null; }
         }
 
-        protected internal override object Deserialize(IntermediateReader input, ContentSerializerAttribute format, object existingInstance)
+        [return: MaybeNull]
+        protected internal override object Deserialize(IntermediateReader input, ContentSerializerAttribute format, [AllowNull] object existingInstance)
         {
             var result = existingInstance;
             if (result == null)
@@ -151,11 +154,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
                 try
                 {
                     result = Activator.CreateInstance(TargetType, true);
+                    if (result == null)
+                        throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Couldn't create object of type {0}.", TargetType.Name));
                 }
                 catch (MissingMethodException e)
                 {
-                    throw new Exception(string.Format("Couldn't create object of type {0}: {1}", TargetType.Name, e.Message), e);
-                }                
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture, "Couldn't create object of type {0}: {1}", TargetType.Name, e.Message), e);
+                }
             }
 
             // First deserialize the base type.
@@ -173,7 +178,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
                         // safely skip it and continue.
                         if (info.Attribute.Optional)
                             continue;
-                        
+
                         // We failed to find a required element.
                         throw input.NewInvalidContentException(null, "The Xml element `{0}` is required, but element `{1}` was found at line {2}:{3}. Try changing the element order or adding missing elements.", info.Attribute.ElementName, input.Xml.Name, ((IXmlLineInfo)input.Xml).LineNumber, ((IXmlLineInfo)input.Xml).LinePosition);
                     }
@@ -181,7 +186,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 
                 if (info.Attribute.SharedResource)
                 {
-                    Action<object> fixup = (o) => info.Setter(result, o);
+                    var setter = info.Setter
+                        ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Shared resource member '{0}' on type '{1}' cannot be assigned.", info.Attribute.ElementName, TargetType.FullName));
+                    Action<object?> fixup = (o) => setter(result, o);
                     input.ReadSharedResource(info.Attribute, fixup);
                 }
                 else if (info.Setter == null)
@@ -202,17 +209,20 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             return result;
         }
 
-        public override bool ObjectIsEmpty(object value)
+        public override bool ObjectIsEmpty([AllowNull] object value)
         {
             if (_baseSerializer != null)
                 return _baseSerializer.ObjectIsEmpty(value);
             if (_collectionHelper != null)
-                return _collectionHelper.ObjectIsEmpty(value);
+                return value != null && _collectionHelper.ObjectIsEmpty(value);
             return false;
         }
 
-        protected internal override void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, object value)
+        protected internal override void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, [AllowNull] object value)
         {
+            if (value == null)
+                return;
+
             if (serializer.AlreadyScanned(value))
                 return;
 
@@ -238,8 +248,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
                 _collectionHelper.ScanChildren(callback, value);
         }
 
-        protected internal override void Serialize(IntermediateWriter output, object value, ContentSerializerAttribute format)
+        protected internal override void Serialize(IntermediateWriter output, [AllowNull] object value, ContentSerializerAttribute format)
         {
+            if (value == null)
+                return;
+
             // First serialize the base type.
             if (_baseSerializer != null)
                 _baseSerializer.Serialize(output, value, format);

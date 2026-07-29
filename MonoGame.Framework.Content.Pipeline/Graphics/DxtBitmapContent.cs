@@ -10,14 +10,19 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 {
+    /// <summary>
+    /// Base class for block-compressed DXT bitmap content.
+    /// </summary>
     public abstract class DxtBitmapContent : BitmapContent
     {
-        private byte[] _bitmapData;
+        private byte[]? _bitmapData;
         private int _blockSize;
         private SurfaceFormat _format;
 
-        private int _nvttWriteOffset;
-
+        /// <summary>
+        /// Initializes a new DXT bitmap with the specified compression block size.
+        /// </summary>
+        /// <param name="blockSize">The block size in bytes.</param>
         protected DxtBitmapContent(int blockSize)
         {
             if (!((blockSize == 8) || (blockSize == 16)))
@@ -26,6 +31,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             TryGetFormat(out _format);
         }
 
+        /// <summary>
+        /// Initializes a new DXT bitmap with the specified block size and dimensions.
+        /// </summary>
+        /// <param name="blockSize">The block size in bytes.</param>
+        /// <param name="width">The bitmap width in pixels.</param>
+        /// <param name="height">The bitmap height in pixels.</param>
         protected DxtBitmapContent(int blockSize, int width, int height)
             : this(blockSize)
         {
@@ -33,11 +44,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             Height = height;
         }
 
+        /// <inheritdoc/>
         public override byte[] GetPixelData()
         {
-            return _bitmapData;
+            return _bitmapData ?? throw new InvalidOperationException("No compressed bitmap data has been set.");
         }
 
+        /// <inheritdoc/>
         public override void SetPixelData(byte[] sourceData)
         {
             _bitmapData = sourceData;
@@ -58,6 +71,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             }
         }
 
+        /// <inheritdoc/>
         protected override bool TryCopyFrom(BitmapContent sourceBitmap, Rectangle sourceRegion, Rectangle destinationRegion)
         {
             SurfaceFormat sourceFormat;
@@ -100,7 +114,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             var sourceData = colorBitmap.GetPixelData();
 
             HasAnyAlpha(sourceData, out var hasTransparency);
-            byte[] compressedBytes = null;
+            byte[]? compressedBytes = null;
             switch (format)
             {
                 case SurfaceFormat.Dxt1 when hasTransparency:
@@ -139,11 +153,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                     throw new PipelineException($"{nameof(DxtBitmapContent)} cannot compress format=[{format}]");
             }
 
-            SetPixelData(compressedBytes);
+            SetPixelData(compressedBytes ?? throw new InvalidOperationException("DXT compression did not produce bitmap data."));
 
             return true;
         }
 
+        /// <inheritdoc/>
         protected override bool TryCopyTo(BitmapContent destinationBitmap, Rectangle sourceRegion, Rectangle destinationRegion)
         {
             SurfaceFormat destinationFormat;
@@ -178,7 +193,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                         break;
                 }
 
-                PixelBitmapContent<Vector4> pixelBitmapContent = BcnUtil.Decode(_bitmapData, bcnFormat, Width, Height);
+                PixelBitmapContent<Vector4> pixelBitmapContent = BcnUtil.Decode(GetPixelData(), bcnFormat, Width, Height);
                 destinationBitmap.SetPixelData(pixelBitmapContent.GetPixelData());
                 return true;
             }

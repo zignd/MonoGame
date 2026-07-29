@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 {
@@ -19,14 +21,20 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             get { return true; }
         }
 
-        public override bool ObjectIsEmpty(object value)
+        public override bool ObjectIsEmpty([AllowNull] object value)
         {
-            return ((IList) value).Count == 0;
+            return value is IList list && list.Count == 0;
         }
 
-        protected internal override object Deserialize(IntermediateReader input, ContentSerializerAttribute format, object existingInstance)
+        [return: MaybeNull]
+        protected internal override object Deserialize(IntermediateReader input, ContentSerializerAttribute format, [AllowNull] object existingInstance)
         {
-            var result = (IList) (existingInstance ?? Activator.CreateInstance(TargetType));
+            var result = existingInstance as IList;
+            if (result == null)
+            {
+                result = Activator.CreateInstance(TargetType) as IList
+                    ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Could not create list instance for '{0}'.", TargetType.FullName));
+            }
 
             // Create the item serializer attribute.
             var itemFormat = new ContentSerializerAttribute();
@@ -42,14 +50,17 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             return result;
         }
 
-        protected internal override void Serialize(IntermediateWriter output, object value, ContentSerializerAttribute format)
+        protected internal override void Serialize(IntermediateWriter output, [AllowNull] object value, ContentSerializerAttribute format)
         {
+            if (value is not IList list)
+                return;
+
             // Create the item serializer attribute.
             var itemFormat = new ContentSerializerAttribute();
             itemFormat.ElementName = format.CollectionItemName;
 
             // Read all the items.
-            foreach (var item in (IList) value)
+            foreach (var item in list)
                 output.WriteObject(item, itemFormat);
         }
     }

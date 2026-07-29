@@ -10,6 +10,7 @@ using System.Reflection;
 using MonoGame.Framework.Utilities;
 using Microsoft.Xna.Framework.Graphics;
 using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content
 {
@@ -115,6 +116,8 @@ namespace Microsoft.Xna.Framework.Content
             }
         }
 
+        [RequiresUnreferencedCode("Reloading assets reflects over runtime asset types to call ReloadAsset<T>. Ensure those asset types and reload paths are preserved in trimmed builds.")]
+        [RequiresDynamicCode("Reloading assets reflects over runtime asset types to call ReloadAsset<T>, which is not supported in all AOT environments.")]
         internal static void ReloadGraphicsContent()
         {
             lock (ContentManagerLock)
@@ -267,6 +270,8 @@ namespace Microsoft.Xna.Framework.Content
         ///
         /// An error occurred while opening the content file.
         /// </exception>
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
         public virtual T LoadLocalized<T> (string assetName)
         {
             string [] cultureNames =
@@ -282,12 +287,12 @@ namespace Microsoft.Xna.Framework.Content
                 string localizedAssetName = assetName + '.' + cultureName;
 
                 try {
-                    return Load<T> (localizedAssetName);
+                    return LoadInternal<T> (localizedAssetName);
                 } catch (ContentLoadException) { }
             }
 
             // If we didn't find any localized asset, fall back to the default name.
-            return Load<T> (assetName);
+            return LoadInternal<T> (assetName);
         }
 
 
@@ -337,7 +342,16 @@ namespace Microsoft.Xna.Framework.Content
         ///
         /// An error occurred while opening the content file.
         /// </exception>
-		public virtual T Load<T>(string assetName)
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
+        public virtual T Load<T>(string assetName)
+        {
+            return LoadInternal<T>(assetName);
+        }
+
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
+        internal T LoadInternal<T>(string assetName)
 		{
             if (string.IsNullOrEmpty(assetName))
             {
@@ -419,7 +433,9 @@ namespace Microsoft.Xna.Framework.Content
 		}
 
         /// <summary />
-		protected T ReadAsset<T>(string assetName, Action<IDisposable> recordDisposableObject)
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
+        protected T ReadAsset<T>(string assetName, Action<IDisposable> recordDisposableObject)
 		{
 			if (string.IsNullOrEmpty(assetName))
 			{
@@ -487,6 +503,8 @@ namespace Microsoft.Xna.Framework.Content
 			return (T)result;
 		}
 
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
         private ContentReader GetContentReaderFromXnb(string originalAssetName, Stream stream, BinaryReader xnbReader, Action<IDisposable> recordDisposableObject)
         {
             // The first 4 bytes should be the "XNB" header. i use that to detect an invalid file
@@ -536,7 +554,8 @@ namespace Microsoft.Xna.Framework.Content
             }
 
             var reader = new ContentReader(this, decompressedStream,
-                                                        originalAssetName, version, recordDisposableObject);
+                                            originalAssetName, version, recordDisposableObject,
+                                            externalReference => LoadInternal<object>(externalReference));
 
             return reader;
         }
@@ -613,25 +632,27 @@ namespace Microsoft.Xna.Framework.Content
         }
 
         /// <summary />
-		protected virtual void ReloadGraphicsAssets()
+        [RequiresUnreferencedCode("Reloading assets reflects over runtime asset types to call ReloadAsset<T>. Ensure those asset types and reload paths are preserved in trimmed builds.")]
+        [RequiresDynamicCode("Reloading assets reflects over runtime asset types to call ReloadAsset<T>, which is not supported in all AOT environments.")]
+        protected virtual void ReloadGraphicsAssets()
         {
             foreach (var asset in LoadedAssets)
             {
                 // This never executes as asset.Key is never null.  This just forces the
                 // linker to include the ReloadAsset function when AOT compiled.
                 if (asset.Key == null)
-                    ReloadAsset(asset.Key, Convert.ChangeType(asset.Value, asset.Value.GetType()));
+                    ReloadAsset(asset.Key, Convert.ChangeType(asset.Value, asset.Value.GetType(), CultureInfo.InvariantCulture));
 
                 var methodInfo = ReflectionHelpers.GetMethodInfo(typeof(ContentManager), "ReloadAsset");
                 // Up the callstack, it is ensured that the type of asset.Value can be used to make a generic method for.
-                #pragma warning disable IL2060, IL3050
                 var genericMethod = methodInfo.MakeGenericMethod(asset.Value.GetType());
-                #pragma warning restore IL2060, IL3050
-                genericMethod.Invoke(this, new object[] { asset.Key, Convert.ChangeType(asset.Value, asset.Value.GetType()) });
+                genericMethod.Invoke(this, new object[] { asset.Key, Convert.ChangeType(asset.Value, asset.Value.GetType(), CultureInfo.InvariantCulture) });
             }
         }
 
         /// <summary />
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
         protected virtual void ReloadAsset<T>(string originalAssetName, T currentAsset)
         {
 			string assetName = originalAssetName;

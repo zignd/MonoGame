@@ -12,6 +12,9 @@ using MonoGame.OpenGL;
 
 namespace Microsoft.Xna.Framework
 {
+    /// <summary>
+    /// Android implementation of <see cref="GameWindow"/>.
+    /// </summary>
     public class AndroidGameWindow : GameWindow, IDisposable
     {
         internal MonoGameAndroidGameView GameView { get; private set; }
@@ -22,8 +25,10 @@ namespace Microsoft.Xna.Framework
         private DisplayOrientation _supportedOrientations = DisplayOrientation.Default;
         private DisplayOrientation _currentOrientation;
 
+        /// <inheritdoc />
         public override IntPtr Handle { get { return IntPtr.Zero; } }
 
+        /// <inheritdoc />
         public override Point Position
         {
             get
@@ -36,11 +41,20 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <summary>
+        /// Sets the resume renderer used while graphics content is being restored.
+        /// </summary>
+        /// <param name="resumer">The resume manager implementation.</param>
         public void SetResumer(IResumeManager resumer)
         {
             Resumer = resumer;
         }
 
+        /// <summary>
+        /// Initializes a new Android game window bound to an activity and game instance.
+        /// </summary>
+        /// <param name="activity">The Android activity hosting the game.</param>
+        /// <param name="game">The game instance.</param>
         public AndroidGameWindow(AndroidGameActivity activity, Game game)
         {
             _game = game;
@@ -60,7 +74,7 @@ namespace Microsoft.Xna.Framework
             }
             else
             {
-                Android.Graphics.Point p = new Android.Graphics.Point();
+                global::Android.Graphics.Point p = new global::Android.Graphics.Point();
                 activity.WindowManager.DefaultDisplay.GetRealSize(p);
                 size.X = p.X;
                 size.Y = p.Y;
@@ -120,6 +134,7 @@ namespace Microsoft.Xna.Framework
         #endregion
 
 
+        /// <inheritdoc />
         protected internal override void SetSupportedOrientations(DisplayOrientation orientations)
         {
             _supportedOrientations = orientations;
@@ -183,6 +198,7 @@ namespace Microsoft.Xna.Framework
                 _game.graphicsDeviceManager.ApplyChanges();
         }
 
+        /// <inheritdoc />
         public override string ScreenDeviceName
         {
             get
@@ -192,6 +208,7 @@ namespace Microsoft.Xna.Framework
         }
 
 
+        /// <inheritdoc />
         public override Rectangle ClientBounds
         {
             get
@@ -209,6 +226,7 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <inheritdoc />
         public override bool AllowUserResizing
         {
             get
@@ -240,6 +258,7 @@ namespace Microsoft.Xna.Framework
             FullSensor = 10,
         }
 
+        /// <inheritdoc />
         public override DisplayOrientation CurrentOrientation
         {
             get
@@ -260,7 +279,7 @@ namespace Microsoft.Xna.Framework
 
                 bool didOrientationChange = false;
                 // Android 2.3 and above support reverse orientations
-                int sdkVer = (int)Android.OS.Build.VERSION.SdkInt;
+                int sdkVer = (int)global::Android.OS.Build.VERSION.SdkInt;
                 if (sdkVer >= 10)
                 {
                     // Check if the requested orientation is supported. Default means all are supported.
@@ -313,6 +332,8 @@ namespace Microsoft.Xna.Framework
 
                 if (didOrientationChange)
                 {
+                    Game.Activity.RequestedOrientation = requestedOrientation;
+
                     // Android doesn't fire Released events for existing touches
                     // so we need to clear them out.
                     if (wasPortrait != requestPortrait)
@@ -326,6 +347,7 @@ namespace Microsoft.Xna.Framework
         }
 
 
+        /// <inheritdoc cref="IDisposable.Dispose()"/>
         public void Dispose()
         {
             if (GameView != null)
@@ -335,14 +357,17 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <inheritdoc />
         public override void BeginScreenDeviceChange(bool willBeFullScreen)
         {
         }
 
+        /// <inheritdoc />
         public override void EndScreenDeviceChange(string screenDeviceName, int clientWidth, int clientHeight)
         {
         }
 
+        /// <inheritdoc />
         protected override void SetTitle(string title)
         {
         }

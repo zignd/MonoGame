@@ -15,7 +15,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <summary>
         /// Gets or sets the specific location of the content item within the larger source file.
         /// </summary>
-        public string FragmentIdentifier { get; set; }
+        public string? FragmentIdentifier { get; set; }
 
         /// <summary>
         /// Gets or sets the file name of the asset source.
@@ -25,7 +25,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <summary>
         /// Gets or sets the creation tool of the asset.
         /// </summary>
-        public string SourceTool { get; set; }
+        public string? SourceTool { get; set; }
 
         /// <summary>
         /// Initializes a new instance of ContentIdentity.
@@ -49,7 +49,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// </summary>
         /// <param name="sourceFilename">The absolute path to the file name of the asset source.</param>
         /// <param name="sourceTool">The name of the digital content creation (DCC) tool that created the asset.</param>
-        public ContentIdentity(string sourceFilename, string sourceTool)
+        public ContentIdentity(string sourceFilename, string? sourceTool)
             : this(sourceFilename, sourceTool, null)
         {
         }
@@ -60,7 +60,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <param name="sourceFilename">The absolute path to the file name of the asset source.</param>
         /// <param name="sourceTool">The name of the digital content creation (DCC) tool that created the asset.</param>
         /// <param name="fragmentIdentifier">Specific location of the content item within the larger source file. For example, this could be a line number in the file.</param>
-        public ContentIdentity(string sourceFilename, string sourceTool, string fragmentIdentifier)
+        public ContentIdentity(string sourceFilename, string? sourceTool, string? fragmentIdentifier)
         {
             SourceFilename = sourceFilename;
             SourceTool = sourceTool;

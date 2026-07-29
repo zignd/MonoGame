@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Xml;
 
@@ -16,13 +17,14 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 
         private class AliasedNamespace
         {
-            public string Alias;
-            public string TypePrefix;
+            public string Alias = string.Empty;
+            public string TypePrefix = string.Empty;
         }
 
         public NamespaceAliasHelper(IntermediateSerializer serializer)
         {
             _serializer = serializer;
+            _namespaceLookupReverse = new Dictionary<string, AliasedNamespace>();
         }
 
         public void WriteNamespaces<T>(XmlWriter writer, T value)
@@ -49,7 +51,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             // Do second pass on the namespaces as they were originally ordered, to match XNA.
             foreach (var childNamespace in childNamespaces)
             {
-                AliasedNamespace alias;
+                AliasedNamespace? alias;
                 if (tempAliases.TryGetValue(childNamespace, out alias))
                     _namespaceLookupReverse.Add(childNamespace, alias);
             }
@@ -62,10 +64,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             }
         }
 
-        private IEnumerable<string> GetAllUsedNamespaces<T>(T value)
+        private IEnumerable<string> GetAllUsedNamespaces<T>([AllowNull] T value)
         {
             var result = new List<string>();
-            ContentTypeSerializer.ChildCallback onScanChild = (contentTypeSerializer, child) =>
+            ContentTypeSerializer.ChildCallback onScanChild = (ContentTypeSerializer contentTypeSerializer, object? child) =>
             {
                 if (child == null)
                     return;
@@ -75,8 +77,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
                 if (contentTypeSerializer.TargetType == childType)
                     return;
 
-                if (contentTypeSerializer.TargetType.IsGenericType 
-                    && contentTypeSerializer.TargetType.GetGenericTypeDefinition() == typeof(Nullable<>) 
+                if (contentTypeSerializer.TargetType.IsGenericType
+                    && contentTypeSerializer.TargetType.GetGenericTypeDefinition() == typeof(Nullable<>)
                     && contentTypeSerializer.TargetType.GetGenericArguments()[0] == childType)
                     return;
 
@@ -101,7 +103,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             return result;
         }
 
-        private static AliasedNamespace FindAlias(Dictionary<string, AliasedNamespace> aliases, string childNamespace)
+        private static AliasedNamespace? FindAlias(Dictionary<string, AliasedNamespace> aliases, string childNamespace)
         {
             if (string.IsNullOrEmpty(childNamespace))
                 return null;
@@ -146,11 +148,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             throw new InvalidOperationException();
         }
 
-        public bool TryGetAliasedTypeName(Type type, out string typeName)
+        public bool TryGetAliasedTypeName(Type type, [MaybeNullWhen(false)] out string typeName)
         {
             if (!string.IsNullOrEmpty(type.Namespace))
             {
-                AliasedNamespace namespaceAlias;
+                AliasedNamespace? namespaceAlias;
                 if (_namespaceLookupReverse.TryGetValue(type.Namespace, out namespaceAlias))
                 {
                     typeName = namespaceAlias.Alias + ":" + namespaceAlias.TypePrefix + _serializer.GetTypeName(type);

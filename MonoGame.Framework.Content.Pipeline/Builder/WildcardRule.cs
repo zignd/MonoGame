@@ -2,8 +2,7 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
+using System.Text.RegularExpressions;
 
 namespace MonoGame.Framework.Content.Pipeline.Builder;
 
@@ -17,5 +16,11 @@ public class WildcardRule : ContentRule
     /// </summary>
     /// <param name="filePath">Relative path to the content file.</param>
     /// <returns>Returns true if filePath matches the Wildcard <see cref="ContentRule.Pattern"/>.</returns>
-    public override bool IsMatch(string filePath) => LikeOperator.LikeString(filePath, Pattern.Sanitize(), CompareMethod.Binary);
+    public override bool IsMatch(string filePath)
+    {
+        var pattern = "^" + Regex.Escape(Pattern.Sanitize())
+            .Replace("\\*", ".*")
+            .Replace("\\?", ".") + "$";
+        return Regex.IsMatch(filePath, pattern, RegexOptions.CultureInvariant);
+    }
 }

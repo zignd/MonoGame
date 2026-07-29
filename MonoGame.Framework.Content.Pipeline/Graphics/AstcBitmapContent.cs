@@ -8,10 +8,13 @@ using Microsoft.Xna.Framework.Content.Pipeline.Utilities;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 {
+    /// <summary>
+    /// Represents ASTC 4x4 compressed bitmap content.
+    /// </summary>
     public class AstcBitmapContent : BitmapContent
     {
         private SurfaceFormat FORMAT => SurfaceFormat.Astc4X4Rgba;
-        internal byte[] _bitmapData;
+        internal byte[]? _bitmapData;
 
         /// <summary>
         /// Initializes a new instance of AstcBitmapContent.
@@ -31,16 +34,19 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
         }
 
+        /// <inheritdoc/>
         public override byte[] GetPixelData()
         {
-            return _bitmapData;
+            return _bitmapData ?? throw new InvalidOperationException("No ASTC bitmap data has been set.");
         }
 
+        /// <inheritdoc/>
         public override void SetPixelData(byte[] sourceData)
         {
             _bitmapData = sourceData;
         }
 
+        /// <inheritdoc/>
         protected override bool TryCopyFrom(BitmapContent sourceBitmap, Rectangle sourceRegion,
             Rectangle destinationRegion)
         {
@@ -87,6 +93,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             return true;
         }
 
+        /// <inheritdoc/>
         protected override bool TryCopyTo(BitmapContent destinationBitmap, Rectangle sourceRegion,
             Rectangle destinationRegion)
         {
@@ -109,6 +116,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             return false;
         }
 
+        /// <inheritdoc/>
         public override bool TryGetFormat(out SurfaceFormat format)
         {
             format = FORMAT;
@@ -116,6 +124,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         }
     }
 
+    /// <summary>
+    /// Represents ASTC 5x5 compressed bitmap content.
+    /// </summary>
     public class Astc5x5BitmapContent : AstcBitmapContent
     {
         /// <summary>
@@ -136,6 +147,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
         }
 
+        /// <inheritdoc/>
         public override bool TryGetFormat(out SurfaceFormat format)
         {
             format = SurfaceFormat.Astc5X5Rgba;
@@ -143,6 +155,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         }
     }
 
+    /// <summary>
+    /// Represents ASTC 6x6 compressed bitmap content.
+    /// </summary>
     public class Astc6x6BitmapContent : AstcBitmapContent
     {
         /// <summary>
@@ -163,6 +178,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
         }
 
+        /// <inheritdoc/>
         public override bool TryGetFormat(out SurfaceFormat format)
         {
             format = SurfaceFormat.Astc6X6Rgba;
@@ -170,6 +186,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         }
     }
 
+    /// <summary>
+    /// Represents ASTC 8x8 compressed bitmap content.
+    /// </summary>
     public class Astc8x8BitmapContent : AstcBitmapContent
     {
         /// <summary>
@@ -190,6 +209,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
         }
 
+        /// <inheritdoc/>
         public override bool TryGetFormat(out SurfaceFormat format)
         {
             format = SurfaceFormat.Astc8X8Rgba;
@@ -197,6 +217,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         }
     }
 
+    /// <summary>
+    /// Represents ASTC 10x10 compressed bitmap content.
+    /// </summary>
     public class Astc10x10BitmapContent : AstcBitmapContent
     {
         /// <summary>
@@ -217,6 +240,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
         }
 
+        /// <inheritdoc/>
         public override bool TryGetFormat(out SurfaceFormat format)
         {
             format = SurfaceFormat.Astc10X10Rgba;
@@ -224,6 +248,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         }
     }
 
+    /// <summary>
+    /// Represents ASTC 12x12 compressed bitmap content.
+    /// </summary>
     public class Astc12x12BitmapContent : AstcBitmapContent
     {
         /// <summary>
@@ -244,6 +271,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
         }
 
+        /// <inheritdoc/>
         public override bool TryGetFormat(out SurfaceFormat format)
         {
             format = SurfaceFormat.Astc12X12Rgba;

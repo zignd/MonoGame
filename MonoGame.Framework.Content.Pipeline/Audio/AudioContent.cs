@@ -10,7 +10,7 @@ using System.IO;
 namespace Microsoft.Xna.Framework.Content.Pipeline.Audio
 {
     /// <summary>
-    /// Encapsulates and provides operations, such as format conversions, on the 
+    /// Encapsulates and provides operations, such as format conversions, on the
     /// source audio. This type is produced by the audio importers and used by audio
     /// processors to produce compiled audio assets.
     /// </summary>
@@ -20,7 +20,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Audio
         private bool _disposed;
         private readonly string _fileName;
         private readonly AudioFileType _fileType;
-        private ReadOnlyCollection<byte> _data;
+        private ReadOnlyCollection<byte>? _data;
         private TimeSpan _duration;
         private AudioFormat _format;
         private int _loopStart;
@@ -44,11 +44,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Audio
         /// This changes from the source data to the output data after conversion.
         /// For MP3 and WMA files this throws an exception to match XNA behavior.
         /// </remarks>
-        public ReadOnlyCollection<byte> Data 
+        public ReadOnlyCollection<byte> Data
         {
             get
             {
-                if (_disposed || _data == null)                
+                if (_disposed || _data == null)
                     throw new InvalidContentException("Could not read the audio data from file \"" + Path.GetFileName(_fileName) + "\".");
                 return _data;
             }
@@ -86,7 +86,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Audio
             get
             {
                 return _loopLength;
-            } 
+            }
         }
 
         /// <summary>
@@ -135,10 +135,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Audio
                     using (var fs = new FileStream(audioFileName, FileMode.Open, FileAccess.Read))
                     {
                         rawData = new byte[fs.Length];
-                        fs.Read(rawData, 0, rawData.Length);
+                        fs.ReadExactly(rawData);
                     }
 
-                    AudioFormat riffAudioFormat;
+                    AudioFormat? riffAudioFormat;
                     var stripped = DefaultAudioProfile.StripRiffWaveHeader(rawData, out riffAudioFormat);
 
                     if (riffAudioFormat != null)

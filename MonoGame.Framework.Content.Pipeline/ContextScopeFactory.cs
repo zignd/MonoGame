@@ -52,11 +52,16 @@ namespace MonoGame.Framework.Content
     /// </summary>
     internal static class ContextScopeFactory
     {
-        private static AsyncLocal<List<IContentContext>> _contextStack = new AsyncLocal<List<IContentContext>>
+        private static readonly AsyncLocal<List<IContentContext>?> _contextStack = new()
         {
             Value = new List<IContentContext>(1)
         };
-        private static AsyncLocal<IContentContext> _activeContext = new AsyncLocal<IContentContext>();
+        private static readonly AsyncLocal<IContentContext?> _activeContext = new();
+
+        private static List<IContentContext> GetContextStack()
+        {
+            return _contextStack.Value ??= new List<IContentContext>(1);
+        }
 
         /// <summary>
         /// Returns true when the <see cref="ActiveContext"/> is a valid <see cref="IContentContext"/> instance.
@@ -87,7 +92,8 @@ namespace MonoGame.Framework.Content
                         $"Cannot access {nameof(ActiveContext)} because there is no active context. Make sure that {nameof(ContextScopeFactory)}.{nameof(BeginContext)} has been called with the `using` keyword");
                 }
 
-                return _activeContext.Value;
+                return _activeContext.Value ?? throw new PipelineException(
+                    $"Cannot access {nameof(ActiveContext)} because there is no active context. Make sure that {nameof(ContextScopeFactory)}.{nameof(BeginContext)} has been called with the `using` keyword");
             }
         }
 
@@ -136,10 +142,8 @@ namespace MonoGame.Framework.Content
         /// </returns>
         public static IContentContext BeginContext(IContentContext scope)
         {
-            if (_contextStack.Value == null)
-                _contextStack.Value = new List<IContentContext>(1);
-
-            _contextStack.Value.Add(scope);
+            var contextStack = GetContextStack();
+            contextStack.Add(scope);
             _activeContext.Value = scope;
             return scope;
         }
@@ -163,15 +167,16 @@ namespace MonoGame.Framework.Content
             /// </summary>
             public virtual void Dispose()
             {
-                _contextStack.Value.Remove(this);
+                var contextStack = GetContextStack();
+                contextStack.Remove(this);
 
                 // if someone else has already claimed the activeContext, then we don't need to care.
                 if (_activeContext.Value != this) return;
 
                 // either use the "most recent" (aka, last) context, or if the list is empty,
                 //  there is no context.
-                _activeContext.Value = _contextStack.Value.Count > 0
-                    ? _contextStack.Value[^1]
+                _activeContext.Value = contextStack.Count > 0
+                    ? contextStack[^1]
                     : null;
             }
 

@@ -14,7 +14,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <summary>
         /// Gets or sets the string representing the processor in a user interface. This name is not used by the content pipeline and should not be passed to the BuildAssets task (a custom MSBuild task used by XNA Game Studio). It is used for display purposes only.
         /// </summary>
-        public virtual string DisplayName { get; set; }
+        public virtual string? DisplayName { get; set; }
 
         /// <summary>
         /// Initializes an instance of ContentProcessorAttribute.

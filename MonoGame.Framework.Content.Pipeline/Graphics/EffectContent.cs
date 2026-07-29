@@ -20,6 +20,6 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <summary>
         /// Gets or sets the effect program source code.
         /// </summary>
-        public string EffectCode { get; set; }
+        public string EffectCode { get; set; } = string.Empty;
     }
 }

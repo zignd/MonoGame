@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -31,7 +32,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <summary>
         /// Optionally used for copying stats that were stored in another collection.
         /// </summary>
-        public ContentStatsCollection PreviousStats { get; set; }
+        public ContentStatsCollection? PreviousStats { get; set; }
 
         /// <summary>
         ///  The internal content statistics dictionary.
@@ -139,7 +140,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
             else if (type == typeof(string))
                 return "string";
             else if (type.IsArray)
-                return GetFriendlyTypeName(type.GetElementType()) + "[" + new string(',', type.GetArrayRank() - 1) + "]";
+                return GetFriendlyTypeName(type.GetElementType() ?? typeof(object)) + "[" + new string(',', type.GetArrayRank() - 1) + "]";
             else if (type.IsGenericType)
                 return type.Name.Split('`')[0] + "<" + string.Join(", ", type.GetGenericArguments().Select(x => GetFriendlyTypeName(x)).ToArray()) + ">";
             else
@@ -176,9 +177,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
                     stats.DestFile = columns[1].Trim('"');
                     stats.ProcessorType = columns[2].Trim('"');
                     stats.ContentType = columns[3].Trim('"');
-                    stats.SourceFileSize = long.Parse(columns[4]);
-                    stats.DestFileSize = long.Parse(columns[5]);
-                    stats.BuildSeconds = float.Parse(columns[6]);
+                    stats.SourceFileSize = long.Parse(columns[4], CultureInfo.InvariantCulture);
+                    stats.DestFileSize = long.Parse(columns[5], CultureInfo.InvariantCulture);
+                    stats.BuildSeconds = float.Parse(columns[6], CultureInfo.InvariantCulture);
 
                     if (!collection._statsBySource.ContainsKey(stats.SourceFile))
                         collection._statsBySource.Add(stats.SourceFile, stats);

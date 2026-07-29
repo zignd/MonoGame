@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using MonoGame.Framework.Utilities;
 
@@ -17,6 +19,7 @@ namespace Microsoft.Xna.Framework.Content
     {
         private ContentManager contentManager;
         private Action<IDisposable> recordDisposableObject;
+        private Func<string, object> externalReferenceLoader;
         private ContentTypeReaderManager typeReaderManager;
         private string assetName;
         private List<KeyValuePair<int, Action<object>>> sharedResourceFixups;
@@ -32,10 +35,11 @@ namespace Microsoft.Xna.Framework.Content
             }
         }
 
-        internal ContentReader(ContentManager manager, Stream stream, string assetName, int version, Action<IDisposable> recordDisposableObject)
+        internal ContentReader(ContentManager manager, Stream stream, string assetName, int version, Action<IDisposable> recordDisposableObject, Func<string, object> externalReferenceLoader)
             : base(stream)
         {
             this.recordDisposableObject = recordDisposableObject;
+            this.externalReferenceLoader = externalReferenceLoader;
             this.contentManager = manager;
             this.assetName = assetName;
 			this.version = version;
@@ -63,6 +67,8 @@ namespace Microsoft.Xna.Framework.Content
             }
         }
 
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
         internal object ReadAsset<T>()
         {
             InitializeTypeReaders();
@@ -76,6 +82,8 @@ namespace Microsoft.Xna.Framework.Content
             return result;
         }
 
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
         internal object ReadAsset<T>(T existingInstance)
         {
             InitializeTypeReaders();
@@ -89,6 +97,8 @@ namespace Microsoft.Xna.Framework.Content
             return result;
         }
 
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
         internal void InitializeTypeReaders()
         {
             typeReaderManager = new ContentTypeReaderManager();
@@ -147,13 +157,18 @@ namespace Microsoft.Xna.Framework.Content
         /// </exception>
         /// <exception cref="EndOfStreamException">The end of stream is reached.</exception>
         /// <exception cref="IOException">An I/O error occurred.</exception>
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
         public T ReadExternalReference<T>()
+            => ReadExternalReferenceCore<T>();
+
+        internal T ReadExternalReferenceCore<T>()
         {
             var externalReference = ReadString();
 
             if (!String.IsNullOrEmpty(externalReference))
             {
-                return contentManager.Load<T>(FileHelpers.ResolveRelativePath(assetName, externalReference));
+                return (T)externalReferenceLoader(FileHelpers.ResolveRelativePath(assetName, externalReference));
             }
 
             return default(T);
@@ -393,7 +408,7 @@ namespace Microsoft.Xna.Framework.Content
                     {
                         if (!(v is T))
                         {
-                            throw new ContentLoadException(String.Format("Error loading shared resource. Expected type {0}, received type {1}", typeof(T).Name, v.GetType().Name));
+                            throw new ContentLoadException(string.Format(CultureInfo.InvariantCulture, "Error loading shared resource. Expected type {0}, received type {1}", typeof(T).Name, v.GetType().Name));
                         }
                         fixup((T)v);
                     }));

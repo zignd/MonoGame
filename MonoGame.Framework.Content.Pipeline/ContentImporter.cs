@@ -45,7 +45,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
                 throw new ArgumentNullException("filename");
             if (context == null)
                 throw new ArgumentNullException("context");
-            return Import(filename, context);
+
+            object? imported = Import(filename, context);
+            return imported ?? throw new InvalidOperationException($"Importer '{GetType().FullName}' returned null.");
         }
     }
 }

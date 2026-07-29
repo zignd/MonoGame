@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Color = Microsoft.Xna.Framework.Color;
 using GD = MonoGame.InteractiveTests.GameDebug;
+using XnaEffect = Microsoft.Xna.Framework.Graphics.Effect;
 
 namespace MonoGame.InteractiveTests
 {
@@ -21,7 +22,7 @@ namespace MonoGame.InteractiveTests
         private SpriteBatch _batch;
 
         private float _tween = 0;
-        private Effect _effect;
+        private XnaEffect _effect;
 
         protected override void LoadContent()
         {
@@ -30,7 +31,7 @@ namespace MonoGame.InteractiveTests
             // Add a texture from a PNG file
             _texture = Texture2D.FromStream(GraphicsDevice,
                 TitleContainer.OpenStream(@"Content\Textures\LogoOnly_64px.png"));
-            _effect = new Effect(GraphicsDevice, TestUtils.ReadBytesFromStream(@"Content\Effect\test.fx.mgfxo"));
+            _effect = new XnaEffect(GraphicsDevice, TestUtils.ReadBytesFromStream(@"Content\Effect\test.fx.mgfxo"));
             _batch = new SpriteBatch(GraphicsDevice);
         }
 

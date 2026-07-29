@@ -3,18 +3,20 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
 {
     [ContentTypeSerializer]
-    class DictionarySerializer<TKey,TValue> : ContentTypeSerializer<Dictionary<TKey,TValue>>
+    class DictionarySerializer<TKey,TValue> : ContentTypeSerializer<Dictionary<TKey,TValue>> where TKey : notnull
     {
-        private ContentTypeSerializer _keySerializer;
-        private ContentTypeSerializer _valueSerializer;
+        private ContentTypeSerializer? _keySerializer;
+        private ContentTypeSerializer? _valueSerializer;
 
-        private ContentSerializerAttribute _keyFormat;
-        private ContentSerializerAttribute _valueFormat;
+        private ContentSerializerAttribute? _keyFormat;
+        private ContentSerializerAttribute? _valueFormat;
 
         public DictionarySerializer() :
             base("dictionary")
@@ -44,13 +46,16 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             };
         }
 
-        public override bool ObjectIsEmpty(Dictionary<TKey, TValue> value)
+        public override bool ObjectIsEmpty([AllowNull] Dictionary<TKey, TValue> value)
         {
-            return value.Count == 0;
+            return value == null || value.Count == 0;
         }
 
-        protected internal override void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, Dictionary<TKey, TValue> value)
+        protected internal override void ScanChildren(IntermediateSerializer serializer, ChildCallback callback, [AllowNull] Dictionary<TKey, TValue> value)
         {
+            if (value == null || _keySerializer == null || _valueSerializer == null)
+                return;
+
             foreach (var kvp in value)
             {
                 callback(_keySerializer, kvp.Key);
@@ -58,17 +63,25 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             }
         }
 
-        protected internal override Dictionary<TKey, TValue> Deserialize(IntermediateReader input, ContentSerializerAttribute format, Dictionary<TKey, TValue> existingInstance)
+        [return: MaybeNull]
+        protected internal override Dictionary<TKey, TValue> Deserialize(IntermediateReader input, ContentSerializerAttribute format, [AllowNull] Dictionary<TKey, TValue> existingInstance)
         {
+            var keySerializer = _keySerializer ?? throw new InvalidOperationException("Dictionary key serializer has not been initialized.");
+            var valueSerializer = _valueSerializer ?? throw new InvalidOperationException("Dictionary value serializer has not been initialized.");
+            var keyFormat = _keyFormat ?? throw new InvalidOperationException("Dictionary key format has not been initialized.");
+            var valueFormat = _valueFormat ?? throw new InvalidOperationException("Dictionary value format has not been initialized.");
             var result = existingInstance ?? new Dictionary<TKey, TValue>();
 
             while (input.MoveToElement(format.CollectionItemName))
             {
                 input.Xml.ReadStartElement();
 
-                var key = input.ReadObject<TKey>(_keyFormat, _keySerializer);
-                var value = input.ReadObject<TValue>(_valueFormat, _valueSerializer);
-                result.Add(key,value);
+                var key = input.ReadObject<TKey>(keyFormat, keySerializer);
+                if (key == null)
+                    throw input.NewInvalidContentException(null, "Dictionary key cannot be null.");
+
+                var value = input.ReadObject<TValue>(valueFormat, valueSerializer);
+                ((IDictionary)result).Add(key, value);
 
                 input.Xml.ReadEndElement();
             }
@@ -76,14 +89,22 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Intermediate
             return result;
         }
 
-        protected internal override void Serialize(IntermediateWriter output, Dictionary<TKey, TValue> value, ContentSerializerAttribute format)
+        protected internal override void Serialize(IntermediateWriter output, [AllowNull] Dictionary<TKey, TValue> value, ContentSerializerAttribute format)
         {
+            if (value == null)
+                return;
+
+            var keyFormat = _keyFormat ?? throw new InvalidOperationException("Dictionary key format has not been initialized.");
+            var valueFormat = _valueFormat ?? throw new InvalidOperationException("Dictionary value format has not been initialized.");
+            var keySerializer = _keySerializer ?? throw new InvalidOperationException("Dictionary key serializer has not been initialized.");
+            var valueSerializer = _valueSerializer ?? throw new InvalidOperationException("Dictionary value serializer has not been initialized.");
+
             foreach (var kvp in value)
             {
                 output.Xml.WriteStartElement(format.CollectionItemName);
 
-                output.WriteObject(kvp.Key, _keyFormat, _keySerializer);
-                output.WriteObject(kvp.Value, _valueFormat, _valueSerializer);
+                output.WriteObject(kvp.Key, keyFormat, keySerializer);
+                output.WriteObject(kvp.Value, valueFormat, valueSerializer);
 
                 output.Xml.WriteEndElement();
             }

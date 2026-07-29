@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 {
@@ -10,13 +11,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
     {
         private readonly MeshContent _meshContent;
 
-        private MaterialContent _currentMaterial;
+        private MaterialContent? _currentMaterial;
         private OpaqueDataDictionary _currentOpaqueData;
         private bool _geometryDirty;
         private GeometryContent _currentGeometryContent;
 
         private readonly List<VertexChannel> _vertexChannels;
-        private readonly List<object> _vertexChannelData;
+        private readonly List<object?> _vertexChannelData;
 
         private bool _finishedCreation;
         private bool _finishedMesh;
@@ -38,7 +39,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
             get
             {
-                return _meshContent.Name;
+                return _meshContent.Name ?? string.Empty;
             }
             set
             {
@@ -56,7 +57,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         {
             _meshContent = new MeshContent();
             _vertexChannels = new List<VertexChannel>();
-            _vertexChannelData = new List<object>();
+            _vertexChannelData = new List<object?>();
             _currentGeometryContent = new GeometryContent();
             _currentOpaqueData = new OpaqueDataDictionary();
             _geometryDirty = true;
@@ -100,7 +101,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                 var channel = _currentGeometryContent.Vertices.Channels[i];
                 var data = _vertexChannelData[i];
                 if (data == null)
-                    throw new InvalidOperationException(string.Format("Missing vertex channel data for channel {0}", channel.Name));
+                    throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Missing vertex channel data for channel {0}", channel.Name));
 
                 channel.Items.Add(data);
             }
@@ -228,8 +229,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <param name="channelData">New data values for the vertex data. The data type being set must match the data type for the vertex channel specified by vertexDataIndex.</param>
         public void SetVertexChannelData(int vertexDataIndex, object channelData)
         {
+            if (channelData == null)
+                throw new ArgumentNullException(nameof(channelData));
+
             if (_currentGeometryContent.Vertices.Channels[vertexDataIndex].ElementType != channelData.GetType())
-                throw new InvalidOperationException(string.Format("Channel {0} data has a different type from input. Expected: {1}. Actual: {2}",
+                throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Channel {0} data has a different type from input. Expected: {1}. Actual: {2}",
                     vertexDataIndex, _currentGeometryContent.Vertices.Channels[vertexDataIndex].ElementType, channelData.GetType()));
 
             _vertexChannelData[vertexDataIndex] = channelData;

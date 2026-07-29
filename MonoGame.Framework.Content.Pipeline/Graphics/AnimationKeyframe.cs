@@ -59,8 +59,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="other">Keyframe being compared to.</param>
         /// <returns>Indication of their relative values.</returns>
-        public int CompareTo(AnimationKeyframe other)
+        public int CompareTo(AnimationKeyframe? other)
         {
+            if (other == null)
+                return 1;
+
             // No sense in comparing the transform, so compare the time.
             // This would be used for sorting keyframes in time order.
             return time.CompareTo(other.time);

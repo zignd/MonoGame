@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using Eto.Forms;
 
 namespace MonoGame.Tools.Pipeline
@@ -21,11 +22,11 @@ namespace MonoGame.Tools.Pipeline
 
             label1.Text = "The file '" + fileloc + "' is outside of target directory. What would you like to do?";
 
-            radioCopy.Text = "Copy the " + filetype.ToString().ToLower() + " to the directory";
-            radioLink.Text = "Add a link to the " + filetype.ToString().ToLower();
-            radioSkip.Text = "Skip adding the " + filetype.ToString().ToLower();
+            radioCopy.Text = "Copy the " + filetype.ToString().ToLower(CultureInfo.InvariantCulture) + " to the directory";
+            radioLink.Text = "Add a link to the " + filetype.ToString().ToLower(CultureInfo.InvariantCulture);
+            radioSkip.Text = "Skip adding the " + filetype.ToString().ToLower(CultureInfo.InvariantCulture);
 
-            checkBox1.Text = "Use the same action for all the selected " + filetype.ToString().ToLower() + "s";
+            checkBox1.Text = "Use the same action for all the selected " + filetype.ToString().ToLower(CultureInfo.InvariantCulture) + "s";
 
             if (exists)
             {

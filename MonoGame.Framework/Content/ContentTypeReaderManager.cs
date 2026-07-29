@@ -4,9 +4,11 @@
 
 using System;
 using System.Collections;
+using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using MonoGame.Framework.Utilities;
 
 namespace Microsoft.Xna.Framework.Content
@@ -135,6 +137,8 @@ namespace Microsoft.Xna.Framework.Content
             return null;
         }
 
+        [RequiresUnreferencedCode("XNB content loading can resolve content readers from metadata strings. Register content readers explicitly with ContentTypeReaderManager.AddTypeCreator in trimmed builds.")]
+        [RequiresDynamicCode("XNB content loading can resolve content readers from metadata strings and activate reader constructors via reflection, which is not supported in all AOT environments.")]
         internal ContentTypeReader[] LoadAssetReaders(ContentReader reader)
         {
             // The first content byte i read tells me the number of content readers in this XNB file
@@ -171,15 +175,13 @@ namespace Microsoft.Xna.Framework.Content
                         Type l_readerType = null;
                         try
                         {
-                            // This might fail in AOT context and we need to properly warn the user on what to do if it happens
-#pragma warning disable IL2057
+                            // This might fail in AOT context and we need to properly warn the user on what to do if it happens.
                             l_readerType = Type.GetType(readerTypeString);
-#pragma warning restore IL2057
                         }
                         catch (NotSupportedException)
                         {
                             // This will not trigger on recent NativeAOT versions, it will crash later on GetDefaultConstructor() with a native access violation
-                            // but we keep this catch block for backward compatibility with older NativeAOT
+                            // but we keep this catch block for backward compatibility with older NativeAOT.
                             throw new NotSupportedException("It seems that you are using PublishAot and trying to load assets with a reflection-based serializer (which is not natively supported). To work around this error, call ContentTypeReaderManager.AddTypeCreator() in your Game constructor with the following type: " + originalReaderTypeString);
                         }
 
@@ -197,10 +199,10 @@ namespace Microsoft.Xna.Framework.Content
                                     // If you are getting here, the Mono runtime is most likely not able to JIT the type.
                                     // In particular, MonoTouch needs help instantiating types that are only defined in strings in Xnb files.
                                     throw new InvalidOperationException(
-                                        "Failed to get default constructor for ContentTypeReader. To work around, add a creation function to ContentTypeReaderManager.AddTypeCreator() " +
-                                        "with the following failed type string: " + originalReaderTypeString, ex);
+                                        "Failed to get default constructor for ContentTypeReader. To work around, add a creation function to ContentTypeReaderManager.AddTypeCreator() with the following failed type string: " + originalReaderTypeString,
+                                        ex);
                                 }
-                                // Catching non-CLS compliant exceptions to catch native exceptions like Access Violations on NativeAOT
+                                // Catching non-CLS compliant exceptions to catch native exceptions like Access Violations on NativeAOT.
                                 catch
                                 {
                                     throw new NotSupportedException("It seems that you are using PublishAot and trying to load assets with a reflection-based serializer (which is not natively supported). To work around this error, call ContentTypeReaderManager.AddTypeCreator() in your Game constructor with the following type: " + originalReaderTypeString);
@@ -214,10 +216,12 @@ namespace Microsoft.Xna.Framework.Content
                             contentReaders[i] = typeReader;
                         }
                         else
+                        {
                             throw new ContentLoadException(
-                                    "Could not find ContentTypeReader Type. Please ensure the name of the Assembly that contains the Type matches the assembly in the full type name: " +
-                                    originalReaderTypeString + " (" + readerTypeString + "). " +
-                                    " If you are using trimming, PublishAOT, or targeting mobile platforms, you should call ContentTypeReaderManager.AddTypeCreator() on that reader type somewhere in your code.");
+                                "Could not find ContentTypeReader Type. Please ensure the name of the Assembly that contains the Type matches the assembly in the full type name: " +
+                                originalReaderTypeString + " (" + readerTypeString + "). " +
+                                " If you are using trimming, PublishAOT, or targeting mobile platforms, you should call ContentTypeReaderManager.AddTypeCreator() on that reader type somewhere in your code.");
+                        }
                     }
 
                     var targetType = contentReaders[i].TargetType;
@@ -266,9 +270,9 @@ namespace Microsoft.Xna.Framework.Content
             if (preparedType.Contains("PublicKeyToken"))
                 preparedType = Regex.Replace(preparedType, @"(.+?), Version=.+?$", "$1");
 
-            preparedType = preparedType.Replace(", Microsoft.Xna.Framework.Graphics", string.Format(", {0}", _assemblyName));
-            preparedType = preparedType.Replace(", Microsoft.Xna.Framework.Video", string.Format(", {0}", _assemblyName));
-            preparedType = preparedType.Replace(", Microsoft.Xna.Framework", string.Format(", {0}", _assemblyName));
+            preparedType = preparedType.Replace(", Microsoft.Xna.Framework.Graphics", string.Format(CultureInfo.InvariantCulture, ", {0}", _assemblyName));
+            preparedType = preparedType.Replace(", Microsoft.Xna.Framework.Video", string.Format(CultureInfo.InvariantCulture, ", {0}", _assemblyName));
+            preparedType = preparedType.Replace(", Microsoft.Xna.Framework", string.Format(CultureInfo.InvariantCulture, ", {0}", _assemblyName));
 
             if (_isRunningOnNetCore)
                 preparedType = preparedType.Replace("mscorlib", "System.Private.CoreLib");

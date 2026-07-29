@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 {
@@ -13,7 +14,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     /// <typeparam name="T">The content type being written.</typeparam>
     class BuiltInContentWriter<T> : ContentTypeWriter<T>
     {
-        private List<ContentTypeWriter> _genericTypes;
+        private List<ContentTypeWriter>? _genericTypes;
 
         /// <inheritdoc/>
         internal override void OnAddedToContentWriter(ContentWriter output)
@@ -34,7 +35,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         /// </summary>
         /// <param name="output">The output writer object.</param>
         /// <param name="value">The value to write to the output.</param>
-        protected internal override void Write(ContentWriter output, T value)
+        protected internal override void Write(ContentWriter output, [AllowNull] T value)
         {
         }
 
@@ -57,7 +58,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
                     readerClassName += "[";
                     readerClassName += argWriter.GetRuntimeType(targetPlatform);
                     readerClassName += "]";
-                    // Important: Do not add a space char after the comma because 
+                    // Important: Do not add a space char after the comma because
                     // this will not work with Type.GetType in Xamarin.Android!
                     readerClassName += ",";
                 }

@@ -90,7 +90,7 @@ namespace MonoGame.Tools.Pipeline
                 if (importer == PipelineTypes.MissingImporter)
                 {
                     var contentItem = (ContentItem)context.Instance;
-                    return string.Format("[missing] {0}", contentItem.ImporterName ?? "[null]");
+                    return string.Format(CultureInfo.InvariantCulture, "[missing] {0}", contentItem.ImporterName ?? "[null]");
                 }
 
                 return ((ImporterTypeDescription)value).DisplayName;

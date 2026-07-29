@@ -46,7 +46,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
             var profile = AudioProfile.ForPlatform(context.TargetPlatform);
             var finalQuality = profile.ConvertAudio(context.TargetPlatform, quality, input);
             if (quality != finalQuality)
-                context.Logger.LogMessage("Failed to convert using \"{0}\" quality, used \"{1}\" quality", quality, finalQuality);
+                context.Logger.Log("Failed to convert using \"{0}\" quality, used \"{1}\" quality", quality, finalQuality);
 
             return new SoundEffectContent(input.Format.NativeWaveFormat, input.Data, input.LoopStart, input.LoopLength, (int)input.Duration.TotalMilliseconds);
         }

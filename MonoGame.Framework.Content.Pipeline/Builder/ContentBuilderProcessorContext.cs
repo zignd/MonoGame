@@ -51,7 +51,7 @@ class ContentBuilderProcessorContext(ContentBuilder builder, string relativePath
 
     [Obsolete]
     public override TOutput BuildAndLoadAsset<TInput, TOutput>(ExternalReference<TInput> sourceAsset,
-        string processorName, OpaqueDataDictionary processorParameters, string importerName)
+        string processorName, OpaqueDataDictionary? processorParameters, string? importerName)
     {
         throw new NotSupportedException(
             @"Converting from importerName and processorName is not supported with the ContentBuilder.
@@ -61,12 +61,15 @@ class ContentBuilderProcessorContext(ContentBuilder builder, string relativePath
     public override TOutput BuildAndLoadAsset<TInput, TOutput>(ExternalReference<TInput> sourceAsset, IContentImporter importer, IContentProcessor processor)
     {
         var processedObject = _builder.BuildAndLoadContent(sourceAsset.Filename, new ContentInfo(_contentInfo.ContentRoot, true, importer, processor), GetNextOutputPath(), this);
-        return (TOutput)processedObject!;
+        if (processedObject is TOutput output)
+            return output;
+
+        throw new InvalidOperationException($"Building '{sourceAsset.Filename}' returned an unexpected result type '{processedObject?.GetType().FullName ?? "<null>"}'.");
     }
 
     [Obsolete]
     public override ExternalReference<TOutput> BuildAsset<TInput, TOutput>(ExternalReference<TInput> sourceAsset,
-        string processorName, OpaqueDataDictionary processorParameters, string importerName, string assetName)
+        string processorName, OpaqueDataDictionary? processorParameters, string? importerName, string? assetName)
     {
         throw new NotSupportedException(
             @"Converting from imposterName and processorName is not supported with the ContentBuilder.
@@ -76,13 +79,14 @@ class ContentBuilderProcessorContext(ContentBuilder builder, string relativePath
     public override ExternalReference<TOutput> BuildAsset<TInput, TOutput>(ExternalReference<TInput> sourceAsset,
         IContentImporter importer, IContentProcessor processor, string? assetName)
     {
-        var outputRelativePath = _builder.BuildAndWriteContent(sourceAsset.Filename, new ContentInfo(_contentInfo.ContentRoot, true, importer, processor), assetName, this);
+        var outputRelativePath = _builder.BuildAndWriteContent(sourceAsset.Filename, new ContentInfo(_contentInfo.ContentRoot, true, importer, processor), assetName, this)
+            ?? throw new InvalidOperationException($"Building '{sourceAsset.Filename}' did not produce an output path.");
 
         return new ExternalReference<TOutput>(Path.Combine(_builder.Parameters.RootedOutputDirectory, outputRelativePath));
     }
 
     [Obsolete]
-    public override TOutput Convert<TInput, TOutput>(TInput input, string processorName, OpaqueDataDictionary processorParameters)
+    public override TOutput Convert<TInput, TOutput>(TInput input, string processorName, OpaqueDataDictionary? processorParameters)
     {
         throw new NotSupportedException(@"Converting from processorName is not supported with the ContentBuilder.
             Please pass a processor instance to the Convert method instead.");
@@ -92,8 +96,14 @@ class ContentBuilderProcessorContext(ContentBuilder builder, string relativePath
     {
         var processContext = new ContentBuilderProcessorContext(_builder, _relativeContentPath, _contentInfo, ContentFileCache);
         using var _ = ContextScopeFactory.BeginContext(processContext);
-        var processedObject = processor.Process(input!, processContext);
+        if (input is null)
+            throw new InvalidOperationException($"Processor '{processor.GetType().FullName}' received null input.");
 
-        return (TOutput)processedObject;
+        var processedObject = processor.Process(input, processContext);
+
+        if (processedObject is TOutput output)
+            return output;
+
+        throw new InvalidOperationException($"Processor '{processor.GetType().FullName}' returned an unexpected result type '{processedObject?.GetType().FullName ?? "<null>"}'.");
     }
 }

@@ -86,7 +86,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <summary>
         /// Gets or sets the texture property.
         /// </summary>
-        public ExternalReference<TextureContent> Texture
+        public ExternalReference<TextureContent>? Texture
         {
             get { return GetTexture(TextureKey); }
             set { SetTexture(TextureKey, value); }

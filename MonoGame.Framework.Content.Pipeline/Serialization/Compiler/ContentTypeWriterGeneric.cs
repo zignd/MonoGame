@@ -2,6 +2,8 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 {
     /// <summary>
@@ -24,9 +26,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         /// </summary>
         /// <param name="output">The content writer serializing the value.</param>
         /// <param name="value">The value to write.</param>
-        protected internal override void Write(ContentWriter output, object value)
+        protected internal override void Write(ContentWriter output, [AllowNull] object value)
         {
-            Write(output, (T)value);
+            Write(output, value == null ? default : (T)value);
         }
 
         /// <summary>
@@ -34,6 +36,6 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
         /// </summary>
         /// <param name="output">The content writer serializing the value.</param>
         /// <param name="value">The value to write.</param>
-        protected internal abstract void Write(ContentWriter output, T value);
+        protected internal abstract void Write(ContentWriter output, [AllowNull] T value);
     }
 }

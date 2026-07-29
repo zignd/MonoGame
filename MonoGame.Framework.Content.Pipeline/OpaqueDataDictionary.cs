@@ -13,7 +13,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
     /// This is equivilant to a <see cref="NamedValueDictionary{T}">NamedValueDictionary</see> where the type of the values is Object.
     /// </remarks>
     [ContentSerializerCollectionItemName("Data")]
-    public sealed class OpaqueDataDictionary : NamedValueDictionary<Object>
+    public sealed class OpaqueDataDictionary : NamedValueDictionary<Object?>
     {
         /// <summary>
         /// Get the value for the specified key
@@ -23,9 +23,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// <returns>The item cast as T, or the default value if the item is not present in the dictonary.</returns>
         public T GetValue<T> (string key, T defaultValue)
         {
-            object o;
+            object? o;
             if (TryGetValue (key, out o))
-                return (T)o ;
+                return (T)o!;
             return defaultValue;
         }
     }

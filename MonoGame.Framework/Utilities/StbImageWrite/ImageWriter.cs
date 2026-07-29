@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -56,7 +57,7 @@ namespace MonoGame.Framework.Utilities.StbImageWrite
 			if (data.Length < requiredDataSize)
 			{
 				throw new ArgumentException(
-					string.Format("Not enough data. 'data' variable should contain at least {0} bytes.", requiredDataSize));
+					string.Format(CultureInfo.InvariantCulture, "Not enough data. 'data' variable should contain at least {0} bytes.", requiredDataSize));
 			}
 		}
 

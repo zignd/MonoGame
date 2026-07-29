@@ -4,6 +4,7 @@
 
 
 using System;
+using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Graphics.PackedVector
@@ -98,7 +99,7 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
         /// <inheritdoc />
 		public override string ToString ()
 		{
-            return _short2Packed.ToString("x8");
+			return _short2Packed.ToString("x8", CultureInfo.InvariantCulture);
 		}
 
         /// <summary>

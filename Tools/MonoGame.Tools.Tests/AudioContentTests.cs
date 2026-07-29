@@ -306,7 +306,7 @@ namespace MonoGame.Tests.ContentPipeline
         public void ConvertAudio(string sourceFile, ConversionFormat format, ConversionQuality quality, int channels, int averageBytesPerSecond, int sampleRate, int bitsPerSample, int blockAlign)
         {
             var content = new AudioContent(sourceFile, AudioFileType.Wav);
-            content.ConvertFormat(format, quality, null);
+            DefaultAudioProfile.ConvertToFormat(content, format, quality, null);
 
             Assert.AreEqual(ToWavFormat(format, content.Format.BitsPerSample), content.Format.Format);
             Assert.AreEqual(channels, content.Format.ChannelCount);

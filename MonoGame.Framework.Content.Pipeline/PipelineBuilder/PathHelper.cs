@@ -50,8 +50,7 @@ namespace MonoGame.Framework.Content.Pipeline.Builder
         /// <returns>The relative path or the original string if it is not absolute or cannot be made relative.</returns>
         public static string GetRelativePath(string basePath, string path)
         {
-            Uri uri;
-            if (!Uri.TryCreate(path, UriKind.Absolute, out uri))
+            if (!Uri.TryCreate(path, UriKind.Absolute, out var uri) || uri == null)
                 return path;
 
             uri = new Uri(basePath).MakeRelativeUri(uri);

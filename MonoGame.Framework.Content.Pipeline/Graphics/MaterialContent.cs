@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 {
@@ -34,11 +35,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <typeparam name="T">Type of the related opaque data.</typeparam>
         /// <param name="key">Key of the property being retrieved.</param>
         /// <returns>The related opaque data.</returns>
+        [return: MaybeNull]
         protected T GetReferenceTypeProperty<T>(string key) where T : class
         {
-            object value;
+            object? value;
             if (OpaqueData.TryGetValue(key, out value))
-                return (T)value;
+                return value as T;
             return default(T);
         }
 
@@ -47,9 +49,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="key">Key of the texture being retrieved.</param>
         /// <returns>Reference to a texture from the collection.</returns>
-        protected ExternalReference<TextureContent> GetTexture(string key)
+        protected ExternalReference<TextureContent>? GetTexture(string key)
         {
-            ExternalReference<TextureContent> texture;
+            ExternalReference<TextureContent>? texture;
             _textures.TryGetValue(key, out texture);
             return texture;
         }
@@ -62,9 +64,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <returns>Index of the value type beng retrieved.</returns>
         protected Nullable<T> GetValueTypeProperty<T>(string key) where T : struct
         {
-            object value;
+            object? value;
             if (OpaqueData.TryGetValue(key, out value))
-                return (T)value;
+                return value is T typedValue ? typedValue : null;
             return null;
         }
 
@@ -92,7 +94,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <remarks>The key value differs depending on the type of attached dictionary.
         /// If attached to a BasicMaterialContent dictionary (which becomes a BasicEffect object at run time), the value for the Texture key is used as the texture for the BasicEffect runtime object. Other keys are ignored.
         /// If attached to a EffectMaterialContent dictionary, key names are the texture names used by the effect. These names are dependent upon the author of the effect object.</remarks>
-        protected void SetTexture(string key, ExternalReference<TextureContent> value)
+        protected void SetTexture(string key, ExternalReference<TextureContent>? value)
         {
             if (value != null)
                 _textures[key] = value;
@@ -107,7 +109,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         public MaterialContent Clone()
         {
             // Construct it via reflection.
-            var clone = (MaterialContent)Activator.CreateInstance(GetType());
+            var clone = (MaterialContent?)Activator.CreateInstance(GetType())
+                ?? throw new InvalidOperationException($"Failed to create a material clone of type '{GetType().FullName}'.");
 
             // Give it the same identity as the original material.
             clone.Name = Name;
@@ -117,7 +120,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
             // result in the same properties being set if the material
             // is implemented correctly.
             foreach (var pair in Textures)
-                clone.Textures.Add(pair.Key, pair.Value);            
+                clone.Textures.Add(pair.Key, pair.Value);
             foreach (var pair in OpaqueData)
                 clone.OpaqueData.Add(pair.Key, pair.Value);
 

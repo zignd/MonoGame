@@ -10,7 +10,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
 {
     /// <summary>
     /// Specifies external references to a data file for the content item.
-    /// 
+    ///
     /// While the object model is instantiated, reference file names are absolute. When the file containing the external reference is serialized to disk, file names are relative to the file. This allows movement of the content tree to a different location without breaking internal links.
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -59,7 +59,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
             // down to the asset path. We don't appear to have any way to do
             // that from here, so we'll work with the absolute path and let the
             // higher level process sort out any relative paths they need.
-            var basePath = Path.GetDirectoryName(relativeToContent.SourceFilename);
+            var basePath = Path.GetDirectoryName(relativeToContent.SourceFilename)
+                ?? throw new ArgumentException("relativeToContent.SourceFilename must include a directory.", "relativeToContent");
             Filename = PathHelper.Normalize(Path.GetFullPath(Path.Combine(basePath, filename)));
         }
     }

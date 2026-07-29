@@ -14,8 +14,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
     public class XmlImporter : ContentImporter<object>
     {
         /// <summary>
-        /// Called by the XNA Framework when importing an intermediate file to be used as a game 
-        /// asset. This is the method called by the XNA Framework when an asset is to be imported 
+        /// Called by the XNA Framework when importing an intermediate file to be used as a game
+        /// asset. This is the method called by the XNA Framework when an asset is to be imported
         /// into an object that can be recognized by the Content Pipeline.
         /// </summary>
         /// <param name="filename">Name of a game asset file.</param>
@@ -24,7 +24,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         public override object Import(string filename, ContentImporterContext context)
         {
             using (var reader = XmlReader.Create(filename))
-                return IntermediateSerializer.Deserialize<object>(reader, filename);
+                return IntermediateSerializer.Deserialize<object>(reader, filename)
+                    ?? throw new InvalidContentException($"XML import of '{filename}' returned null.");
         }
     }
 }

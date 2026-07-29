@@ -11,7 +11,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
     public class NodeContent : ContentItem
     {
         Matrix transform;
-        NodeContent parent;
+        NodeContent? parent;
         NodeContentCollection children;
         AnimationContentDictionary animations;
 
@@ -53,7 +53,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <summary>
         /// Gets the parent of this NodeContent object.
         /// </summary>
-        public NodeContent Parent
+        public NodeContent? Parent
         {
             get
             {

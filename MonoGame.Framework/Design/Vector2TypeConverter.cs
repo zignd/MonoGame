@@ -4,10 +4,7 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-
-#pragma warning disable IL2067
 
 namespace Microsoft.Xna.Framework.Design
 {
@@ -15,7 +12,6 @@ namespace Microsoft.Xna.Framework.Design
     /// Provides a unified way of converting <see cref="Vector2"/> values to other  types, as well as for accessing
     /// standard values and subproperties.
     /// </summary>
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     public sealed class Vector2TypeConverter : TypeConverter
     {
         /// <inheritdoc />
@@ -82,5 +78,3 @@ namespace Microsoft.Xna.Framework.Design
         }
     }
 }
-
-#pragma warning restore IL2067

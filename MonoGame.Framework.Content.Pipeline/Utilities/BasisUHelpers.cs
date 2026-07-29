@@ -266,7 +266,7 @@ internal static class BasisU
     /// so the only way to control the output is to control the working dir.
     /// </param>
     /// <returns>The exit code for the basisu process. </returns>
-    public static int Run(string args, out string stdOut, out string stdErr, string stdIn=null, string workingDirectory=null)
+    public static int Run(string args, out string stdOut, out string stdErr, string? stdIn = null, string? workingDirectory = null)
     {
         return Basisu.Run(args, out stdOut, out stdErr, stdIn, workingDirectory);
     }
@@ -439,7 +439,7 @@ internal static class BasisU
         BitmapContent sourceBitmap,
         SurfaceFormat format,
         out byte[] encodedBytes,
-        out string failureMessage)
+        out string? failureMessage)
     {
         failureMessage = null;
         encodedBytes = Array.Empty<byte>();
@@ -447,9 +447,9 @@ internal static class BasisU
 
         // these files will likely be created during this method, and should be
         //  deleted before exiting the function.
-        string pngFileName = null;
-        string intermediateFileName = null;
-        string ktxFileName = null;
+        string? pngFileName = null;
+        string? intermediateFileName = null;
+        string? ktxFileName = null;
 
         try
         {
@@ -476,7 +476,7 @@ internal static class BasisU
                 return false;
             }
 
-            if (!KtxFileHelper.TryReadKtx(ktxFileName, out encodedBytes))
+            if (!KtxFileHelper.TryReadKtx(ktxFileName ?? throw new InvalidOperationException("BasisU unpacking succeeded without returning an output KTX path."), out encodedBytes))
             {
                 failureMessage = "unable to read unpacked ktx file";
                 return false;
@@ -507,7 +507,7 @@ internal static class BasisU
         string basisFileName,
         BasisUFormat basisUFormat,
         IContentContext context,
-        out string outputKtxFileName,
+        out string? outputKtxFileName,
         out string error
     )
     {

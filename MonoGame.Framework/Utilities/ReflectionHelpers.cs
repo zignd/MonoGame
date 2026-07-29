@@ -17,20 +17,21 @@ namespace MonoGame.Framework.Utilities
             {
                 throw new NullReferenceException("Must supply the targetType parameter");
             }
-#if NET45            
+#if NET45
             return targetType.GetTypeInfo().IsValueType;
 #else
             return targetType.IsValueType;
 #endif
         }
 
+        [return: MaybeNull]
         public static Type GetBaseType(Type targetType)
         {
             if (targetType == null)
             {
                 throw new NullReferenceException("Must supply the targetType parameter");
             }
-#if NET45            
+#if NET45
             return targetType.GetTypeInfo().BaseType;
 #else
             return targetType.BaseType;
@@ -46,7 +47,7 @@ namespace MonoGame.Framework.Utilities
             {
                 throw new NullReferenceException("Must supply the targetType parameter");
             }
-#if NET45            
+#if NET45
             return targetType.GetTypeInfo().Assembly;
 #else
             return targetType.Assembly;
@@ -65,26 +66,28 @@ namespace MonoGame.Framework.Utilities
 
             if (t == typeof(object))
                 return false;
-#if NET45            
+#if NET45
             var ti = t.GetTypeInfo();
             if (ti.IsClass && !ti.IsAbstract)
                 return true;
-#else            
+#else
             if (t.IsClass && !t.IsAbstract)
                 return true;
 #endif
             return false;
         }
 
+        [return: MaybeNull]
         public static MethodInfo GetMethodInfo([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicMethods)] Type type, string methodName)
         {
-#if NET45            
+#if NET45
             return type.GetTypeInfo().GetDeclaredMethod(methodName);
 #else
             return type.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
 #endif
         }
 
+        [return: MaybeNull]
         public static MethodInfo GetPropertyGetMethod(PropertyInfo property)
         {
             if (property == null)
@@ -92,13 +95,14 @@ namespace MonoGame.Framework.Utilities
                 throw new NullReferenceException("Must supply the property parameter");
             }
 
-#if NET45            
+#if NET45
             return property.GetMethod;
 #else
             return property.GetGetMethod();
 #endif
         }
 
+        [return: MaybeNull]
         public static MethodInfo GetPropertySetMethod(PropertyInfo property)
         {
             if (property == null)
@@ -106,19 +110,20 @@ namespace MonoGame.Framework.Utilities
                 throw new NullReferenceException("Must supply the property parameter");
             }
 
-#if NET45            
+#if NET45
             return property.SetMethod;
 #else
             return property.GetSetMethod();
 #endif
         }
 
+        [return: MaybeNull]
         public static T GetCustomAttribute<T>(MemberInfo member) where T : Attribute
         {
             if (member == null)
                 throw new NullReferenceException("Must supply the member parameter");
 
-#if NET45            
+#if NET45
             return member.GetCustomAttribute(typeof(T)) as T;
 #else
             return Attribute.GetCustomAttribute(member, typeof(T)) as T;
@@ -172,7 +177,7 @@ namespace MonoGame.Framework.Utilities
                 return true;
 #else
             if (type.IsAssignableFrom(objectType))
-                return true;     
+                return true;
 #endif
             return false;
         }
@@ -183,6 +188,7 @@ namespace MonoGame.Framework.Utilities
             return SizeOf<T>.Get();
         }
 
+        [RequiresDynamicCode("Marshal.SizeOf(Type) requires runtime code generation support for arbitrary runtime types.")]
         internal static int FastManagedSizeOf(Type type)
         {
             return ManagedSizeOfCore(type);
@@ -192,17 +198,17 @@ namespace MonoGame.Framework.Utilities
         /// Fallback handler for Marshal.SizeOf(type)
         /// </summary>
         [Obsolete("This shouldn't be used because it is not PublishAot-compliant (but we're only using it in WindowsDX code, which isn't AOT-compatible, so it's fine for the time being)")]
+        [RequiresDynamicCode("Marshal.SizeOf(Type) requires runtime code generation support for arbitrary runtime types.")]
         internal static int ManagedSizeOf(Type type)
         {
             return ManagedSizeOfCore(type);
         }
 
+        [RequiresDynamicCode("Marshal.SizeOf(Type) requires runtime code generation support for arbitrary runtime types.")]
         static int ManagedSizeOfCore(Type type)
         {
             // to make this AOT-compliant, we should be using Marshal.SizeOf<T>() but it isn't possible here without using reflection (which we can't if we want AOT compatibility)
-            #pragma warning disable IL3050
             return Marshal.SizeOf(type);
-            #pragma warning restore IL3050
         }
 
     }

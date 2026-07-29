@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework
 {
@@ -17,6 +18,8 @@ namespace Microsoft.Xna.Framework
         /// Called at the start of the resume process. Textures should always be reloaded here.
         /// If using a ContentManager, it should be disposed and recreated.
         /// </summary>
+        [RequiresUnreferencedCode("Content reload can resolve content readers and asset types through reflection.")]
+        [RequiresDynamicCode("Content reload can activate content readers and asset types through reflection.")]
         void LoadContent();
 
         /// <summary>

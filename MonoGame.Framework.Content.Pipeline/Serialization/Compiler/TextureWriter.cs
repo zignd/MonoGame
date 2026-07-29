@@ -2,6 +2,7 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework.Content.Pipeline.Graphics;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
@@ -9,7 +10,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     internal class TextureWriter : BuiltInContentWriter<TextureContent>
     {
-        protected internal override void Write(ContentWriter output, TextureContent value)
+        protected internal override void Write(ContentWriter output, [AllowNull] TextureContent value)
         {
             // Do nothing.
             // The TextureWriter is not used to write anything, but it is used by

@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using System.IO;
 using Microsoft.Xna.Framework.Content.Pipeline.Audio;
 
@@ -35,7 +36,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
                 throw new ArgumentNullException("context");
 
             if (!File.Exists(filename))
-                throw new FileNotFoundException(string.Format("Could not locate audio file {0}.", Path.GetFileName(filename)));
+                throw new FileNotFoundException(string.Format(CultureInfo.InvariantCulture, "Could not locate audio file {0}.", Path.GetFileName(filename)));
 
             var content = new AudioContent(filename, AudioFileType.Mp3);
             return content;

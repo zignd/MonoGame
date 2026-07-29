@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Globalization;
 using System.Linq;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -45,16 +46,16 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                 throw new ArgumentNullException("newBitmapType");
 
             if (!newBitmapType.IsSubclassOf(typeof (BitmapContent)))
-                throw new ArgumentException(string.Format("Type '{0}' is not a subclass of BitmapContent.", newBitmapType));
+                throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, "Type '{0}' is not a subclass of BitmapContent.", newBitmapType));
 
             if (newBitmapType.IsAbstract)
-                throw new ArgumentException(string.Format("Type '{0}' is abstract and cannot be allocated.", newBitmapType));
+                throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, "Type '{0}' is abstract and cannot be allocated.", newBitmapType));
 
             if (newBitmapType.ContainsGenericParameters)
-                throw new ArgumentException(string.Format("Type '{0}' contains generic parameters and cannot be allocated.", newBitmapType));
+                throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, "Type '{0}' contains generic parameters and cannot be allocated.", newBitmapType));
 
             if (newBitmapType.GetConstructor(new Type[2] {typeof (int), typeof (int)}) == null)
-                throw new ArgumentException(string.Format("Type '{0} does not have a constructor with signature (int, int) and cannot be allocated.",
+                throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, "Type '{0} does not have a constructor with signature (int, int) and cannot be allocated.",
                                                           newBitmapType));
 
             foreach (var mipChain in faces)
@@ -64,13 +65,14 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                     var src = mipChain[i];
                     if (src.GetType() != newBitmapType)
                     {
-                        var dst = (BitmapContent)Activator.CreateInstance(newBitmapType, new object[] { src.Width,src.Height });
+                        var dst = (BitmapContent?)Activator.CreateInstance(newBitmapType, new object[] { src.Width,src.Height })
+                            ?? throw new InvalidOperationException($"Could not create bitmap of type '{newBitmapType}'.");
                         BitmapContent.Copy(src, dst);
                         mipChain[i] = dst;
                     }
                 }
             }
-        }        
+        }
 
         /// <summary>
         /// Generates a full set of mipmaps for the texture.
@@ -100,7 +102,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                     if (height > 1)
                         height /= 2;
 
-                    var mip = (BitmapContent)Activator.CreateInstance(faceType, new object[] { width, height });
+                    var mip = (BitmapContent?)Activator.CreateInstance(faceType, new object[] { width, height })
+                        ?? throw new InvalidOperationException($"Could not create mip bitmap of type '{faceType}'.");
                     BitmapContent.Copy(faceBitmap, mip);
                     face.Add(mip);
                 }

@@ -26,7 +26,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="child">The child of the parent being retrieved.</param>
         /// <returns>The parent of the child object.</returns>
-        protected override NodeContent GetParent(NodeContent child)
+        protected override NodeContent? GetParent(NodeContent child)
         {
             return child.Parent;
         }
@@ -36,7 +36,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// </summary>
         /// <param name="child">The child of the parent being modified.</param>
         /// <param name="parent">The new value for the parent object.</param>
-        protected override void SetParent(NodeContent child, NodeContent parent)
+        protected override void SetParent(NodeContent child, NodeContent? parent)
         {
             child.Parent = parent;
         }

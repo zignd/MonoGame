@@ -69,7 +69,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
 
             string stdout, stderr;
             var result = FFprobe.Run(
-                string.Format("-i \"{0}\" -show_format -select_streams v -show_streams -print_format ini", Filename),
+                string.Format(CultureInfo.InvariantCulture, "-i \"{0}\" -show_format -select_streams v -show_streams -print_format ini", Filename),
                 out stdout,
                 out stderr);
 

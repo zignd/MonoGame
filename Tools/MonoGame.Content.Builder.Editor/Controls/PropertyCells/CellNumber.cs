@@ -4,6 +4,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using Eto.Forms;
 
 namespace MonoGame.Tools.Pipeline
@@ -28,13 +29,14 @@ namespace MonoGame.Tools.Pipeline
             if (_type == typeof(float) || _type == typeof(double) || _type == typeof(decimal))
             {
                 if (_type == typeof(float))
-                    DisplayValue = ((float)Value).ToString("0.00");
+                    DisplayValue = ((float)Value).ToString("0.00", CultureInfo.CurrentCulture);
                 else if (_type == typeof(double))
-                    DisplayValue = ((double)Value).ToString("0.00");
+                    DisplayValue = ((double)Value).ToString("0.00", CultureInfo.CurrentCulture);
                 else
-                    DisplayValue = ((decimal)Value).ToString("0.00");
+                    DisplayValue = ((decimal)Value).ToString("0.00", CultureInfo.CurrentCulture);
 
-                DisplayValue = (DisplayValue.Length > Value.ToString().Length) ? DisplayValue : Value.ToString();
+                var currentCultureValue = Convert.ToString(Value, CultureInfo.CurrentCulture);
+                DisplayValue = (DisplayValue.Length > currentCultureValue.Length) ? DisplayValue : currentCultureValue;
             }
         }
 

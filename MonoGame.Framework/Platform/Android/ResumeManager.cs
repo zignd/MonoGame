@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -33,6 +34,14 @@ namespace Microsoft.Xna.Framework
         float scale;
         float rotateSpeed;
 
+        /// <summary>
+        /// Initializes a new resume manager used to draw a resume indicator while content reloads.
+        /// </summary>
+        /// <param name="services">The game service provider.</param>
+        /// <param name="spriteBatch">The sprite batch used for drawing.</param>
+        /// <param name="resumeTextureName">The content name for the resume texture.</param>
+        /// <param name="scale">The draw scale applied to the resume texture.</param>
+        /// <param name="rotateSpeed">The per-frame rotation increment.</param>
         public ResumeManager(IServiceProvider services,
                              SpriteBatch spriteBatch,
                              string resumeTextureName,
@@ -47,12 +56,20 @@ namespace Microsoft.Xna.Framework
             this.rotateSpeed = rotateSpeed;
         }
 
+        /// <summary>
+        /// Reloads the configured resume texture from content.
+        /// </summary>
+        [RequiresUnreferencedCode("Content reload can resolve content readers and asset types through reflection.")]
+        [RequiresDynamicCode("Content reload can activate content readers and asset types through reflection.")]
         public virtual void LoadContent()
         {
             content.Unload();
             resumeTexture = content.Load<Texture2D>(resumeTextureName);
         }
 
+        /// <summary>
+        /// Draws the resume texture centered on screen with rotation.
+        /// </summary>
         public virtual void Draw()
         {
             rotation += rotateSpeed;

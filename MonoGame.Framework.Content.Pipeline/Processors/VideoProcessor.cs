@@ -16,12 +16,12 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <inheritdoc/>
         public override VideoContent Process(VideoContent input, ContentProcessorContext context)
         {
-            var relative = Path.GetDirectoryName(PathHelper.GetRelativePath(context.OutputDirectory, context.OutputFilename));
+            var relative = Path.GetDirectoryName(PathHelper.GetRelativePath(context.OutputDirectory, context.OutputFilename)) ?? string.Empty;
             var relVideoPath = PathHelper.Normalize(Path.Combine(relative, Path.GetFileName(input.Filename)));
             var absVideoPath = PathHelper.Normalize(Path.Combine(context.OutputDirectory, relVideoPath));
 
             // Make sure the output folder for the video exists.
-            Directory.CreateDirectory(Path.GetDirectoryName(absVideoPath));
+            Directory.CreateDirectory(Path.GetDirectoryName(absVideoPath) ?? context.OutputDirectory);
 
             // Copy the already encoded video file over
             File.Copy(input.Filename, absVideoPath, true);

@@ -4,6 +4,7 @@
 
 
 using System;
+using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Graphics.PackedVector
@@ -97,7 +98,7 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
         /// <inheritdoc />
 		public override string ToString ()
 		{
-            return short4Packed.ToString("X");
+            return short4Packed.ToString("X", CultureInfo.InvariantCulture);
 		}
 
         private static ulong PackInFour(float vectorX, float vectorY, float vectorZ, float vectorW)

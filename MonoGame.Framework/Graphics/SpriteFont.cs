@@ -268,7 +268,7 @@ namespace Microsoft.Xna.Framework.Graphics
             {
                 if(!TryGetRegionIdx(c, pRegions, out int regionIdx))
                 {
-                    c = char.IsUpper(c) ? char.ToLower(c) : char.ToUpper(c);
+                    c = char.IsUpper(c) ? char.ToLowerInvariant(c) : char.ToUpperInvariant(c);
                     TryGetRegionIdx(c, pRegions, out regionIdx);
                 }
 
@@ -286,7 +286,7 @@ namespace Microsoft.Xna.Framework.Graphics
 
         private unsafe bool TryGetRegionIdx(char c, CharacterRegion* pRegions, out int regionIdx)
         {
-            // Get region Index 
+            // Get region Index
             regionIdx = -1;
             var l = 0;
             var r = _regions.Length - 1;
@@ -389,11 +389,11 @@ namespace Microsoft.Xna.Framework.Graphics
             /// </summary>
             public float RightSideBearing;
             /// <summary>
-            /// Width of the character before kerning is applied. 
+            /// Width of the character before kerning is applied.
             /// </summary>
             public float Width;
             /// <summary>
-            /// Width of the character before kerning is applied. 
+            /// Width of the character before kerning is applied.
             /// </summary>
             public float WidthIncludingBearings;
 

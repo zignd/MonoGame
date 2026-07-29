@@ -70,9 +70,27 @@ public class ContentBuildLogger
     }
 
     /// <summary>
+    /// Outputs a message from the content system with source content context.
+    /// </summary>
+    /// <param name="level">Log level of the message.</param>
+    /// <param name="contentIdentity">Identity of the content item that generated the message.</param>
+    /// <param name="message">Message being reported.</param>
+    /// <param name="messageArgs">Arguments for the reported message.</param>
+    public void Log(LogLevel level, ContentIdentity? contentIdentity, string message, params object[] messageArgs)
+        => Log(level, $"{string.Format(CultureInfo.InvariantCulture, message, messageArgs)}: {GetCurrentFilename(contentIdentity)}");
+
+    /// <summary>
     /// Outputs a message from the content system with the <see cref="LogLevel.Info"/> log level.
     /// </summary>
     public void Log(string message) => Log(LogLevel.Info, message);
+
+    /// <summary>
+    /// Outputs a formatted message from the content system with the <see cref="LogLevel.Info"/> log level.
+    /// </summary>
+    /// <param name="message">Message being reported.</param>
+    /// <param name="messageArgs">Arguments for the reported message.</param>
+    public void Log(string message, params object[] messageArgs)
+        => Log(string.Format(CultureInfo.InvariantCulture, message, messageArgs));
 
     /// <summary>
     /// Outputs a high-priority status message from the content system.

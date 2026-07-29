@@ -15,9 +15,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 		{
             var bitmapRegion = region.HasValue ? region.Value : new Rectangle(0, 0, bitmap.Width, bitmap.Height);
             // Works with PixelBitmapContent<byte> at this stage
-            if (bitmap is PixelBitmapContent<byte>)
+            if (bitmap is PixelBitmapContent<byte> bmp)
             {
-                var bmp = bitmap as PixelBitmapContent<byte>;
                 for (int y = 0; y < bitmapRegion.Height; y++)
                 {
                     for (int x = 0; x < bitmapRegion.Width; x++)
@@ -29,14 +28,13 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                 }
                 return true;
             }
-            else if (bitmap is PixelBitmapContent<Color>)
+            else if (bitmap is PixelBitmapContent<Color> colorBitmap)
             {
-                var bmp = bitmap as PixelBitmapContent<Color>;
                 for (int y = 0; y < bitmapRegion.Height; y++)
                 {
                     for (int x = 0; x < bitmapRegion.Width; x++)
                     {
-                        var alpha = bmp.GetPixel(bitmapRegion.X + x, bitmapRegion.Y + y).A;
+                        var alpha = colorBitmap.GetPixel(bitmapRegion.X + x, bitmapRegion.Y + y).A;
                         if (alpha != expectedAlpha)
                             return false;
                     }

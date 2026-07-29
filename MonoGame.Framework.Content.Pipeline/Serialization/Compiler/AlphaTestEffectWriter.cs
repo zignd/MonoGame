@@ -10,8 +10,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     class AlphaTestEffectWriter : BuiltInContentWriter<AlphaTestMaterialContent>
     {
-        protected internal override void Write(ContentWriter output, AlphaTestMaterialContent value)
+        protected internal override void Write(ContentWriter output, AlphaTestMaterialContent? value)
         {
+            if (value == null)
+                throw new ArgumentNullException("value");
+
             output.WriteExternalReference(value.Textures.ContainsKey(AlphaTestMaterialContent.TextureKey) ? value.Texture : null);
             output.Write((int)(value.AlphaFunction.HasValue ? value.AlphaFunction.Value : CompareFunction.Greater));
             output.Write((int)(value.ReferenceAlpha.HasValue ? value.ReferenceAlpha.Value : 0));

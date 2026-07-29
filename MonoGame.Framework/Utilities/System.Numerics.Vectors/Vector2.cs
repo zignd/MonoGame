@@ -1,8 +1,7 @@
-#pragma warning disable CS1591
 namespace System.Numerics
 {
     /// <summary>
-    /// This is a dummy Vector2 type for platforms where System.Numerics.Vectors is not supported or available
+    /// Represents a compatibility implementation of a 2D vector for platforms without System.Numerics.Vectors.
     /// </summary>
     public struct Vector2
     {

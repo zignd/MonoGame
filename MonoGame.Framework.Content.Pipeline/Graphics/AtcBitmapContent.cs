@@ -14,7 +14,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
     /// </summary>
     public abstract class AtcBitmapContent : BitmapContent
     {
-        internal byte[] _bitmapData;
+        internal byte[]? _bitmapData;
 
         /// <summary>
         /// Initializes a new instance of AtcBitmapContent.
@@ -37,7 +37,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         /// <inheritdoc/>
         public override byte[] GetPixelData()
         {
-            return _bitmapData;
+            return _bitmapData ?? throw new InvalidOperationException("No ATC bitmap data has been set.");
         }
 
         /// <inheritdoc/>

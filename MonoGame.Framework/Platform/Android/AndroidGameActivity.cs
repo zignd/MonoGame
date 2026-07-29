@@ -10,6 +10,9 @@ using Android.Views;
 
 namespace Microsoft.Xna.Framework
 {
+    /// <summary>
+    /// Android activity used to host a MonoGame game.
+    /// </summary>
     public class AndroidGameActivity : Activity
     {
         internal Game Game { private get; set; }
@@ -17,7 +20,14 @@ namespace Microsoft.Xna.Framework
         private ScreenReceiver screenReceiver;
         private OrientationListener _orientationListener;
 
+        /// <summary>
+        /// Controls whether media playback is paused and resumed automatically with activity lifecycle events.
+        /// </summary>
         public bool AutoPauseAndResumeMediaPlayer = true;
+
+        /// <summary>
+        /// Controls whether rendering executes on the Android UI thread.
+        /// </summary>
         public bool RenderOnUIThread = true; 
 
 		/// <summary>
@@ -45,14 +55,19 @@ namespace Microsoft.Xna.Framework
 			Game.Activity = this;
 		}
 
+        /// <summary>
+        /// Raised when the activity is paused.
+        /// </summary>
         public static event EventHandler Paused;
 
-		public override void OnConfigurationChanged (Android.Content.Res.Configuration newConfig)
+        /// <inheritdoc />
+        public override void OnConfigurationChanged (global::Android.Content.Res.Configuration newConfig)
 		{
 			// we need to refresh the viewport here.
 			base.OnConfigurationChanged (newConfig);
 		}
 
+        /// <inheritdoc />
         protected override void OnPause()
         {
             base.OnPause();
@@ -62,7 +77,12 @@ namespace Microsoft.Xna.Framework
                 _orientationListener.Disable();
         }
 
+        /// <summary>
+        /// Raised when the activity is resumed.
+        /// </summary>
         public static event EventHandler Resumed;
+
+        /// <inheritdoc />
         protected override void OnResume()
         {
             base.OnResume();
@@ -80,6 +100,7 @@ namespace Microsoft.Xna.Framework
             }
         }
 
+        /// <inheritdoc />
 		protected override void OnDestroy ()
 		{
             UnregisterReceiver(screenReceiver);
@@ -92,8 +113,16 @@ namespace Microsoft.Xna.Framework
 		}
     }
 
+	/// <summary>
+	/// Extension helpers for Android activity metadata.
+	/// </summary>
 	public static class ActivityExtensions
     {
+        /// <summary>
+        /// Gets the <see cref="ActivityAttribute"/> applied to the activity type.
+        /// </summary>
+        /// <param name="obj">The activity instance.</param>
+        /// <returns>The activity attribute when found; otherwise <see langword="null"/>.</returns>
         public static ActivityAttribute GetActivityAttribute(this AndroidGameActivity obj)
         {			
             var attr = obj.GetType().GetCustomAttributes(typeof(ActivityAttribute), true);

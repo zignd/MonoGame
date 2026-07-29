@@ -17,9 +17,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
 
             for (int i = 0; i < sourceGlyphs.Length; i++)
             {
-                var glyph = new ArrangedGlyph();
-
-                glyph.Source = sourceGlyphs[i];
+                var glyph = new ArrangedGlyph
+                {
+                    Source = sourceGlyphs[i]
+                };
 
                 // Leave a one pixel border around every glyph in the output bitmap.
                 glyph.Width = sourceGlyphs[i].Subrect.Width + 2;
@@ -80,7 +81,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
         // Internal helper class keeps track of a glyph while it is being arranged.
         class ArrangedGlyph
         {
-            public GlyphData Source;
+            public required GlyphData Source;
 
             public int X;
             public int Y;

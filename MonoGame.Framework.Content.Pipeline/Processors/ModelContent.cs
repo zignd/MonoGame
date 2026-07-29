@@ -11,9 +11,9 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
     /// </summary>
     public sealed class ModelContent
     {
-        private ModelBoneContentCollection _bones;
-        private ModelMeshContentCollection _meshes;
-        private ModelBoneContent _root;
+        private ModelBoneContentCollection _bones = new ModelBoneContentCollection(new List<ModelBoneContent>());
+        private ModelMeshContentCollection _meshes = new ModelMeshContentCollection(new List<ModelMeshContent>());
+        private ModelBoneContent? _root;
 
         internal ModelContent() { }
 
@@ -43,7 +43,7 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <summary>
         /// Returns the root bone.
         /// </summary>
-        public ModelBoneContent Root
+        public ModelBoneContent? Root
         {
             get { return _root; }
         }
@@ -51,6 +51,6 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Processors
         /// <summary>
         /// Gets or sets an object that can be used to tag this model content.
         /// </summary>
-        public object Tag { get; set; }
+        public object? Tag { get; set; }
     }
 }

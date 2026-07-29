@@ -5,10 +5,7 @@
 using Microsoft.Xna.Framework.Graphics.PackedVector;
 using System;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
- 
-#pragma warning disable IL2067
 
 namespace Microsoft.Xna.Framework.Design
 {
@@ -16,7 +13,6 @@ namespace Microsoft.Xna.Framework.Design
     /// Provides a unified way of converting <see cref="Byte4"/> value to other types, as well as for accessing
     /// standard values and subproperties.
     /// </summary>
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     public sealed class Byte4TypeConverter : TypeConverter
     {
         /// <inheritdoc />
@@ -43,7 +39,7 @@ namespace Microsoft.Xna.Framework.Design
 
             if (destinationType == typeof(string))
             {
-                return vec.PackedValue.ToString();
+                return vec.PackedValue.ToString(culture ?? CultureInfo.CurrentCulture);
             }
 
             return base.ConvertTo(context, culture, value, destinationType);
@@ -77,5 +73,3 @@ namespace Microsoft.Xna.Framework.Design
         }
     }
 }
-
-#pragma warning restore IL2067

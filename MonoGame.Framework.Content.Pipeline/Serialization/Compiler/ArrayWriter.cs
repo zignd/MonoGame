@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 {
@@ -12,7 +13,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
     [ContentTypeWriter]
     class ArrayWriter<T> : BuiltInContentWriter<T[]>
     {
-        ContentTypeWriter _elementWriter;
+        ContentTypeWriter? _elementWriter;
+
+        ContentTypeWriter ElementWriter => _elementWriter
+            ?? throw new InvalidOperationException("Array writer has not been initialized with an element writer.");
 
         /// <inheritdoc/>
         internal override void OnAddedToContentWriter(ContentWriter output)
@@ -24,20 +28,20 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 
         public override string GetRuntimeReader(TargetPlatform targetPlatform)
         {
-            return string.Concat(   typeof(ContentTypeReader).Namespace, 
-                                    ".", 
-                                    "ArrayReader`1[[", 
-                                    _elementWriter.GetRuntimeType(targetPlatform), 
+            return string.Concat(   typeof(ContentTypeReader).Namespace,
+                                    ".",
+                                    "ArrayReader`1[[",
+                                        ElementWriter.GetRuntimeType(targetPlatform),
                                     "]]");
         }
 
-        protected internal override void Write(ContentWriter output, T[] value)
+        protected internal override void Write(ContentWriter output, [AllowNull] T[] value)
         {
             if (value == null)
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             output.Write(value.Length);
             foreach (var element in value)
-                output.WriteObject(element, _elementWriter);
+                output.WriteObject(element, ElementWriter);
         }
     }
 }
