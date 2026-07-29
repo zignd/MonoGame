@@ -50,20 +50,18 @@ public partial class VertexBuffer
         dataHandle.Free();
     }
 
-    private unsafe void PlatformSetData<T>(int offsetInBytes, Span<T> data, int elementCount, int vertexStride, SetDataOptions options, int bufferSize, int elementSizeInBytes)
+    private unsafe void PlatformSetData<T>(int offsetInBytes, Span<T> data, int elementCount, int vertexStride, SetDataOptions options, int bufferSize, int elementSizeInBytes) where T : struct
     {
-        var dataBytes = elementCount * elementSizeInBytes;
-
         // TODO: We need to figure out the correct behavior 
         // for SetDataOptions.None on a dynamic buffer.
         //
         // For now we always discard as it is a pretty safe default.
         //
-        fixed (void* ptr = &data[0])
+        var dataBytes = MemoryMarshal.AsBytes(data);
+        fixed (byte* dataPtr = dataBytes)
         {
             var discard = _isDynamic && options != SetDataOptions.NoOverwrite;
 
-            var dataPtr = (byte*)ptr;
             MGG.Buffer_SetData(GraphicsDevice.Handle, ref Handle, offsetInBytes, dataPtr, elementCount, vertexStride, elementSizeInBytes, discard);
         }
     }
@@ -77,6 +75,7 @@ public partial class VertexBuffer
         }
     }
 
+    /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
         PlatformGraphicsDeviceResetting();

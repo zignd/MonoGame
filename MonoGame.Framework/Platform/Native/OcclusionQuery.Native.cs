@@ -30,6 +30,7 @@ partial class OcclusionQuery
         return MGG.OcclusionQuery_GetResult(GraphicsDevice.Handle, Handle, out pixelCount) == 0 ? false : true;
     }
 
+    /// <inheritdoc />
     protected unsafe override void Dispose(bool disposing)
     {
         if (!IsDisposed)

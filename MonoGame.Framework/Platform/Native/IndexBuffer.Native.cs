@@ -63,6 +63,7 @@ public partial class IndexBuffer
         dataHandle.Free();
     }
 
+    /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
         PlatformGraphicsDeviceResetting();

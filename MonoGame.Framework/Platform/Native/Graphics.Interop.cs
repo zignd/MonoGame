@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 
 namespace MonoGame.Interop;
 
-internal struct PtrTo<T>
+internal struct PtrTo<T> where T : unmanaged
 {
     public unsafe T* Ptr;
 }

@@ -39,7 +39,7 @@ public sealed partial class Video : IDisposable
     private int _state;
     private Thread _thread;
 
-    private ConcurrentQueue<Texture2D> _frames;
+    private ConcurrentQueue<Texture2D> _frames = new ConcurrentQueue<Texture2D>();
 
     private bool _muted = false;
     private float _volume = 1.0f;

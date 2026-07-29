@@ -12,7 +12,6 @@ partial class Shader
 {
     internal unsafe MGG_Shader* Handle;
 
-    private byte[] _bytecode;
     private readonly Dictionary<VertexInputLayout, PtrTo<MGG_InputLayout>> _cache = new Dictionary<VertexInputLayout, PtrTo<MGG_InputLayout>>();
 
     private static int PlatformProfile()

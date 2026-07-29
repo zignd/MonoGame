@@ -213,6 +213,11 @@ namespace Microsoft.Xna.Framework.Audio
         /// </summary>
         public event EventHandler<EventArgs> BufferReady;
 
+        private void OnBufferReady()
+        {
+            BufferReady?.Invoke(this, EventArgs.Empty);
+        }
+
         #endregion
 
         #region Static Methods

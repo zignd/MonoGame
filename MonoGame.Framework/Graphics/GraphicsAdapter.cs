@@ -7,6 +7,9 @@ using System.Collections.ObjectModel;
 
 namespace Microsoft.Xna.Framework.Graphics
 {
+    /// <summary>
+    /// Represents a graphics adapter that can create and present a graphics device.
+    /// </summary>
     public sealed partial class GraphicsAdapter : IDisposable
     {
         /// <summary>
@@ -54,6 +57,9 @@ namespace Microsoft.Xna.Framework.Graphics
             _adapters[0].IsDefaultAdapter = true;
         }
 
+        /// <summary>
+        /// Gets the default graphics adapter.
+        /// </summary>
         public static GraphicsAdapter DefaultAdapter
         {
             get
@@ -62,7 +68,10 @@ namespace Microsoft.Xna.Framework.Graphics
                 return _adapters[0];
             }
         }
-        
+
+        /// <summary>
+        /// Gets the available graphics adapters.
+        /// </summary>
         public static ReadOnlyCollection<GraphicsAdapter> Adapters
         {
             get
@@ -73,7 +82,7 @@ namespace Microsoft.Xna.Framework.Graphics
         }
 
         /// <summary>
-        /// Used to request creation of the reference graphics device, 
+        /// Used to request creation of the reference graphics device,
         /// or the default hardware accelerated device (when set to false).
         /// </summary>
         /// <remarks>
@@ -102,27 +111,57 @@ namespace Microsoft.Xna.Framework.Graphics
         /// </summary>
         public static bool UseDebugLayers { get; set; }
 
+        /// <summary>
+        /// Gets the adapter description.
+        /// </summary>
         public string Description { get; private set; }
 
+        /// <summary>
+        /// Gets the adapter device identifier.
+        /// </summary>
         public int DeviceId { get; private set; }
 
+        /// <summary>
+        /// Gets the adapter device name.
+        /// </summary>
         public string DeviceName { get; private set; }
 
+        /// <summary>
+        /// Gets the adapter vendor identifier.
+        /// </summary>
         public int VendorId { get; private set; }
 
+        /// <summary>
+        /// Gets whether this adapter is the default adapter.
+        /// </summary>
         public bool IsDefaultAdapter { get; private set; }
 
+        /// <summary>
+        /// Gets the native monitor handle associated with the adapter.
+        /// </summary>
         public IntPtr MonitorHandle { get; private set; }
 
+        /// <summary>
+        /// Gets the adapter revision.
+        /// </summary>
         public int Revision { get; private set; }
 
+        /// <summary>
+        /// Gets the adapter subsystem identifier.
+        /// </summary>
         public int SubSystemId { get; private set; }
-       
+
+        /// <summary>
+        /// Gets the display modes supported by this adapter.
+        /// </summary>
         public DisplayModeCollection SupportedDisplayModes
         {
             get { return _supportedDisplayModes; }
         }
 
+        /// <summary>
+        /// Gets the current display mode for this adapter.
+        /// </summary>
         public DisplayMode CurrentDisplayMode
         {
             get { return _currentDisplayMode; }
@@ -167,7 +206,7 @@ namespace Microsoft.Xna.Framework.Graphics
             selectedFormat = format;
             selectedDepthFormat = depthFormat;
             selectedMultiSampleCount = multiSampleCount;
-			
+
             // fallback for unsupported renderTarget surface formats.
             if (selectedFormat == SurfaceFormat.Alpha8 ||
                 selectedFormat == SurfaceFormat.NormalizedByte2 ||
@@ -184,11 +223,19 @@ namespace Microsoft.Xna.Framework.Graphics
             return (format == selectedFormat) && (depthFormat == selectedDepthFormat) && (multiSampleCount == selectedMultiSampleCount);
 		}
 
+        /// <summary>
+        /// Returns whether this adapter supports the requested graphics profile.
+        /// </summary>
+        /// <param name="graphicsProfile">The graphics profile to query.</param>
+        /// <returns><c>true</c> if the profile is supported; otherwise, <c>false</c>.</returns>
         public bool IsProfileSupported(GraphicsProfile graphicsProfile)
         {
             return PlatformIsProfileSupported(graphicsProfile);
         }
 
+        /// <summary>
+        /// Releases resources used by this adapter.
+        /// </summary>
         public void Dispose()
         {
             // We don't keep any resources, so we have

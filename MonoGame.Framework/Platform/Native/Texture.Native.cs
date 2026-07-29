@@ -19,6 +19,7 @@ public abstract partial class Texture
         }
     }
 
+    /// <inheritdoc />
     protected unsafe override void Dispose(bool disposing)
     {
         PlatformGraphicsDeviceResetting();

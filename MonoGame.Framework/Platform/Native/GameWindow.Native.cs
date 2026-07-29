@@ -74,7 +74,9 @@ internal class NativeGameWindow : GameWindow
         }
     }
 
-    public bool IsFullScreen { get; private set; }
+    private bool _isFullScreen;
+
+    public override bool IsFullScreen => _isFullScreen;
 
     public bool HardwareModeSwitch { get; private set; }
 
@@ -175,14 +177,14 @@ internal class NativeGameWindow : GameWindow
         }
         else if (pp.IsFullScreen && (!IsFullScreen || pp.HardwareModeSwitch != HardwareModeSwitch))
         {
-            IsFullScreen = pp.IsFullScreen;
+            _isFullScreen = pp.IsFullScreen;
             HardwareModeSwitch = pp.HardwareModeSwitch;
 
             MGP.Window_EnterFullScreen(_handle, (byte)(HardwareModeSwitch ? 1 : 0));
         }
         else if (!pp.IsFullScreen && IsFullScreen)
         {
-            IsFullScreen = pp.IsFullScreen;
+            _isFullScreen = pp.IsFullScreen;
 
             MGP.Window_ExitFullScreen(_handle);
         }

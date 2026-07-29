@@ -137,7 +137,7 @@ namespace Microsoft.Xna.Framework.Audio
         {
             if (GetQueuedSampleCount() > 0)
             {
-                BufferReady.Invoke(this, EventArgs.Empty);
+                OnBufferReady();
             }
         }
 
