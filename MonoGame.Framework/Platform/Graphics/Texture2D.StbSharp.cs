@@ -2,11 +2,13 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
-using StbImageSharp;
-using StbImageWriteSharp;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using ImageResult = MonoGame.Framework.Utilities.StbImage.ImageResult;
+using ImageWriter = MonoGame.Framework.Utilities.StbImageWrite.ImageWriter;
+using StbImageColorComponents = MonoGame.Framework.Utilities.StbImage.ColorComponents;
+using StbImageWriteColorComponents = MonoGame.Framework.Utilities.StbImageWrite.ColorComponents;
 
 namespace Microsoft.Xna.Framework.Graphics
 {
@@ -23,7 +25,7 @@ namespace Microsoft.Xna.Framework.Graphics
             ImageResult result;
             if (stream.CanSeek)
             {
-                result = ImageResult.FromStream(stream, StbImageSharp.ColorComponents.RedGreenBlueAlpha);
+                result = ImageResult.FromStream(stream, StbImageColorComponents.RedGreenBlueAlpha);
             }
             else
             {
@@ -32,7 +34,7 @@ namespace Microsoft.Xna.Framework.Graphics
                 {
                     stream.CopyTo(ms);
                     ms.Seek(0, SeekOrigin.Begin);
-                    result = ImageResult.FromStream(ms, StbImageSharp.ColorComponents.RedGreenBlueAlpha);
+                    result = ImageResult.FromStream(ms, StbImageColorComponents.RedGreenBlueAlpha);
                 }
             }
 
@@ -90,10 +92,10 @@ namespace Microsoft.Xna.Framework.Graphics
                     switch (format)
                     {
                         case ImageWriterFormat.Jpg:
-                            writer.WriteJpg(ptr, width, height, StbImageWriteSharp.ColorComponents.RedGreenBlueAlpha, stream, 90);
+                            writer.WriteJpg(ptr, width, height, StbImageWriteColorComponents.RedGreenBlueAlpha, stream, 90);
                             break;
                         case ImageWriterFormat.Png:
-                            writer.WritePng(ptr, width, height, StbImageWriteSharp.ColorComponents.RedGreenBlueAlpha, stream);
+                            writer.WritePng(ptr, width, height, StbImageWriteColorComponents.RedGreenBlueAlpha, stream);
                             break;
                     }
                 }

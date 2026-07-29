@@ -1,8 +1,10 @@
 using System;
 using System.IO;
 using Microsoft.Xna.Framework;
-using StbImageSharp;
-using StbImageWriteSharp;
+using ImageResult = MonoGame.Framework.Utilities.StbImage.ImageResult;
+using ImageWriter = MonoGame.Framework.Utilities.StbImageWrite.ImageWriter;
+using StbImageColorComponents = MonoGame.Framework.Utilities.StbImage.ColorComponents;
+using StbImageWriteColorComponents = MonoGame.Framework.Utilities.StbImageWrite.ColorComponents;
 
 namespace MonoGame.Tests
 {
@@ -10,7 +12,7 @@ namespace MonoGame.Tests
     {
         public static unsafe FramePixelData FromFile(string filename)
         {
-            var result = ImageResult.FromMemory(File.ReadAllBytes(filename), StbImageSharp.ColorComponents.RedGreenBlueAlpha);
+            var result = ImageResult.FromMemory(File.ReadAllBytes(filename), StbImageColorComponents.RedGreenBlueAlpha);
 			var frame = new FramePixelData(result.Width, result.Height);
 			
 			fixed (byte* b = &result.Data[0])
@@ -34,9 +36,9 @@ namespace MonoGame.Tests
 				{
 					var writer = new ImageWriter();
                     if (filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
-					    writer.WritePng(ptr, Width, Height, StbImageWriteSharp.ColorComponents.RedGreenBlueAlpha, stream);
+					    writer.WritePng(ptr, Width, Height, StbImageWriteColorComponents.RedGreenBlueAlpha, stream);
                     else if (filename.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
-                        writer.WriteBmp(ptr, Width, Height, StbImageWriteSharp.ColorComponents.RedGreenBlueAlpha, stream);
+                        writer.WriteBmp(ptr, Width, Height, StbImageWriteColorComponents.RedGreenBlueAlpha, stream);
                     else
                         throw new NotImplementedException();
                 }

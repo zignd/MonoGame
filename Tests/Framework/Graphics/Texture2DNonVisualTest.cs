@@ -9,7 +9,8 @@ using System.Runtime.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using NUnit.Framework;
-using StbImageSharp;
+using ImageResult = MonoGame.Framework.Utilities.StbImage.ImageResult;
+using StbImageColorComponents = MonoGame.Framework.Utilities.StbImage.ColorComponents;
 
 namespace MonoGame.Tests.Graphics
 {
@@ -41,7 +42,7 @@ namespace MonoGame.Tests.Graphics
             Assert.NotNull(_texture);
             try
             {
-                var bitmap = ImageResult.FromMemory(File.ReadAllBytes(filename), StbImageSharp.ColorComponents.RedGreenBlueAlpha);
+                var bitmap = ImageResult.FromMemory(File.ReadAllBytes(filename), StbImageColorComponents.RedGreenBlueAlpha);
                 Assert.AreEqual((int)bitmap.Height, _texture.Height);
                 Assert.AreEqual((int)bitmap.Width, _texture.Width);
             }//The dds file test case can't be checked with System.Drawing because it does not understand this format

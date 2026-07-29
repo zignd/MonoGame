@@ -33,15 +33,6 @@
     <None Remove="Utilities\System.Numerics.Vectors\**\*" />
   </ItemGroup>
 	
-  <!--
-        We leave this because we made it part of the public API, but the native
-        backend doesn't use it to load or save textures.
-  -->
-  <ItemGroup>
-    <Compile Include="..\ThirdParty\StbImageSharp\src\**\*.cs" LinkBase="Utilities\StbImageSharp" />
-	<Compile Include="..\ThirdParty\StbImageWriteSharp\src\**\*.cs" LinkBase="Utilities\StbImageWriteSharp" />
-  </ItemGroup>
-
   <ItemGroup>
     <Compile Include="Platform\Input\InputKeyEventArgs.cs" />
     <Compile Include="Platform\Utilities\AssemblyHelper.cs" />

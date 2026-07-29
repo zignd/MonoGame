@@ -129,12 +129,7 @@ License: MIT OR Unlicense
 Comment: MonoGame uses stb_image, stb_image_write, and stb_image_resize2 from 
          the vendored stb repository.
 
-Files: MonoGame/ThirdParty/SDL_GameControllerDB/*
-Component: SDL_GameControllerDB
-Copyright: 1997-2022 Sam Lantinga <slouken@libsdl.org>
-License: Zlib
-
-Files: MonoGame/ThirdParty/StbImageSharp/*
+Files: MonoGame/MonoGame.Framework/Utilities/StbImage/*
 Component: StbImageSharp
 Copyright: 2017 Sean Barrett
 License: MIT OR Unlicense
@@ -143,7 +138,7 @@ Comment: StbImageSharp is a C# port of stb_image.h. The StbImageSharp repository
          provide an explicit SPDX identifier for the port itself. The original
          stb_image.h licensing terms have therefore been preserved.
 
-Files: MonoGame/ThirdParty/StbImageWriteSharp/*
+Files: MonoGame/MonoGame.Framework/Utilities/StbImageWrite/*
 Component: StbImageWriteSharp
 Copyright: 2017 Sean Barrett
 License: MIT OR Unlicense
