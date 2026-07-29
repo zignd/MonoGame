@@ -1,12 +1,3 @@
-[submodule "ThirdParty/SDL_GameControllerDB"]
-	path = ThirdParty/SDL_GameControllerDB
-	url = https://github.com/gabomdq/SDL_GameControllerDB.git
-[submodule "ThirdParty/StbImageSharp"]
-	path = ThirdParty/StbImageSharp
-	url = https://github.com/StbSharp/StbImageSharp.git
-[submodule "ThirdParty/StbImageWriteSharp"]
-	path = ThirdParty/StbImageWriteSharp
-	url = https://github.com/StbSharp/StbImageWriteSharp.git
 [submodule "src/monogame/external/sdl2"]
 	path = native/monogame/external/sdl2
 	url = https://github.com/MonoGame/MonoGame.Library.SDL.git

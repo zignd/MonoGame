@@ -9,7 +9,7 @@ namespace MonoGame.Framework.Utilities
     {
         // This helper caches the Marshal.SizeOf result
         // as it generates an allocation on each call.
-        static class SizeOf<T>
+        internal static class SizeOf<T>
         {
             static int _sizeOf;
 

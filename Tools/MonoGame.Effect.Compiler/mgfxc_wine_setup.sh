@@ -15,7 +15,7 @@ then
     exit 1
 fi
 
-# wine 8 is the minimum requirement for dotnet 8
+# wine 8 is the minimum requirement for dotnet 8+
 # wine --version will output "wine-#.# (Distro #.#.#)" or "wine-#.#"
 WINE_VERSION=$(wine --version 2>&1 | grep -oP 'wine-\d+' | sed 's/wine-//')
 if (( $WINE_VERSION < 8 )); then
@@ -44,7 +44,7 @@ wine64 regedit crashdialog.reg
 popd
 
 # get dotnet
-DOTNET_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/8.0.201/dotnet-sdk-8.0.201-win-x64.zip"
+DOTNET_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.103/dotnet-sdk-10.0.103-win-x64.zip"
 curl $DOTNET_URL --output "$SCRIPT_DIR/dotnet-sdk.zip"
 7z x "$SCRIPT_DIR/dotnet-sdk.zip" -o"$WINEPREFIX/drive_c/windows/system32/"
 

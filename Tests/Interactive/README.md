@@ -30,7 +30,7 @@ To run the test and launch via a simulator:
 
 ```bash
 cd Tests/Interactive/TestRunners/iOS
-dotnet run --project= MonoGame.InteractiveTests.iOS.csproj -c Debug -f net8.0-ios
+dotnet run --project= MonoGame.InteractiveTests.iOS.csproj -c Debug -f net10.0-ios
 
 ```
 
@@ -41,15 +41,15 @@ To run the test on a specific device (or a specific simulator):
 /Applications/Xcode.app/Contents/Developer/usr/bin/xctrace list devices
 
 cd Tests/Interactive/TestRunners/iOS 
-dotnet build -t:Run -f net8.0-ios   -p:RuntimeIdentifier=ios-arm64  MonoGame.InteractiveTests.iOS.csproj -p:_DeviceName="<device id>"
+dotnet build -t:Run -f net10.0-ios   -p:RuntimeIdentifier=ios-arm64  MonoGame.InteractiveTests.iOS.csproj -p:_DeviceName="<device id>"
 
 cd Tests/Interactive/TestRunners/iOS
 
 # To run on a simulator:
-dotnet run --project= MonoGame.InteractiveTests.iOS.csproj -c Debug -f net8.0-ios 
+dotnet run --project= MonoGame.InteractiveTests.iOS.csproj -c Debug -f net10.0-ios
 
 # To run on a specific simulator (use XCode -> Windows -> Devices and Simulators to find the UDID):
-dotnet build -t:Run -f net8.0-ios  -p:RuntimeIdentifier=iossimulator-arm64  MonoGame.InteractiveTests.iOS.csproj   -p:_DeviceName=:v2:udid="$1"
+dotnet build -t:Run -f net10.0-ios  -p:RuntimeIdentifier=iossimulator-arm64  MonoGame.InteractiveTests.iOS.csproj   -p:_DeviceName=:v2:udid="$1"
 
 ```
 
