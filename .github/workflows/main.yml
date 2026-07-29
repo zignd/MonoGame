@@ -416,7 +416,7 @@ jobs:
           path: tests-desktopgl
           
       - name: Download tests-windowsdx-${{ matrix.platform }}
-        if: runner.os == 'Windows' && runner.environment != 'github-hosted'
+        if: runner.os == 'Windows'
         uses: actions/download-artifact@v4
         with:
           name: tests-windowsdx-${{ matrix.platform }}
@@ -534,10 +534,18 @@ jobs:
         working-directory: tests-desktopgl
 
       - name: Run Visual Tests
+        if: runner.environment != 'github-hosted' || runner.os != 'Windows'
         run: dotnet MonoGame.Tests.dll --timeout=300000 --test MonoGame.Tests.Visual
         env:
           CI: true
         working-directory: tests-desktopgl
+
+      - name: Run Visual Tests (WindowsDX)
+        if: runner.os == 'Windows' && runner.environment == 'github-hosted'
+        run: dotnet MonoGame.Tests.dll --timeout=300000 --test MonoGame.Tests.Visual
+        env:
+          CI: true
+        working-directory: tests-windowsdx
 
       - name: Run Game Tests
         if: runner.environment != 'github-hosted' || runner.os == 'Linux' 
