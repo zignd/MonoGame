@@ -18,7 +18,7 @@
 	url = https://github.com/nothings/stb
 [submodule "native/monogame/external/faudio"]
 	path = native/monogame/external/faudio
-	url = https://github.com/FNA-XNA/FAudio.git
+	url = https://github.com/zignd/FAudio.git
 [submodule "native/monogame/external/sdl3"]
 	path = native/monogame/external/sdl3
 	url = https://github.com/libsdl-org/SDL.git
