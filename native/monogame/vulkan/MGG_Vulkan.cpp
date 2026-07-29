@@ -40,7 +40,14 @@
 
 #define VMA_IMPLEMENTATION
 #define VMA_STATIC_VULKAN_FUNCTIONS 1
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+#endif
 #include <vk_mem_alloc.h>
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #if defined(MG_SDL3)
 #include <SDL3/SDL_vulkan.h>
@@ -614,6 +621,7 @@ static VkFormat ToVkFormat(MGSurfaceFormat format)
 	default:
 		assert(0);
 	}
+	return VK_FORMAT_UNDEFINED;
 }
 
 static VkFormat ToVkFormat(MGDepthFormat format)
@@ -722,6 +730,9 @@ static VkImageCreateFlags ToVkImageCreateFlags(MGTextureType type)
 	{
 	case MGTextureType::Cube:
 		return VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	case MGTextureType::_2D:
+	case MGTextureType::_3D:
+		return 0;
 	}
 	return 0;
 }

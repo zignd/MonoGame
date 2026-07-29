@@ -65,7 +65,6 @@ public sealed class BuildNativeDependenciesTask : FrostingTask<BuildContext>
             .Append("-B").AppendQuoted(context.MakeAbsolute(new DirectoryPath(faudioBuildDir)).FullPath)
             .Append("-DBUILD_SHARED_LIBS=OFF")
             .Append($"-DCMAKE_C_STANDARD_INCLUDE_DIRECTORIES=\"{context.MakeAbsolute(new DirectoryPath(sdlIncludeDir))}\"")
-            .Append($"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES=\"{context.MakeAbsolute(new DirectoryPath(sdlIncludeDir))}\"")
             .Append("-DBUILD_SDL3=OFF");
 
         AppendPlatformCMakeArgs(configureArgs, context, isSDL: false, targetArch);
@@ -99,6 +98,10 @@ public sealed class BuildNativeDependenciesTask : FrostingTask<BuildContext>
             case PlatformFamily.OSX:
                 args.Append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64");
                 args.Append("-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15");
+                if (isSDL)
+                    args.Append("-DCMAKE_C_FLAGS=\"-Wno-deprecated-declarations -Wno-gnu-folding-constant\"");
+                else
+                    args.Append("-DCMAKE_C_FLAGS=\"-Wno-tautological-compare\"");
                 break;
         }
     }
