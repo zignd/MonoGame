@@ -763,8 +763,12 @@ static bool MGMTL_EnsureEncoder(MGG_GraphicsDevice* device)
 
         MTLRenderPassColorAttachmentDescriptor* ca = rp.colorAttachments[0];
         ca.texture = colorTex;
-        ca.loadAction = device->clearColor ? MTLLoadActionClear : MTLLoadActionLoad;
-        ca.clearColor = device->clearColorValue;
+        // A CAMetalDrawable has undefined contents when acquired, so loading it can expose stale
+        // swapchain memory before the first successful draw of a frame.
+        ca.loadAction = MTLLoadActionClear;
+        ca.clearColor = device->clearColor
+            ? device->clearColorValue
+            : MTLClearColorMake(0.0, 0.0, 0.0, 1.0);
         if (resolveTex != nil)
         {
             ca.resolveTexture = resolveTex;
