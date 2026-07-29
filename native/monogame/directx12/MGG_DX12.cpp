@@ -458,7 +458,7 @@ void MGG_GraphicsAdapter_GetInfo(MGG_GraphicsAdapter* adapter, MGG_GraphicsAdapt
 			DXGI_MODE_DESC* pDescs = new DXGI_MODE_DESC[num];
 			pOutput->GetDisplayModeList(format, flags, &num, pDescs);
 
-			for (int j = 0; j < num; j++)
+            for (UINT j = 0; j < num; j++)
 			{
 				MGG_DisplayMode mode;
 				mode.width = pDescs[j].Width;
@@ -987,7 +987,7 @@ void MGG_GraphicsDevice_SetVertexBuffer(MGG_GraphicsDevice* device, mgint slot, 
 
 	device->vertexBuffers[slot] = buffer;
 	device->vertexOffsets[slot] = vertexOffset;
-	device->vertexBuffersDirty |= 1ul << slot;
+	device->vertexBuffersDirty |= 1ull << slot;
 }
 
 void MGG_GraphicsDevice_SetShader(MGG_GraphicsDevice* device, MGShaderStage stage, MGG_Shader* shader)
@@ -1089,7 +1089,7 @@ void MGDX_ApplyState(MGG_GraphicsDevice* device)
 
 		for (int i = 0; i < 16; i++)
 		{
-			if ((device->vertexBuffersDirty & (1 << i)) == 0)
+			if ((device->vertexBuffersDirty & (1ull << i)) == 0)
 				continue;
 
 			auto buffer = device->vertexBuffers[i];
@@ -1320,7 +1320,7 @@ MGG_BlendState* MGG_BlendState_Create(MGG_GraphicsDevice* device, MGG_BlendState
 								infos[i].colorDestBlend == MGBlend::Zero &&
 								infos[i].alphaSourceBlend == MGBlend::One &&
 								infos[i].alphaDestBlend == MGBlend::Zero);
-		state->blending |= bstate.BlendEnable;
+		state->blending = state->blending || bstate.BlendEnable != FALSE;
 
 		bstate.SrcBlend = BlendToD3D12_BLEND[(int)infos[i].colorSourceBlend];
 		bstate.DestBlend = BlendToD3D12_BLEND[(int)infos[i].colorDestBlend];
@@ -1328,7 +1328,7 @@ MGG_BlendState* MGG_BlendState_Create(MGG_GraphicsDevice* device, MGG_BlendState
 		bstate.SrcBlendAlpha = BlendToAlphaD3D12_BLEND[(int)infos[i].alphaSourceBlend];
 		bstate.DestBlendAlpha = BlendToAlphaD3D12_BLEND[(int)infos[i].alphaDestBlend];
 		bstate.BlendOpAlpha = BlendFunctionToD3D12_BLEND_OP[(int)infos[i].alphaBlendFunc];
-		bstate.RenderTargetWriteMask = (uint8_t)infos[i].colorWriteChannels;
+		bstate.RenderTargetWriteMask = static_cast<UINT8>(infos[i].colorWriteChannels);
 	}
 
 	return state;
@@ -1695,7 +1695,7 @@ void MGG_Buffer_SetData(MGG_GraphicsDevice* device, MGG_Buffer*& buffer, mgint o
 			if (device->vertexBuffers[i] == last)
 			{
 				device->vertexBuffers[i] = buffer;
-				device->vertexBuffersDirty |= 1ul << i;
+				device->vertexBuffersDirty |= 1ull << i;
 			}
 		}
 	

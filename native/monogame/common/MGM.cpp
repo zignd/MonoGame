@@ -27,7 +27,12 @@ void MGM_ReadSignature(const char* filepath, uint8_t* signature)
 {
 	memset(signature, 0, 16);
 
-	FILE* handle = fopen(filepath, "rb");
+	FILE* handle = nullptr;
+#if defined(_MSC_VER)
+	fopen_s(&handle, filepath, "rb");
+#else
+	handle = fopen(filepath, "rb");
+#endif
 	if (handle == nullptr)
 		return;
 

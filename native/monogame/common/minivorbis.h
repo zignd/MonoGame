@@ -4621,7 +4621,7 @@ STIN int vorbis_ftoi(double f){
 #define cPI2_8 .70710678118654752441F
 #define cPI1_8 .92387953251128675613F
 
-#define FLOAT_CONV(x) (x)
+#define FLOAT_CONV(x) ((float)(x))
 #define MULT_NORM(x) (x)
 #define HALVE(x) ((x)*.5f)
 
@@ -6712,7 +6712,7 @@ void mdct_init(mdct_lookup *lookup,int n){
 
   int i;
   int n2=n>>1;
-  int log2n=lookup->log2n=rint(log((float)n)/log(2.f));
+  int log2n=lookup->log2n=(int)rint(log((float)n)/log(2.f));
   lookup->n=n;
   lookup->trig=T;
   lookup->bitrev=bitrev;
@@ -9334,7 +9334,7 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
       if(b->sample_count>v->granulepos){
         /* corner case; if this is both the first and last audio page,
            then spec says the end is cut, not beginning */
-       long extra=b->sample_count-vb->granulepos;
+      long extra=(long)(b->sample_count-vb->granulepos);
 
         /* we use ogg_int64_t for granule positions because a
            uint64 isn't universally available.  Unfortunately,
@@ -9372,7 +9372,7 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
     if(vb->granulepos!=-1 && v->granulepos!=vb->granulepos){
 
       if(v->granulepos>vb->granulepos){
-        long extra=v->granulepos-vb->granulepos;
+        long extra=(long)(v->granulepos-vb->granulepos);
 
         if(extra)
           if(vb->eofflag){
@@ -9564,7 +9564,7 @@ void _ve_envelope_init(envelope_lookup *e,vorbis_info *vi){
   mdct_init(&e->mdct,n);
 
   for(i=0;i<n;i++){
-    e->mdct_win[i]=sin(i/(n-1.)*M_PI);
+    e->mdct_win[i]=(float)sin(i/(n-1.)*M_PI);
     e->mdct_win[i]*=e->mdct_win[i];
   }
 
@@ -9581,10 +9581,10 @@ void _ve_envelope_init(envelope_lookup *e,vorbis_info *vi){
     n=e->band[j].end;
     e->band[j].window=(float*)_ogg_malloc(n*sizeof(*e->band[0].window));
     for(i=0;i<n;i++){
-      e->band[j].window[i]=sin((i+.5)/n*M_PI);
+      e->band[j].window[i]=(float)sin((i+.5)/n*M_PI);
       e->band[j].total+=e->band[j].window[i];
     }
-    e->band[j].total=1./e->band[j].total;
+    e->band[j].total=1.f/e->band[j].total;
   }
 
   e->filter=(envelope_filter_state*)_ogg_calloc(VE_BANDS*ch,sizeof(*e->filter));
@@ -13225,10 +13225,10 @@ void _vp_psy_init(vorbis_look_psy *p,vorbis_info_psy *vi,
   p->rate=rate;
 
   /* AoTuV HF weighting */
-  p->m_val = 1.;
+  p->m_val = 1.f;
   if(rate < 26000) p->m_val = 0;
-  else if(rate < 38000) p->m_val = .94;   /* 32kHz */
-  else if(rate > 46000) p->m_val = 1.275; /* 48kHz */
+  else if(rate < 38000) p->m_val = .94f;   /* 32kHz */
+  else if(rate > 46000) p->m_val = 1.275f; /* 48kHz */
 
   /* set up the lookups for a given blocksize and sample rate */
 
@@ -13742,24 +13742,24 @@ void _vp_offset_and_mix(vorbis_look_psy *p,
     */
 
     if(offset_select == 1) {
-      coeffi = -17.2;       /* coeffi is a -17.2dB threshold */
+      coeffi = -17.2f;       /* coeffi is a -17.2dB threshold */
       val = val - logmdct[i];  /* val == mdct line value relative to floor in dB */
 
       if(val > coeffi){
         /* mdct value is > -17.2 dB below floor */
 
-        de = 1.0-((val-coeffi)*0.005*cx);
+        de = 1.0f-((val-coeffi)*0.005f*cx);
         /* pro-rated attenuation:
            -0.00 dB boost if mdct value is -17.2dB (relative to floor)
            -0.77 dB boost if mdct value is 0dB (relative to floor)
            -1.64 dB boost if mdct value is +17.2dB (relative to floor)
            etc... */
 
-        if(de < 0) de = 0.0001;
+        if(de < 0) de = 0.0001f;
       }else
         /* mdct value is <= -17.2 dB below floor */
 
-        de = 1.0-((val-coeffi)*0.0003*cx);
+        de = 1.0f-((val-coeffi)*0.0003f*cx);
       /* pro-rated attenuation:
          +0.00 dB atten if mdct value is -17.2dB (relative to floor)
          +0.45 dB atten if mdct value is -34.4dB (relative to floor)
@@ -14209,19 +14209,21 @@ void vorbis_comment_add(vorbis_comment *vc,const char *comment){
                             (vc->comments+2)*sizeof(*vc->user_comments));
   vc->comment_lengths=(int*)_ogg_realloc(vc->comment_lengths,
                                   (vc->comments+2)*sizeof(*vc->comment_lengths));
-  vc->comment_lengths[vc->comments]=strlen(comment);
+  vc->comment_lengths[vc->comments]=(int)strlen(comment);
   vc->user_comments[vc->comments]=(char*)_ogg_malloc(vc->comment_lengths[vc->comments]+1);
-  strcpy(vc->user_comments[vc->comments], comment);
+  memcpy(vc->user_comments[vc->comments], comment, vc->comment_lengths[vc->comments]+1);
   vc->comments++;
   vc->user_comments[vc->comments]=NULL;
 }
 
 void vorbis_comment_add_tag(vorbis_comment *vc, const char *tag, const char *contents){
   /* Length for key and value +2 for = and \0 */
-  char *comment=(char*)_ogg_malloc(strlen(tag)+strlen(contents)+2);
-  strcpy(comment, tag);
-  strcat(comment, "=");
-  strcat(comment, contents);
+  size_t tag_length=strlen(tag);
+  size_t contents_length=strlen(contents);
+  char *comment=(char*)_ogg_malloc(tag_length+contents_length+2);
+  memcpy(comment, tag, tag_length);
+  comment[tag_length]='=';
+  memcpy(comment+tag_length+1, contents, contents_length+1);
   vorbis_comment_add(vc, comment);
   _ogg_free(comment);
 }
@@ -14241,11 +14243,12 @@ static int tagcompare(const char *s1, const char *s2, int n){
 char *vorbis_comment_query(vorbis_comment *vc, const char *tag, int count){
   long i;
   int found = 0;
-  int taglen = strlen(tag)+1; /* +1 for the = we append */
+  int taglen = (int)strlen(tag)+1; /* +1 for the = we append */
   char *fulltag = (char*)_ogg_malloc(taglen+1);
 
-  strcpy(fulltag, tag);
-  strcat(fulltag, "=");
+  memcpy(fulltag, tag, taglen-1);
+  fulltag[taglen-1]='=';
+  fulltag[taglen]='\0';
 
   for(i=0;i<vc->comments;i++){
     if(!tagcompare(vc->user_comments[i], fulltag, taglen)){
@@ -14264,10 +14267,11 @@ char *vorbis_comment_query(vorbis_comment *vc, const char *tag, int count){
 
 int vorbis_comment_query_count(vorbis_comment *vc, const char *tag){
   int i,count=0;
-  int taglen = strlen(tag)+1; /* +1 for the = we append */
+  int taglen = (int)strlen(tag)+1; /* +1 for the = we append */
   char *fulltag = (char*)_ogg_malloc(taglen+1);
-  strcpy(fulltag,tag);
-  strcat(fulltag, "=");
+  memcpy(fulltag, tag, taglen-1);
+  fulltag[taglen-1]='=';
+  fulltag[taglen]='\0';
 
   for(i=0;i<vc->comments;i++){
     if(!tagcompare(vc->user_comments[i], fulltag, taglen))
@@ -20306,7 +20310,12 @@ int ov_open(FILE *f,OggVorbis_File *vf,const char *initial,long ibytes){
 
 int ov_fopen(const char *path,OggVorbis_File *vf){
   int ret;
-  FILE *f = fopen(path,"rb");
+  FILE *f = NULL;
+#if defined(_MSC_VER)
+  fopen_s(&f,path,"rb");
+#else
+  f = fopen(path,"rb");
+#endif
   if(!f) return -1;
 
   ret = ov_open(f,vf,NULL,0);

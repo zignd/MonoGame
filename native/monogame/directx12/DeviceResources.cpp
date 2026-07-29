@@ -276,8 +276,16 @@ public:
             // Windows runner.  So what are we doing wrong on DX12 that
             // we need to do this here?
             //
-            const char* running_unit_tests = std::getenv("MG_RUNNING_UNIT_TESTS");
-            if (running_unit_tests != nullptr)
+            bool runningUnitTests = false;
+#if defined(_MSC_VER)
+            size_t runningUnitTestsLength = 0;
+            char runningUnitTestsValue[2] = {};
+            getenv_s(&runningUnitTestsLength, runningUnitTestsValue, sizeof(runningUnitTestsValue), "MG_RUNNING_UNIT_TESTS");
+            runningUnitTests = runningUnitTestsLength > 0;
+#else
+            runningUnitTests = std::getenv("MG_RUNNING_UNIT_TESTS") != nullptr;
+#endif
+            if (runningUnitTests)
                 desc.PreferredBlockSize = 4ull * 1024 * 1024;
 #else
             Microsoft::WRL::ComPtr<IDXGIDevice1> dxgiDevice;

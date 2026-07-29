@@ -219,12 +219,17 @@ MGP_Platform* MGP_Platform_Create(MGGameRunBehavior& behavior)
     //
     //_CrtSetBreakAlloc(327);
 
-	if (SDL_WasInit(0) == 0) {
-		if (SDL_Init(
+    if (SDL_WasInit(0) == 0) {
+        const auto initResult = SDL_Init(
 			SDL_INIT_VIDEO |
 			SDL_INIT_JOYSTICK |
 			SDL_INIT_GAMECONTROLLER |
-			SDL_INIT_HAPTIC) < 0)
+            SDL_INIT_HAPTIC);
+#if defined(MG_SDL3)
+        if (!initResult)
+#else
+        if (initResult < 0)
+#endif
 		{
 			printf("SDL_Init failed: %s\n", SDL_GetError());
             fflush(stdout);

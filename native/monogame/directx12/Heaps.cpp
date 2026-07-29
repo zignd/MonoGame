@@ -75,9 +75,10 @@ Heaps::Heaps(ID3D12Device* device, int backBufferCount) {
     m_rtvHeap = std::make_unique<NonShaderVisibleDescHeap>(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1024);
     m_dsvHeap = std::make_unique<NonShaderVisibleDescHeap>(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1024);
 
-    for (UINT n = 0; n < backBufferCount; n++)
+    const UINT backBufferCountUint = static_cast<UINT>(backBufferCount);
+    for (UINT n = 0; n < backBufferCountUint; n++)
         m_srvShaderHeap[n] = std::make_unique<ShaderVisibleDescHeap>(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1 << 16);
-    for (UINT n = 0; n < backBufferCount; n++)
+    for (UINT n = 0; n < backBufferCountUint; n++)
         m_samplerShaderHeap[n] = std::make_unique<ShaderVisibleDescHeap>(device, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 2048);
 
     D3D12_QUERY_HEAP_DESC queryHeapDesc = { D3D12_QUERY_HEAP_TYPE_OCCLUSION, 1024 };

@@ -212,8 +212,7 @@ function faudio()
     filter {"system:macosx"}
     libdirs {faudio_build}
     linkoptions {
-        "-Wl,-force_load," .. faudio_build .. "/libFAudio.a",
-        "-Wl,-ld_classic"
+        "-Wl,-force_load," .. faudio_build .. "/libFAudio.a"
     }
 
     filter {"system:linux"}

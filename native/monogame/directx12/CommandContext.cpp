@@ -311,10 +311,10 @@ void CommandContext::SetPSODeviceParameters(D3D12_GRAPHICS_PIPELINE_STATE_DESC& 
     psoDesc.SampleMask = UINT32_MAX;
     psoDesc.SampleDesc = m_currentRT[0]->GetSampleDesc();
 
-    psoDesc.NumRenderTargets = m_currentRT.size();
-    for (int i = 0; i < m_currentRT.size(); i++)
+    psoDesc.NumRenderTargets = static_cast<UINT>(m_currentRT.size());
+    for (size_t i = 0; i < m_currentRT.size(); i++)
         psoDesc.RTVFormats[i] = m_currentRT[i]->GetFormat();
-    for (int i = m_currentRT.size(); i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
+    for (size_t i = m_currentRT.size(); i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
         psoDesc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
     psoDesc.DSVFormat = m_currentDepthStencil ? m_currentDepthStencil->GetFormat() : DXGI_FORMAT_UNKNOWN;
 }

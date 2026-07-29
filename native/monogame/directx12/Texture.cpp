@@ -43,13 +43,13 @@ Texture::Texture(SurfaceType type, TextureDimension dimension, int width, int he
 
     switch (dimension) {
     case TextureDimension::Texture2D:
-        impl->m_desc = CD3DX12_RESOURCE_DESC::Tex2D(TextureFormatToDXGI_FORMAT(format), width, height, depth, mipLevels, 1, 0, flags);
+        impl->m_desc = CD3DX12_RESOURCE_DESC::Tex2D(TextureFormatToDXGI_FORMAT(format), static_cast<UINT64>(width), static_cast<UINT>(height), static_cast<UINT16>(depth), static_cast<UINT16>(mipLevels), 1, 0, flags);
         break;
     case TextureDimension::Texture3D:
-        impl->m_desc = CD3DX12_RESOURCE_DESC::Tex3D(TextureFormatToDXGI_FORMAT(format), width, height, depth, mipLevels, flags);
+        impl->m_desc = CD3DX12_RESOURCE_DESC::Tex3D(TextureFormatToDXGI_FORMAT(format), static_cast<UINT64>(width), static_cast<UINT>(height), static_cast<UINT16>(depth), static_cast<UINT16>(mipLevels), flags);
         break;
     case TextureDimension::TextureCube:
-        impl->m_desc = CD3DX12_RESOURCE_DESC::Tex2D(TextureFormatToDXGI_FORMAT(format), width, height, 6, mipLevels, 1, 0, flags);
+        impl->m_desc = CD3DX12_RESOURCE_DESC::Tex2D(TextureFormatToDXGI_FORMAT(format), static_cast<UINT64>(width), static_cast<UINT>(height), 6, static_cast<UINT16>(mipLevels), 1, 0, flags);
         break;
     }
 }
@@ -61,7 +61,7 @@ Texture::Texture(int width, int height, MGDepthFormat format) {
     impl->m_levels = 1;
     impl->m_dimension = TextureDimension::Texture2D;
     impl->m_currentState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-    impl->m_desc = CD3DX12_RESOURCE_DESC::Tex2D(DepthFormatToDXGI_FORMAT[(int)format], width, height, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+    impl->m_desc = CD3DX12_RESOURCE_DESC::Tex2D(DepthFormatToDXGI_FORMAT[(int)format], static_cast<UINT64>(width), static_cast<UINT>(height), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 }
 
 Texture::Texture(const Texture& other) {
@@ -235,7 +235,7 @@ void Texture::Create(DeviceResources* device, bool createViews) {
                 else
                 {
                     rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
-                    rtvDesc.Texture2DMSArray.FirstArraySlice = i;
+                    rtvDesc.Texture2DMSArray.FirstArraySlice = static_cast<UINT>(i);
                     rtvDesc.Texture2DMSArray.ArraySize = 1;
                 }
             }
@@ -246,7 +246,7 @@ void Texture::Create(DeviceResources* device, bool createViews) {
                 else
                 {
                     rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
-                    rtvDesc.Texture2DArray.FirstArraySlice = i;
+                    rtvDesc.Texture2DArray.FirstArraySlice = static_cast<UINT>(i);
                     rtvDesc.Texture2DArray.ArraySize = 1;
                 }
             }
@@ -254,7 +254,7 @@ void Texture::Create(DeviceResources* device, bool createViews) {
 
         case TextureDimension::Texture3D:
             rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
-            rtvDesc.Texture3D.FirstWSlice = i;
+            rtvDesc.Texture3D.FirstWSlice = static_cast<UINT>(i);
             rtvDesc.Texture3D.WSize = 1;
             break;
 
@@ -263,13 +263,13 @@ void Texture::Create(DeviceResources* device, bool createViews) {
             {
                 rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
                 rtvDesc.Texture2DMSArray.ArraySize = 1;
-                rtvDesc.Texture2DMSArray.FirstArraySlice = i;
+                rtvDesc.Texture2DMSArray.FirstArraySlice = static_cast<UINT>(i);
             }
             else
             {
                 rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
                 rtvDesc.Texture2DArray.ArraySize = 1;
-                rtvDesc.Texture2DArray.FirstArraySlice = i;
+                rtvDesc.Texture2DArray.FirstArraySlice = static_cast<UINT>(i);
             }
             break;
         }
@@ -343,7 +343,7 @@ void Texture::SetData(DeviceResources* device, uint32_t subResId, uint8_t* data,
         break;
     }
 
-    D3D12_SUBRESOURCE_DATA initData = { data, rowPitch, slicePitch };
+    D3D12_SUBRESOURCE_DATA initData = { data, static_cast<LONG_PTR>(rowPitch), static_cast<LONG_PTR>(slicePitch) };
     UpdateSubresources(cmdList, impl->m_res.Get(), uploadBuffer.Get(), 0, subResId, 1, &initData);
 
     impl->m_currentState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
@@ -402,7 +402,7 @@ void Graphics::Texture::SetData(DeviceResources* device, uint32_t subResId, uint
         {
             for (size_t y = 0; y < height; y++)
             {
-                memcpy(dst, src, fpRowPitch);
+                memcpy(dst, src, static_cast<size_t>(fpRowPitch));
                 dst += dstRowPitch;
                 src += fpRowPitch;
             }
@@ -423,7 +423,7 @@ void Graphics::Texture::SetData(DeviceResources* device, uint32_t subResId, uint
 
     D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint = {};
     footprint.Footprint.Width = static_cast<UINT>(copyDesc.Width);
-    footprint.Footprint.Height = copyDesc.Height;
+    footprint.Footprint.Height = static_cast<UINT>(copyDesc.Height);
     footprint.Footprint.Depth = copyDesc.DepthOrArraySize;
     footprint.Footprint.RowPitch = static_cast<UINT>(dstRowPitch);
     footprint.Footprint.Format = copyDesc.Format;
@@ -488,8 +488,8 @@ void Graphics::Texture::GetData(DeviceResources* device, uint32_t subResId, uint
     }
 
     D3D12_PLACED_SUBRESOURCE_FOOTPRINT bufferFootprint = {};
-    bufferFootprint.Footprint.Width = copyDesc.Width;
-    bufferFootprint.Footprint.Height = copyDesc.Height;
+    bufferFootprint.Footprint.Width = static_cast<UINT>(copyDesc.Width);
+    bufferFootprint.Footprint.Height = static_cast<UINT>(copyDesc.Height);
     bufferFootprint.Footprint.Depth = copyDesc.DepthOrArraySize;
     bufferFootprint.Footprint.RowPitch = static_cast<UINT>(dstRowPitch);
     bufferFootprint.Footprint.Format = copyDesc.Format;
@@ -511,7 +511,7 @@ void Graphics::Texture::GetData(DeviceResources* device, uint32_t subResId, uint
 
     // Phew, the copy is done we can map the resource and read it now
 
-    D3D12_RANGE readbackBufferRange{ 0, readbackBufferSize };
+    D3D12_RANGE readbackBufferRange{ 0, static_cast<SIZE_T>(readbackBufferSize) };
     void* pReadbackBufferData{};
     ThrowIfFailed(readbackBuffer->Map(0, &readbackBufferRange, &pReadbackBufferData));
 
@@ -537,8 +537,8 @@ void Graphics::Texture::GetData(DeviceResources* device, uint32_t subResId, uint
         break;
     }
 
-    UINT cpuSlicePitch = h * fpRowPitch;
-    UINT gpuSlicePitch = h * dstRowPitch;
+    UINT cpuSlicePitch = static_cast<UINT>(h * fpRowPitch);
+    UINT gpuSlicePitch = static_cast<UINT>(h * dstRowPitch);
 
     for (UINT z = 0; z < d; ++z)
     {
@@ -547,9 +547,9 @@ void Graphics::Texture::GetData(DeviceResources* device, uint32_t subResId, uint
 
         for (UINT y = 0; y < height; ++y)
         {
-            memcpy(dstData, srcData, fpRowPitch);
-            dstData += fpRowPitch;
-            srcData += dstRowPitch;
+            memcpy(dstData, srcData, static_cast<size_t>(fpRowPitch));
+            dstData += static_cast<size_t>(fpRowPitch);
+            srcData += static_cast<size_t>(dstRowPitch);
         }
     }
 

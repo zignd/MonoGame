@@ -365,7 +365,7 @@ void MGA_Buffer_InitializeFormat(MGA_Buffer* buffer, mgbyte* waveHeader, mgbyte*
 	
 	// TODO: This API doesn't have a way to indicate that the format
 	// provided was not supported and this buffer is uninitialized.
-	throw 0;
+	return;
 }
 
 void MGA_Buffer_InitializePCM(MGA_Buffer* buffer, mgbyte* waveData, mgint offset, mgint length, mgint sampleBits, mgint sampleRate, mgint channels, mgint loopStart, mgint loopLength)

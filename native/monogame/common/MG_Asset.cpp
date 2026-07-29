@@ -14,7 +14,11 @@ struct MG_Asset
 mgbool MG_Asset_Open(const char* path, MG_Asset*& handle, mglong& length)
 {
     handle = new MG_Asset();
+#if defined(_MSC_VER)
+    fopen_s(&handle->file, path, "rb");
+#else
     handle->file = fopen(path, "rb");
+#endif
     if (handle->file == nullptr)
     {
         delete handle;

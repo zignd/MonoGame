@@ -32,10 +32,10 @@ Sampler::Sampler(DeviceResources* device, MGG_SamplerState_Info* info)
         info->MaximumAnisotropy,
         CompareFunctionToD3D12_COMPARISON_FUNC[(int)info->ComparisonFunction],
         {
-            ((info->BorderColor >> 0) & 0xFF) / 255.0f,
-            ((info->BorderColor >> 8) & 0xFF) / 255.0f,
-            ((info->BorderColor >> 16) & 0xFF) / 255.0f,
-            ((info->BorderColor >> 24) & 0xFF) / 255.0f,
+            static_cast<FLOAT>(((info->BorderColor >> 0) & 0xFF) / 255.0f),
+            static_cast<FLOAT>(((info->BorderColor >> 8) & 0xFF) / 255.0f),
+            static_cast<FLOAT>(((info->BorderColor >> 16) & 0xFF) / 255.0f),
+            static_cast<FLOAT>(((info->BorderColor >> 24) & 0xFF) / 255.0f),
         },
         info->MaxMipLevel,
         D3D12_FLOAT32_MAX
