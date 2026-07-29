@@ -8,14 +8,14 @@ namespace MonoGame.Effect
 		{
 			IsVertexShader = isVertexShader;
 			SharedIndex = sharedIndex;
-			Bytecode = (byte[])bytecode.Clone();	    
+			Bytecode = (byte[])bytecode.Clone();
 		}
 
 		public bool IsVertexShader { get; private set; }
 
-        public string SourceFile { get; set; }
+		public string SourceFile { get; set; } = string.Empty;
 
-        public string Entrypoint { get; set; }
+		public string Entrypoint { get; set; } = string.Empty;
 
 		public struct Sampler
 		{
@@ -25,7 +25,7 @@ namespace MonoGame.Effect
 			public string samplerName;
 			public string parameterName;
 			public int parameter;
-			public SamplerState state;
+			public SamplerState? state;
 		}
 
 		public struct Attribute
@@ -33,22 +33,20 @@ namespace MonoGame.Effect
             public string name;
             public VertexElementUsage usage;
 			public int index;
-#pragma warning disable 649
             public int location;
-#pragma warning restore 649
         }
 
 		/// <summary>
-		/// The index to the constant buffers which are 
+		/// The index to the constant buffers which are
 		/// required by this shader at runtime.
 		/// </summary>
-		public int[] _cbuffers;
+		public int[] _cbuffers = [];
 
-		public Sampler[] _samplers;
+		public Sampler[] _samplers = [];
 
-		public Attribute[] _attributes;
+		public Attribute[] _attributes = [];
 
-		public byte[] ShaderCode { get; set; }
+		public byte[] ShaderCode { get; set; } = [];
 
 
 #region Non-Serialized Stuff
@@ -58,7 +56,7 @@ namespace MonoGame.Effect
 		// The index of the shader in the shared list.
 		public int SharedIndex { get; private set; }
 
-        public string ShaderProfile { get; set; }
+		public string ShaderProfile { get; set; } = string.Empty;
 
 #endregion // Non-Serialized Stuff
 

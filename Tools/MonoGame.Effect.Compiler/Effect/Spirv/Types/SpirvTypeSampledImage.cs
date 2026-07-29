@@ -10,11 +10,11 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv.Types
     internal class SpirvTypeSampledImage : SpirvTypeBase
     {
         public override SpirvType Type => SpirvType.SampledImage;
-        public SpirvTypeImage ImageType { get; private set; }
+        public SpirvTypeImage? ImageType { get; private set; }
 
         protected override void ParseArgs(string[] args, SpirvReflectionInfo.SpirvParseContext context)
         {
-            if (!context.Types.TryGetValue(args[0], out SpirvTypeBase type))
+            if (!context.Types.TryGetValue(args[0], out SpirvTypeBase? type))
             {
                 Debug.WriteLine($"Could not find type {args[0]} reference by OpTypeSampledImage {Name ?? Id}.");
             }

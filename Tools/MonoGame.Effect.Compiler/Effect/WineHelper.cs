@@ -121,7 +121,7 @@ namespace MonoGame.Effect.Compiler
         {
             var srcPath = Path.GetTempFileName();
             var dstPath = Path.GetTempFileName();
-            CompilationResult ret = null;
+            CompilationResult? ret = null;
 
             try
             {
@@ -145,6 +145,8 @@ namespace MonoGame.Effect.Compiler
 
             File.Delete(srcPath);
             File.Delete(dstPath);
+
+            ret ??= new CompilationResult(null, Result.Fail, "Wine compilation did not produce a result.");
 
             if (ret.ResultCode != Result.Ok)
             {

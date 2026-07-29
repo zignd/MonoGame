@@ -8,10 +8,13 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace MonoGame.Effect
 {
+    /// <summary>
+    /// Stores parsed sampler-state assignments and materializes them into a <see cref="SamplerState"/>.
+    /// </summary>
     public class SamplerStateInfo
     {
-        private SamplerState _state;
-        
+        private SamplerState? _state;
+
         private bool _dirty;
 
         private TextureFilterType _minFilter;
@@ -28,6 +31,9 @@ namespace MonoGame.Effect
         private int _maxMipLevel;
         private float _mipMapLevelOfDetailBias;
 
+        /// <summary>
+        /// Initializes a sampler-state description with MonoGame's default sampler values.
+        /// </summary>
         public SamplerStateInfo()
         {
             // NOTE: These match the defaults of SamplerState.
@@ -43,10 +49,19 @@ namespace MonoGame.Effect
             _mipMapLevelOfDetailBias = 0.0f;
         }
 
-        public string Name { get; set; }
+        /// <summary>
+        /// Gets or sets the sampler declaration name.
+        /// </summary>
+        public string Name { get; set; } = string.Empty;
 
-        public string TextureName { get; set; }
+        /// <summary>
+        /// Gets or sets the texture binding name referenced by the sampler.
+        /// </summary>
+        public string? TextureName { get; set; }
 
+        /// <summary>
+        /// Sets the minification filter.
+        /// </summary>
         public TextureFilterType MinFilter
         {
             set
@@ -56,6 +71,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the magnification filter.
+        /// </summary>
         public TextureFilterType MagFilter
         {
             set
@@ -65,6 +83,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the mip filter.
+        /// </summary>
         public TextureFilterType MipFilter
         {
             set
@@ -74,6 +95,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the same filter for minification, magnification, and mip selection.
+        /// </summary>
         public TextureFilterType Filter
         {
             set
@@ -83,6 +107,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the address mode for the U texture coordinate.
+        /// </summary>
         public TextureAddressMode AddressU
         {
             set
@@ -92,6 +119,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the address mode for the V texture coordinate.
+        /// </summary>
         public TextureAddressMode AddressV
         {
             set
@@ -101,6 +131,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the address mode for the W texture coordinate.
+        /// </summary>
         public TextureAddressMode AddressW
         {
             set
@@ -110,6 +143,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the border color.
+        /// </summary>
         public Color BorderColor
         {
             set
@@ -119,6 +155,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the maximum anisotropy value.
+        /// </summary>
         public int MaxAnisotropy
         {
             set
@@ -128,6 +167,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the maximum mip level.
+        /// </summary>
         public int MaxMipLevel
         {
             set
@@ -137,6 +179,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the mip level-of-detail bias.
+        /// </summary>
         public float MipMapLevelOfDetailBias
         {
             set
@@ -190,7 +235,7 @@ namespace MonoGame.Effect
             // Do we need to disable mipmapping?
             if (_mipFilter == TextureFilterType.None)
             {
-                // TODO: This is the only option we have right now for 
+                // TODO: This is the only option we have right now for
                 // disabling mipmapping.  We should add support for MinLod
                 // and MaxLod which potentially does a better job at this.
                 _state.MipMapLevelOfDetailBias = -16.0f;
@@ -199,7 +244,10 @@ namespace MonoGame.Effect
 
             _dirty = false;
         }
-        
+
+        /// <summary>
+        /// Gets a <see cref="SamplerState"/> reflecting the currently assigned sampler settings.
+        /// </summary>
         public SamplerState State
         {
             get
@@ -207,7 +255,7 @@ namespace MonoGame.Effect
                 if (_dirty)
                     UpdateSamplerState();
 
-                return _state;
+                return _state ??= new SamplerState();
             }
         }
     }

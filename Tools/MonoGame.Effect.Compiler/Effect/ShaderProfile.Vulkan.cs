@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -31,13 +32,13 @@ namespace MonoGame.Effect
             if (!string.IsNullOrEmpty(pass.vsFunction))
             {
                 if (pass.vsModel != "vs_6_0")
-                    throw new Exception(String.Format("Invalid Vulkan vertex profile '{0}'! Requires vs_6_0.", pass.vsModel));
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture, "Invalid Vulkan vertex profile '{0}'! Requires vs_6_0.", pass.vsModel));
             }
 
             if (!string.IsNullOrEmpty(pass.psFunction))
             {
                 if (pass.psModel != "ps_6_0")
-                    throw new Exception(String.Format("Invalid Vulkan pixel profile '{0}'! Requires ps_6_0.", pass.psModel));
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture, "Invalid Vulkan pixel profile '{0}'! Requires ps_6_0.", pass.psModel));
             }
         }
 
@@ -110,7 +111,12 @@ namespace MonoGame.Effect
         {
             const int SlotOffset = 32;
 
-            var outputPath = Path.GetDirectoryName(shaderResult.OutputFilePath);
+            var shaderInfo = shaderResult.ShaderInfo
+                ?? throw new InvalidOperationException("ShaderResult is missing ShaderInfo.");
+            var outputFilePath = shaderResult.OutputFilePath
+                ?? throw new InvalidOperationException("ShaderResult is missing an output file path.");
+            var outputPath = Path.GetDirectoryName(outputFilePath)
+                ?? throw new InvalidOperationException($"Could not determine the output directory for '{outputFilePath}'.");
             var sourceFileName = Path.GetFileNameWithoutExtension(shaderResult.FilePath) + "." + shaderFunction;
 
             // TODO: We have no intermediate folder in 2MGFX for temp stuff
@@ -252,7 +258,11 @@ namespace MonoGame.Effect
 
                 foreach (SpirvVariable variable in withDescriptorSet)
                 {
-                    if (variable.Pointer.PointerType.Type == SpirvType.Struct)
+                    var pointer = variable.Pointer
+                        ?? throw new InvalidOperationException($"SPIR-V variable '{variable.Name ?? variable.Id}' is missing a pointer type.");
+                    var pointerType = pointer.PointerType;
+
+                    if (pointerType.Type == SpirvType.Struct)
                     {
                         // TODO: Look into multiple cbuffer support.
                         if (cbCount > 0)
@@ -261,7 +271,8 @@ namespace MonoGame.Effect
                             throw new ShaderCompilerException();
                         }
 
-                        SpirvTypeStruct constantBuffer = variable.Pointer.PointerType as SpirvTypeStruct;
+                        var constantBuffer = pointerType as SpirvTypeStruct
+                            ?? throw new InvalidOperationException($"SPIR-V variable '{variable.Name ?? variable.Id}' expected a struct pointer type.");
                         ConstantBufferData cbuffer = ConstantBufferData.BuildFromSpirvStruct(constantBuffer);
 
                         if (cbuffer.Size > 0)
@@ -279,7 +290,7 @@ namespace MonoGame.Effect
 
                         cbCount++;
                     }
-                    else if (variable.Pointer.PointerType.Type == SpirvType.Image)
+                    else if (pointerType.Type == SpirvType.Image)
                     {
                         // find all the times this image was sampled by distinct samplers.
                         var sampledImages = reflectionInfo.SampledImages.Where(si => si.LoadedImage.Variable == variable)
@@ -292,25 +303,33 @@ namespace MonoGame.Effect
                             var samplerVariable = sampledImage.LoadedSampler.Variable;
                             var imageVariable = sampledImage.LoadedImage.Variable;
 
-                            var samplerType = samplerVariable.Pointer.PointerType as SpirvTypeSampler;
-                            var imageType = imageVariable.Pointer.PointerType as SpirvTypeImage;
+                            var samplerName = samplerVariable.Name ?? samplerVariable.Id;
+                            var imageName = imageVariable.Name ?? imageVariable.Id;
+                            var imageBindingSlot = imageVariable.BindingSlot
+                                ?? throw new InvalidOperationException($"Image variable '{imageName}' is missing a binding slot.");
+                            var samplerBindingSlot = samplerVariable.BindingSlot
+                                ?? throw new InvalidOperationException($"Sampler variable '{samplerName}' is missing a binding slot.");
+                            _ = samplerVariable.Pointer?.PointerType as SpirvTypeSampler
+                                ?? throw new InvalidOperationException($"Sampler variable '{samplerName}' is missing a sampler pointer type.");
+                            var imageType = imageVariable.Pointer?.PointerType as SpirvTypeImage
+                                ?? throw new InvalidOperationException($"Image variable '{imageName}' is missing an image pointer type.");
 
                             var sampler = new ShaderData.Sampler
                             {
-                                samplerSlot = (int)samplerVariable.BindingSlot.Value - SlotOffset,
-                                samplerName = samplerVariable.Name,
-                                textureSlot = (int)imageVariable.BindingSlot.Value - SlotOffset,
+                                samplerSlot = (int)samplerBindingSlot - SlotOffset,
+                                samplerName = samplerName,
+                                textureSlot = (int)imageBindingSlot - SlotOffset,
                             };
 
                             // This image is only sampled by one sampler, we can safely use the texture name for the parameter.
                             if (sampledImages.Count() == 1)
                             {
-                                sampler.parameterName = imageVariable.Name;
+                                sampler.parameterName = imageName;
                             }
                             // otherwise make a composite name for this image/sampler combo.
                             else
                             {
-                                sampler.parameterName = $"{samplerVariable.Name}+{imageVariable.Name}";
+                                sampler.parameterName = $"{samplerName}+{imageName}";
                             }
 
                             switch (imageType.Dimensionality)
@@ -329,9 +348,9 @@ namespace MonoGame.Effect
                                     break;
                             }
 
-                            if (!shaderResult.ShaderInfo.SamplerStates.TryGetValue(samplerVariable.Name, out SamplerStateInfo samplerStateInfo))
+                            if (!shaderInfo.SamplerStates.TryGetValue(samplerName, out SamplerStateInfo? samplerStateInfo))
                             {
-                                errorsAndWarnings += $"Could not find sampler state info for sampler '{samplerVariable.Name}'; using defaults\n";
+                                errorsAndWarnings += $"Could not find sampler state info for sampler '{samplerName}'; using defaults\n";
                                 samplerStateInfo = new SamplerStateInfo();
                             }
 
@@ -360,16 +379,20 @@ namespace MonoGame.Effect
                                     continue;
 
                                 var imageVariable = image.Variable;
-                                var imageType = imageVariable.Pointer.PointerType as SpirvTypeImage;
+                                var imageName = imageVariable.Name ?? imageVariable.Id;
+                                var imageBindingSlot = imageVariable.BindingSlot
+                                    ?? throw new InvalidOperationException($"Image variable '{imageName}' is missing a binding slot.");
+                                var imageType = imageVariable.Pointer?.PointerType as SpirvTypeImage
+                                    ?? throw new InvalidOperationException($"Image variable '{imageName}' is missing an image pointer type.");
 
                                 var sampler = new ShaderData.Sampler
                                 {
                                     samplerSlot = -1,
                                     samplerName = string.Empty,
-                                    textureSlot = (int)imageVariable.BindingSlot.Value - SlotOffset,
+                                    textureSlot = (int)imageBindingSlot - SlotOffset,
                                 };
 
-                                sampler.parameterName = imageVariable.Name;
+                                sampler.parameterName = imageName;
 
                                 switch (imageType.Dimensionality)
                                 {
@@ -399,7 +422,7 @@ namespace MonoGame.Effect
                 if (isVertexShader)
                 {
                     // Sort by the location.
-                    var sorted = reflectionInfo.Input.OrderBy(i => i.Location);
+                    var sorted = reflectionInfo.Input.OrderBy(i => i.Location ?? uint.MaxValue);
 
                     foreach (SpirvVariable input in sorted)
                     {
@@ -407,14 +430,14 @@ namespace MonoGame.Effect
 
                         var m = Regex.Match(semanticId, @"(\D+)(\d+)?");
                         int indexOffset = m.Groups[2].Success
-                            ? int.Parse(m.Groups[2].Value)
+                            ? int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture)
                             : 0;
 
                         var usage = VertexElementUsage.TextureCoordinate;
 
                         if (m.Groups[1].Success)
                         {
-                            switch (m.Groups[1].Value.ToUpper())
+                            switch (m.Groups[1].Value.ToUpper(CultureInfo.InvariantCulture))
                             {
                                 default:
                                     // Give a warning which hopefully someone notices.
@@ -466,7 +489,7 @@ namespace MonoGame.Effect
 
                         uint locationCount = 1;
                         var pointerType = input.Pointer?.PointerType;
-                        
+
                         if (pointerType is SpirvTypeArray spirvTypeArray)
                         {
                             locationCount = spirvTypeArray.Length;
@@ -486,9 +509,9 @@ namespace MonoGame.Effect
                             {
                                 usage = usage,
                                 index = indexOffset + locationIndex,
-                                
+
                                 // TODO: These are unused at runtime under the
-                                // new native backends, we will remove them soon.               
+                                // new native backends, we will remove them soon.
                                 location = 0,
                                 name = string.Empty,
                             };

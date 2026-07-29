@@ -62,9 +62,9 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
     internal class SpirvDecoration
     {
         public SpirvDecorationType Type { get; private set; }
-        public string[] Args { get; private set; }
+        public string[] Args { get; private set; } = [];
 
-        internal static SpirvDecoration ParseDecorator(string[] definition)
+        internal static SpirvDecoration? ParseDecorator(string[] definition)
         {
             if (!Enum.TryParse(definition[0], out SpirvDecorationType decorationType))
             {

@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using MonoGame.Effect.TPGParser;
@@ -17,13 +18,13 @@ namespace MonoGame.Effect
 
         public OpenGLShaderProfile()
             : base("OpenGL", 0)
-        {                
+        {
         }
 
         internal override void AddMacros(Dictionary<string, string> macros)
         {
             macros.Add("GLSL", "1");
-            macros.Add("OPENGL", "1");                
+            macros.Add("OPENGL", "1");
         }
 
         internal override void ValidateShaderModels(PassInfo pass)
@@ -32,16 +33,16 @@ namespace MonoGame.Effect
 
             if (!string.IsNullOrEmpty(pass.vsFunction))
             {
-                ParseShaderModel(pass.vsModel, GlslVertexShaderRegex, out major, out minor);
+                ParseShaderModel(pass.vsModel ?? throw new InvalidOperationException("Vertex shader model is missing."), GlslVertexShaderRegex, out major, out minor);
                 if (major > 3)
-                    throw new Exception(String.Format("Invalid profile '{0}'. Vertex shader '{1}' must be SM 3.0 or lower!", pass.vsModel, pass.vsFunction));
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture, "Invalid profile '{0}'. Vertex shader '{1}' must be SM 3.0 or lower!", pass.vsModel, pass.vsFunction));
             }
 
             if (!string.IsNullOrEmpty(pass.psFunction))
             {
-                ParseShaderModel(pass.psModel, GlslPixelShaderRegex, out major, out minor);
+                ParseShaderModel(pass.psModel ?? throw new InvalidOperationException("Pixel shader model is missing."), GlslPixelShaderRegex, out major, out minor);
                 if (major > 3)
-                    throw new Exception(String.Format("Invalid profile '{0}'. Pixel shader '{1}' must be SM 3.0 or lower!", pass.vsModel, pass.psFunction));
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture, "Invalid profile '{0}'. Pixel shader '{1}' must be SM 3.0 or lower!", pass.vsModel, pass.psFunction));
             }
         }
 
@@ -51,7 +52,8 @@ namespace MonoGame.Effect
             // using MojoShader which works from HLSL bytecode.
             var bytecode = EffectObject.CompileHLSL(shaderResult, shaderFunction, shaderProfile, ref errorsAndWarnings);
 
-            var shaderInfo = shaderResult.ShaderInfo;
+            var shaderInfo = shaderResult.ShaderInfo
+                ?? throw new InvalidOperationException("ShaderResult is missing ShaderInfo.");
             var shaderData = ShaderData.CreateGLSL(bytecode, isVertexShader, effect.ConstantBuffers, effect.Shaders.Count, shaderInfo.SamplerStates, shaderResult.Debug);
             effect.Shaders.Add(shaderData);
 

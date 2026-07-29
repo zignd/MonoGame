@@ -7,19 +7,15 @@
 using System;
 using System.Collections.Generic;
 
-// Disable unused variable warnings which
-// can happen during the parser generation.
-#pragma warning disable 168
-
 namespace MonoGame.Effect.TPGParser
 {
     #region Parser
 
-    partial class Parser 
+    partial class Parser
     {
         private Scanner scanner;
-        private ParseTree tree;
-        
+        private ParseTree tree = null!;
+
         public Parser(Scanner scanner)
         {
             this.scanner = scanner;
@@ -201,7 +197,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseFillModes(ParseNode parent) // NonTerminalSymbol: FillModes
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.FillModes), "FillModes");
             parent.Nodes.Add(node);
 
@@ -282,7 +277,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseCullModes(ParseNode parent) // NonTerminalSymbol: CullModes
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.CullModes), "CullModes");
             parent.Nodes.Add(node);
 
@@ -442,7 +436,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseColors(ParseNode parent) // NonTerminalSymbol: Colors
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.Colors), "Colors");
             parent.Nodes.Add(node);
 
@@ -799,7 +792,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseBlends(ParseNode parent) // NonTerminalSymbol: Blends
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.Blends), "Blends");
             parent.Nodes.Add(node);
 
@@ -951,7 +943,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseBlendOps(ParseNode parent) // NonTerminalSymbol: BlendOps
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.BlendOps), "BlendOps");
             parent.Nodes.Add(node);
 
@@ -1136,7 +1127,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseCmpFunc(ParseNode parent) // NonTerminalSymbol: CmpFunc
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.CmpFunc), "CmpFunc");
             parent.Nodes.Add(node);
 
@@ -1330,7 +1320,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseStencilOp(ParseNode parent) // NonTerminalSymbol: StencilOp
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.StencilOp), "StencilOp");
             parent.Nodes.Add(node);
 
@@ -2417,7 +2406,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseRender_State_Expression(ParseNode parent) // NonTerminalSymbol: Render_State_Expression
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.Render_State_Expression), "Render_State_Expression");
             parent.Nodes.Add(node);
 
@@ -2881,7 +2869,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseAddressMode(ParseNode parent) // NonTerminalSymbol: AddressMode
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.AddressMode), "AddressMode");
             parent.Nodes.Add(node);
 
@@ -2987,7 +2974,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseTextureFilter(ParseNode parent) // NonTerminalSymbol: TextureFilter
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.TextureFilter), "TextureFilter");
             parent.Nodes.Add(node);
 
@@ -3638,7 +3624,6 @@ namespace MonoGame.Effect.TPGParser
         private void ParseSampler_State_Expression(ParseNode parent) // NonTerminalSymbol: Sampler_State_Expression
         {
             Token tok;
-            ParseNode n;
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.Sampler_State_Expression), "Sampler_State_Expression");
             parent.Nodes.Add(node);
 

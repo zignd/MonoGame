@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using SharpDX.Direct3D;
 using MonoGame.Effect.TPGParser;
@@ -32,7 +33,7 @@ namespace MonoGame.Effect
                     {
                         // TODO: There is a way to strip SM3 and below
                         // but we have to write the method ourselves.
-                        // 
+                        //
                         // If we need to support it then consider porting
                         // this code over...
                         //
@@ -52,7 +53,8 @@ namespace MonoGame.Effect
                         var rdesc = refelect.GetResourceBindingDescription(i);
                         if (rdesc.Type == SharpDX.D3DCompiler.ShaderInputType.Texture)
                         {
-                            var samplerName = rdesc.Name;
+                            var samplerName = rdesc.Name
+                                ?? throw new InvalidOperationException("Shader reflection returned a texture resource without a name.");
 
                             var sampler = new Sampler
                             {
@@ -61,9 +63,8 @@ namespace MonoGame.Effect
                                 samplerSlot = rdesc.BindPoint,
                                 parameterName = samplerName
                             };
-                            
-                            SamplerStateInfo state;
-                            if (samplerStates.TryGetValue(samplerName, out state))
+
+                            if (samplerStates.TryGetValue(samplerName, out var state))
                             {
                                 sampler.parameterName = state.TextureName ?? samplerName;
                                 sampler.state = state.State;
@@ -86,7 +87,7 @@ namespace MonoGame.Effect
                             {
                                 var samplerrdesc = refelect.GetResourceBindingDescription(j);
 
-                                if (samplerrdesc.Type == SharpDX.D3DCompiler.ShaderInputType.Sampler && 
+                                if (samplerrdesc.Type == SharpDX.D3DCompiler.ShaderInputType.Sampler &&
                                     samplerrdesc.Name == samplerName)
                                 {
                                     sampler.samplerSlot = samplerrdesc.BindPoint;

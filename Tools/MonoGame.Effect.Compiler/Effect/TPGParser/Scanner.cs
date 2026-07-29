@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MonoGame.Effect.TPGParser
 {
@@ -16,17 +17,17 @@ namespace MonoGame.Effect.TPGParser
 
     partial class Scanner
     {
-        public string Input;
+        public string Input = string.Empty;
         public int StartPos = 0;
         public int EndPos = 0;
-        public string CurrentFile;
+        public string CurrentFile = string.Empty;
         public int CurrentLine;
         public int CurrentColumn;
         public int CurrentPosition;
         public List<Token> Skipped; // tokens that were skipped
         public Dictionary<TokenType, Regex> Patterns;
 
-        private Token LookAheadToken;
+        private Token? LookAheadToken;
         private List<TokenType> Tokens;
         private List<TokenType> SkipList; // tokens to be skipped
         private readonly TokenType FileAndLine;
@@ -564,14 +565,14 @@ namespace MonoGame.Effect.TPGParser
             int endpos = EndPos;
             int currentline = CurrentLine;
             string currentFile = CurrentFile;
-            Token tok = null;
+            Token? tok = null;
             List<TokenType> scantokens;
 
 
             // this prevents double scanning and matching
             // increased performance
-            if (LookAheadToken != null 
-                && LookAheadToken.Type != TokenType._UNDETERMINED_ 
+            if (LookAheadToken != null
+                && LookAheadToken.Type != TokenType._UNDETERMINED_
                 && LookAheadToken.Type != TokenType._NONE_) return LookAheadToken;
 
             // if no scantokens specified, then scan for all of them (= backward compatible)
@@ -599,7 +600,7 @@ namespace MonoGame.Effect.TPGParser
                     if (m.Success && m.Index == 0 && ((m.Length > len) || (scantokens[i] < index && m.Length == len )))
                     {
                         len = m.Length;
-                        index = scantokens[i];  
+                        index = scantokens[i];
                     }
                 }
 
@@ -638,7 +639,7 @@ namespace MonoGame.Effect.TPGParser
                     Skipped = new List<Token>(); //reset skips
                 }
 
-                // Check to see if the parsed token wants to 
+                // Check to see if the parsed token wants to
                 // alter the file and line number.
                 if (tok.Type == FileAndLine)
                 {
@@ -900,57 +901,57 @@ namespace MonoGame.Effect.TPGParser
 
     class Token
     {
-        private string file;
+        private string file = string.Empty;
         private int line;
         private int column;
         private int startpos;
         private int endpos;
-        private string text;
-        private object value;
+        private string text = string.Empty;
+        private object? value;
 
         // contains all prior skipped symbols
-        private List<Token> skipped;
+        private List<Token> skipped = [];
 
-        public string File { 
-            get { return file; } 
+        public string File {
+            get { return file; }
             set { file = value; }
         }
 
-        public int Line { 
-            get { return line; } 
+        public int Line {
+            get { return line; }
             set { line = value; }
         }
 
         public int Column {
-            get { return column; } 
+            get { return column; }
             set { column = value; }
         }
 
-        public int StartPos { 
-            get { return startpos;} 
+        public int StartPos {
+            get { return startpos;}
             set { startpos = value; }
         }
 
-        public int Length { 
-            get { return endpos - startpos;} 
+        public int Length {
+            get { return endpos - startpos;}
         }
 
-        public int EndPos { 
-            get { return endpos;} 
+        public int EndPos {
+            get { return endpos;}
             set { endpos = value; }
         }
 
-        public string Text { 
-            get { return text;} 
+        public string Text {
+            get { return text;}
             set { text = value; }
         }
 
-        public List<Token> Skipped { 
-            get { return skipped;} 
+        public List<Token> Skipped {
+            get { return skipped;}
             set { skipped = value; }
         }
-        public object Value { 
-            get { return value;} 
+        public object? Value {
+            get { return value;}
             set { this.value = value; }
         }
 

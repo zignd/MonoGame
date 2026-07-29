@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -116,7 +117,7 @@ namespace MonoGame.Effect
 		    SRCBLENDALPHA             = 207,
 		    DESTBLENDALPHA            = 208,
 		    BLENDOPALPHA              = 209,
-		
+
 		    FORCE_DWORD               = 0x7fffffff
 		}
 
@@ -140,7 +141,7 @@ namespace MonoGame.Effect
 		    ALPHAARG0             = 27,
 		    RESULTARG             = 28,
 		    CONSTANT              = 32,
-		
+
 		    FORCE_DWORD           = 0x7fffffff
 		}
 
@@ -200,7 +201,7 @@ namespace MonoGame.Effect
 			FORCE_DWORD = 0x7fffffff,
 		}
 
-		enum D3DSAMPLERSTATETYPE 
+		enum D3DSAMPLERSTATETYPE
         {
 		    ADDRESSU       = 1,
 		    ADDRESSV       = 2,
@@ -215,7 +216,7 @@ namespace MonoGame.Effect
 		    SRGBTEXTURE    = 11,
 		    ELEMENTINDEX   = 12,
 		    DMAPOFFSET     = 13,
-		                                
+
 		    FORCE_DWORD   = 0x7fffffff,
 		};
 
@@ -284,9 +285,9 @@ namespace MonoGame.Effect
 
 		public class d3dx_parameter
 		{
-			public string name;
-			public string semantic;
-			public object data;
+			public string name = string.Empty;
+			public string semantic = string.Empty;
+			public object? data;
 			public D3DXPARAMETER_CLASS class_;
 			public D3DXPARAMETER_TYPE  type;
 			public uint rows;
@@ -300,54 +301,54 @@ namespace MonoGame.Effect
             public int bufferIndex = -1;
             public int bufferOffset = -1;
 
-		    public d3dx_parameter[] annotation_handles = null;
-			public d3dx_parameter[] member_handles;
+		    public d3dx_parameter[] annotation_handles = [];
+			public d3dx_parameter[] member_handles = [];
 
             public override string ToString()
             {
                 if (rows > 0 || columns > 0)
-                    return string.Format("{0} {1}{2}x{3} {4} : cb{5},{6}", class_, type, rows, columns, name, bufferIndex, bufferOffset);
+					return string.Format(CultureInfo.InvariantCulture, "{0} {1}{2}x{3} {4} : cb{5},{6}", class_, type, rows, columns, name, bufferIndex, bufferOffset);
                 else
-                    return string.Format("{0} {1} {2}", class_, type, name);
+					return string.Format(CultureInfo.InvariantCulture, "{0} {1} {2}", class_, type, name);
             }
 		}
-		
+
 		public class d3dx_state
 		{
 			public uint operation;
 			public uint index;
 			public STATE_TYPE type;
-			public d3dx_parameter parameter;
+			public d3dx_parameter parameter = new();
 		}
 
 		public class d3dx_sampler
 		{
 		    public uint state_count = 0;
-		    public d3dx_state[] states = null;
+		    public d3dx_state[] states = [];
 		}
-		
+
 		public class d3dx_pass
 		{
-			public string name;
+			public string name = string.Empty;
 			public uint state_count;
 		    public uint annotation_count = 0;
 
-			public BlendState blendState;
-			public DepthStencilState depthStencilState;
-			public RasterizerState rasterizerState;
+			public BlendState? blendState;
+			public DepthStencilState? depthStencilState;
+			public RasterizerState? rasterizerState;
 
-			public d3dx_state[] states;
-		    public d3dx_parameter[] annotation_handles = null;
+			public d3dx_state[] states = [];
+		    public d3dx_parameter[] annotation_handles = [];
 		}
 
 		public class d3dx_technique
 		{
-			public string name;
+			public string name = string.Empty;
 			public uint pass_count;
 		    public uint annotation_count = 0;
 
-		    public d3dx_parameter[] annotation_handles = null;
-			public d3dx_pass[] pass_handles;
+		    public d3dx_parameter[] annotation_handles = [];
+			public d3dx_pass[] pass_handles = [];
 		}
 
         public class state_info
@@ -356,7 +357,7 @@ namespace MonoGame.Effect
             public uint op { get; private set; }
             public string name { get; private set; }
 
-			public state_info(STATE_CLASS class_, uint op, string name) 
+			public state_info(STATE_CLASS class_, uint op, string name)
             {
 				this.class_ = class_;
 				this.op = op;
@@ -566,7 +567,7 @@ namespace MonoGame.Effect
 
         static public EffectParameterClass ToXNAParameterClass( D3DXPARAMETER_CLASS class_ )
         {
-			switch (class_) 
+			switch (class_)
             {
 			    case D3DXPARAMETER_CLASS.SCALAR:
 				    return EffectParameterClass.Scalar;
@@ -586,7 +587,7 @@ namespace MonoGame.Effect
 
         static public EffectParameterType ToXNAParameterType(D3DXPARAMETER_TYPE type)
         {
-			switch (type) 
+			switch (type)
             {
 			    case D3DXPARAMETER_TYPE.BOOL:
                     return EffectParameterType.Bool;
@@ -657,9 +658,12 @@ namespace MonoGame.Effect
             effect.ConstantBuffers = new List<ConstantBufferData>();
             effect.Shaders = new List<ShaderData>();
 
-            // Go thru the techniques and that will find all the 
+            // Go thru the techniques and that will find all the
             // shaders and constant buffers.
-            var shaderInfo = shaderResult.ShaderInfo;
+			var shaderInfo = shaderResult.ShaderInfo
+				?? throw new InvalidOperationException("ShaderResult is missing ShaderInfo.");
+			var profile = shaderResult.Profile
+				?? throw new InvalidOperationException("ShaderResult is missing a shader profile.");
             effect.Techniques = new d3dx_technique[shaderInfo.Techniques.Count];
             for (var t = 0; t < shaderInfo.Techniques.Count; t++)
             {
@@ -684,18 +688,18 @@ namespace MonoGame.Effect
                     pass.state_count = 0;
                     var tempstate = new d3dx_state[2];
 
-                    shaderResult.Profile.ValidateShaderModels(pinfo);
+					profile.ValidateShaderModels(pinfo);
 
                     if (!string.IsNullOrEmpty(pinfo.psFunction))
                     {
                         pass.state_count += 1;
-                        tempstate[pass.state_count - 1] = effect.CreateShader(shaderResult, pinfo.psFunction, pinfo.psModel, false, ref errorsAndWarnings);
+						tempstate[pass.state_count - 1] = effect.CreateShader(shaderResult, pinfo.psFunction, pinfo.psModel!, false, ref errorsAndWarnings);
                     }
 
                     if (!string.IsNullOrEmpty(pinfo.vsFunction))
                     {
                         pass.state_count += 1;
-                        tempstate[pass.state_count - 1] = effect.CreateShader(shaderResult, pinfo.vsFunction, pinfo.vsModel, true, ref errorsAndWarnings);
+						tempstate[pass.state_count - 1] = effect.CreateShader(shaderResult, pinfo.vsFunction, pinfo.vsModel!, true, ref errorsAndWarnings);
                     }
 
                     pass.states = new d3dx_state[pass.state_count];
@@ -727,7 +731,7 @@ namespace MonoGame.Effect
                     }
                     else
                     {
-                        // TODO: Make sure the type and size of 
+                        // TODO: Make sure the type and size of
                         // the parameter match up!
                         cb.ParameterIndex.Add(match);
                     }
@@ -775,7 +779,7 @@ namespace MonoGame.Effect
                     }
                     else
                     {
-                        // TODO: Make sure the type and size of 
+                        // TODO: Make sure the type and size of
                         // the parameter match up!
 
                         shader._samplers[s].parameter = match;
@@ -800,7 +804,9 @@ namespace MonoGame.Effect
             if (shaderData == null)
             {
                 // Compile and create the shader.
-                shaderData = shaderResult.Profile.CreateShader(shaderResult, shaderFunction, shaderProfile, isVertexShader, this, ref errorsAndWarnings);
+				var profile = shaderResult.Profile
+					?? throw new InvalidOperationException("ShaderResult is missing a shader profile.");
+				shaderData = profile.CreateShader(shaderResult, shaderFunction, shaderProfile, isVertexShader, this, ref errorsAndWarnings);
                 shaderData.SourceFile = shaderResult.RelativeFilePath;
                 shaderData.Entrypoint = shaderFunction;
                 shaderData.ShaderProfile = shaderProfile;
@@ -822,7 +828,7 @@ namespace MonoGame.Effect
 
             return state;
         }
-       
+
         internal static int GetShaderIndex(STATE_CLASS type, d3dx_state[] states)
         {
             foreach (var state in states)
@@ -834,21 +840,24 @@ namespace MonoGame.Effect
                 if (state.type != STATE_TYPE.CONSTANT)
                     throw new NotSupportedException("We do not support shader expressions!");
 
-                return (int)state.parameter.data;
+				if (state.parameter.data is int shaderIndex)
+					return shaderIndex;
+
+				throw new InvalidOperationException("Shader state data must contain a shader index.");
             }
 
             return -1;
         }
 
-        public d3dx_parameter[] Objects { get; private set; }
+		public d3dx_parameter[] Objects { get; private set; } = [];
 
-        public d3dx_parameter[] Parameters { get; private set; }
+		public d3dx_parameter[] Parameters { get; private set; } = [];
 
-        public d3dx_technique[] Techniques { get; private set; }
+		public d3dx_technique[] Techniques { get; private set; } = [];
 
-        public List<ShaderData> Shaders { get; private set; }
+		public List<ShaderData> Shaders { get; private set; } = [];
 
-        public List<ConstantBufferData> ConstantBuffers { get; private set; }
+		public List<ConstantBufferData> ConstantBuffers { get; private set; } = [];
 	}
 }
 

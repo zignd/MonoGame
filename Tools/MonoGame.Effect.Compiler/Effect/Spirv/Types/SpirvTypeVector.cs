@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System.Diagnostics;
+using System.Globalization;
 
 namespace MonoGame.Effect.Compiler.Effect.Spirv
 {
@@ -10,12 +11,12 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
     internal class SpirvTypeVector : SpirvTypeBase
     {
         public override SpirvType Type => SpirvType.Vector;
-        public SpirvTypeScalar ElementType { get; private set; }
+        public SpirvTypeScalar? ElementType { get; private set; }
         public uint Dimensions { get; private set; }
 
         protected override void ParseArgs(string[] args, SpirvReflectionInfo.SpirvParseContext context)
         {
-            if (!context.Types.TryGetValue(args[0], out SpirvTypeBase type))
+            if (!context.Types.TryGetValue(args[0], out SpirvTypeBase? type))
             {
                 Debug.WriteLine($"OpTypeVector {Name ?? Id} uses elements of unencountered type {args[0]}");
                 return;
@@ -27,7 +28,7 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
             }
 
             ElementType = type as SpirvTypeScalar;
-            Dimensions = uint.Parse(args[1]);
+            Dimensions = uint.Parse(args[1], CultureInfo.InvariantCulture);
         }
     }
 }

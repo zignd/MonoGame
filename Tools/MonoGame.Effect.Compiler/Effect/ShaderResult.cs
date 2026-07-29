@@ -4,37 +4,84 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using MonoGame.Effect.TPGParser;
 
 namespace MonoGame.Effect
 {
+    /// <summary>
+    /// Represents parsed effect source and the metadata needed for shader compilation.
+    /// </summary>
     public class ShaderResult
     {
-        public ShaderInfo ShaderInfo { get; private set; }
+        /// <summary>
+        /// Gets the parsed shader techniques and sampler state declarations.
+        /// </summary>
+        public ShaderInfo? ShaderInfo { get; private set; }
 
-        public string FilePath { get; private set; }
-        public string RelativeFilePath { get; set; }
+        /// <summary>
+        /// Gets the absolute path to the source effect file.
+        /// </summary>
+        public string FilePath { get; private set; } = string.Empty;
 
-        public string FileContent { get; private set; }
+        /// <summary>
+        /// Gets or sets the path to the source file relative to the compilation root.
+        /// </summary>
+        public string RelativeFilePath { get; set; } = string.Empty;
 
-        public string OutputFilePath { get; private set; }
+        /// <summary>
+        /// Gets the preprocessed source content with effect-only syntax removed.
+        /// </summary>
+        public string FileContent { get; private set; } = string.Empty;
 
-        public List<string> Dependencies { get; private set; }
+        /// <summary>
+        /// Gets the absolute path to the primary compiled output file, when one is configured.
+        /// </summary>
+        public string? OutputFilePath { get; private set; }
 
-        public List<string> AdditionalOutputFiles { get; private set; }
+        /// <summary>
+        /// Gets the source file dependencies discovered during preprocessing.
+        /// </summary>
+        public List<string> Dependencies { get; private set; } = [];
 
-        public ShaderProfile Profile { get; private set; }
+        /// <summary>
+        /// Gets additional generated output files.
+        /// </summary>
+        public List<string> AdditionalOutputFiles { get; private set; } = [];
 
+        /// <summary>
+        /// Gets the shader profile selected for compilation.
+        /// </summary>
+        public ShaderProfile? Profile { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether debug compilation was requested.
+        /// </summary>
         public bool Debug { get; private set; }
 
 
+        /// <summary>
+        /// Creates a <see cref="ShaderResult"/> by reading effect source from a file.
+        /// </summary>
+        /// <param name="path">The path to the source effect file.</param>
+        /// <param name="options">The effect compiler options.</param>
+        /// <param name="output">The diagnostic sink for preprocessing messages.</param>
+        /// <returns>The parsed shader result.</returns>
         static public ShaderResult FromFile(string path, Options options, IEffectCompilerOutput output)
         {
             var effectSource = File.ReadAllText(path);
             return FromString(effectSource, path, options, output);
         }
 
+        /// <summary>
+        /// Creates a <see cref="ShaderResult"/> from effect source text.
+        /// </summary>
+        /// <param name="effectSource">The effect source code to parse.</param>
+        /// <param name="filePath">The source file path used for diagnostics and include resolution.</param>
+        /// <param name="options">The effect compiler options.</param>
+        /// <param name="output">The diagnostic sink for preprocessing messages.</param>
+        /// <returns>The parsed shader result.</returns>
         static public ShaderResult FromString(string effectSource, string filePath, Options options, IEffectCompilerOutput output)
         {
             var macros = new Dictionary<string, string>();
@@ -68,7 +115,7 @@ namespace MonoGame.Effect
                 }
             }
 
-            // Use the D3DCompiler to pre-process the file resolving 
+            // Use the D3DCompiler to pre-process the file resolving
             // all #includes and macros.... this even works for GLSL.
             string newFile;
             var fullPath = Path.GetFullPath(filePath);
@@ -81,13 +128,14 @@ namespace MonoGame.Effect
             {
                 var errors = String.Empty;
                 foreach (var error in tree.Errors)
-                    errors += string.Format("{0}({1},{2}) : {3}\r\n", error.File, error.Line, error.Column, error.Message);
+                    errors += string.Format(CultureInfo.InvariantCulture, "{0}({1},{2}) : {3}\r\n", error.File, error.Line, error.Column, error.Message);
 
                 throw new Exception(errors);
             }
 
             // Evaluate the results of the parse tree.
-            var shaderInfo = tree.Eval() as ShaderInfo;
+            var shaderInfo = tree.Eval() as ShaderInfo
+                ?? throw new Exception("Failed to evaluate shader info from the parse tree.");
 
             // Remove the samplers and techniques so that the shader compiler
             // gets a clean file without any FX file syntax in it.
@@ -125,7 +173,7 @@ namespace MonoGame.Effect
 
             return result;
         }
-                
+
         static void WhitespaceNodes(TokenType type, List<ParseNode> nodes, ref string sourceFile)
         {
             for (var i = 0; i < nodes.Count; i++)

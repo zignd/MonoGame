@@ -8,10 +8,19 @@ using System.IO;
 
 namespace MonoGame.Effect
 {
+    /// <summary>
+    /// Contains the parsed techniques and sampler states for an effect.
+    /// </summary>
     public class ShaderInfo
 	{
+		/// <summary>
+		/// The techniques declared by the effect.
+		/// </summary>
 		public List<TechniqueInfo> Techniques = new List<TechniqueInfo>();
 
+		/// <summary>
+		/// The sampler states declared by name.
+		/// </summary>
         public Dictionary<string, SamplerStateInfo> SamplerStates = new Dictionary<string, SamplerStateInfo>();
 	}
 }

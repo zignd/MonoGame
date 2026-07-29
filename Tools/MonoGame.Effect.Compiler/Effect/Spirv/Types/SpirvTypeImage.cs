@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System.Diagnostics;
+using System.Globalization;
 
 namespace MonoGame.Effect.Compiler.Effect.Spirv
 {
@@ -21,7 +22,7 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
     {
         public override SpirvType Type => SpirvType.Image;
         public ImageDimensionality Dimensionality { get; private set; }
-        public SpirvTypeScalar SampleType { get; private set; }
+        public SpirvTypeScalar? SampleType { get; private set; }
 
         // Can be true, false, or unspecified
         public bool? Depth { get; private set; }
@@ -32,11 +33,11 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
         public int Sampled { get; private set; }
 
         // https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#Image_Format
-        public string ImageFormat { get; private set; }
+        public string ImageFormat { get; private set; } = string.Empty;
 
         protected override void ParseArgs(string[] args, SpirvReflectionInfo.SpirvParseContext context)
         {
-            if (!context.Types.TryGetValue(args[0], out SpirvTypeBase sampleType))
+            if (!context.Types.TryGetValue(args[0], out SpirvTypeBase? sampleType))
             {
                 Debug.WriteLine($"OpTypeImage {Name ?? Id} has a sample type of unencountered type: {args[0]}");
                 return;
@@ -48,14 +49,21 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
                 return;
             }
 
+            if (sampleType is not SpirvTypeScalar scalarSampleType)
+            {
+                Debug.WriteLine($"OpTypeImage {Name ?? Id} has a non-scalar sample type {args[0]}");
+                return;
+            }
+
             Dimensionality = dimensionality;
+            SampleType = scalarSampleType;
 
             if (args[2] == "0") Depth = false;
             else if (args[2] == "1") Depth = true;
 
             Arrayed = args[3] == "1";
             Multisampled = args[4] == "1";
-            Sampled = int.Parse(args[5]);
+            Sampled = int.Parse(args[5], CultureInfo.InvariantCulture);
             ImageFormat = args[6];
         }
 

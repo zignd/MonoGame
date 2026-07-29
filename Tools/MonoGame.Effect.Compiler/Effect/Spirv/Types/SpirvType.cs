@@ -30,8 +30,8 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
     internal abstract class SpirvTypeBase
     {
         public abstract SpirvType Type { get; }
-        public string Id { get; private set; }
-        public string Name { get; private set; }
+        public string Id { get; private set; } = string.Empty;
+        public string? Name { get; private set; }
 
         public override string ToString()
         {
@@ -46,7 +46,7 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
         {
             Id = parts[0];
 
-            if (context.Names.TryGetValue(Id, out string name))
+            if (context.Names.TryGetValue(Id, out string? name))
             {
                 Name = name;
             }
@@ -58,9 +58,9 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
         {
         }
 
-        internal static SpirvTypeBase ParseType(string[] parts, SpirvReflectionInfo.SpirvParseContext context)
+        internal static SpirvTypeBase? ParseType(string[] parts, SpirvReflectionInfo.SpirvParseContext context)
         {
-            SpirvTypeBase type = null;
+            SpirvTypeBase? type = null;
 
             switch (parts[2])
             {

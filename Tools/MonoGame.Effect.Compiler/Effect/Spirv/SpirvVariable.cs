@@ -5,21 +5,22 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace MonoGame.Effect.Compiler.Effect.Spirv
 {
     // https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpVariable
     internal class SpirvVariable
     {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public SpirvTypePointer Pointer { get; set; }
+        public string Id { get; set; } = string.Empty;
+        public string? Name { get; set; }
+        public SpirvTypePointer? Pointer { get; set; }
         public StorageClass StorageClass { get; set; }
         public List<SpirvDecoration> Decorations { get; private set; } = [];
         public uint? BindingSlot { get; private set; }
         public uint? DescriptorSet { get; private set; }
         public uint? Location { get; private set; }
-        public string HlslSemantic { get; private set; }
+        public string? HlslSemantic { get; private set; }
 
         internal static SpirvVariable ParseVariable(string[] parts, SpirvReflectionInfo.SpirvParseContext context)
         {
@@ -28,12 +29,12 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
                 Id = parts[0]
             };
 
-            if (context.Names.TryGetValue(result.Id, out string name))
+            if (context.Names.TryGetValue(result.Id, out string? name))
             {
                 result.Name = name;
             }
 
-            if (!context.Types.TryGetValue(parts[3], out SpirvTypeBase type))
+            if (!context.Types.TryGetValue(parts[3], out SpirvTypeBase? type))
             {
                 Debug.WriteLine($"OpVariable {result.Id ?? result.Name} references an unencountered type {parts[3]}");
             }
@@ -61,13 +62,13 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
             switch (spirvDecoration.Type)
             {
                 case SpirvDecorationType.Binding:
-                    BindingSlot = uint.Parse(spirvDecoration.Args[0]);
+                    BindingSlot = uint.Parse(spirvDecoration.Args[0], CultureInfo.InvariantCulture);
                     break;
                 case SpirvDecorationType.DescriptorSet:
-                    DescriptorSet = uint.Parse(spirvDecoration.Args[0]);
+                    DescriptorSet = uint.Parse(spirvDecoration.Args[0], CultureInfo.InvariantCulture);
                     break;
                 case SpirvDecorationType.Location:
-                    Location = uint.Parse(spirvDecoration.Args[0]);
+                    Location = uint.Parse(spirvDecoration.Args[0], CultureInfo.InvariantCulture);
                     break;
                 case SpirvDecorationType.UserSemantic:
                     HlslSemantic = spirvDecoration.Args[0].Trim('\"');

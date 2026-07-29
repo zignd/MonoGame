@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Globalization;
 using MonoGame.Effect.TPGParser;
 
 namespace MonoGame.Effect
@@ -67,11 +68,11 @@ namespace MonoGame.Effect
 			}
 			);//(a, b) => ((int)(a.info.elements > 1))a.register_index.CompareTo(b.register_index));
 
-            // NOTE: It seems the latest versions of MojoShader only 
+            // NOTE: It seems the latest versions of MojoShader only
             // output vec4 register sets.  We leave the code below, but
             // the runtime has been optimized for this case.
 
-			// For whatever reason the register indexing is 
+			// For whatever reason the register indexing is
 			// incorrect from MojoShader.
 			{
 				uint bool_index = 0;
@@ -102,19 +103,19 @@ namespace MonoGame.Effect
 			var samplers = MarshalHelper.UnmarshalArray<MojoShader.MOJOSHADER_sampler> (
 					parseData.samplers, parseData.sampler_count);
 			dxshader._samplers = new Sampler[samplers.Length];
-			for (var i = 0; i < samplers.Length; i++) 
+			for (var i = 0; i < samplers.Length; i++)
             {
                 // We need the original sampler name... look for that in the symbols.
-                var originalSamplerName =
-                    symbols.First(e => e.register_set == MojoShader.MOJOSHADER_symbolRegisterSet.MOJOSHADER_SYMREGSET_SAMPLER &&
-                    e.register_index == samplers[i].index
-                ).name;
+				var originalSamplerName =
+					symbols.FirstOrDefault(e => e.register_set == MojoShader.MOJOSHADER_symbolRegisterSet.MOJOSHADER_SYMREGSET_SAMPLER &&
+					e.register_index == samplers[i].index
+				).name ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Could not resolve sampler symbol for register {0}.", samplers[i].index));
 
                 var sampler = new Sampler
                 {
                     //sampler mapping to parameter is unknown atm
                     parameter = -1,
-                                      
+
                     // GLSL needs the MojoShader mangled sampler name.
                     samplerName = samplers[i].name,
 
@@ -126,8 +127,7 @@ namespace MonoGame.Effect
                     type = samplers[i].type,
                 };
 
-                SamplerStateInfo state;
-                if (samplerStates.TryGetValue(originalSamplerName, out state))
+				if (samplerStates.TryGetValue(originalSamplerName, out var state))
                 {
                     sampler.state = state.State;
                     sampler.parameterName = state.TextureName ?? originalSamplerName;
@@ -138,7 +138,7 @@ namespace MonoGame.Effect
 			}
 
 			// Gather all the parameters used by this shader.
-			var symbol_types = new [] { 
+			var symbol_types = new [] {
 				new { name = dxshader.IsVertexShader ? "vs_uniforms_bool" : "ps_uniforms_bool", set = MojoShader.MOJOSHADER_symbolRegisterSet.MOJOSHADER_SYMREGSET_BOOL, },
 				new { name = dxshader.IsVertexShader ? "vs_uniforms_ivec4" : "ps_uniforms_ivec4", set = MojoShader.MOJOSHADER_symbolRegisterSet.MOJOSHADER_SYMREGSET_INT4, },
 				new { name = dxshader.IsVertexShader ? "vs_uniforms_vec4" : "ps_uniforms_vec4", set = MojoShader.MOJOSHADER_symbolRegisterSet.MOJOSHADER_SYMREGSET_FLOAT4, },

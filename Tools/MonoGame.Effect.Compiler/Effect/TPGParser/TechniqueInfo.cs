@@ -6,12 +6,29 @@ using System.Collections.Generic;
 
 namespace MonoGame.Effect
 {
+    /// <summary>
+    /// Stores the parsed source span and pass list for an effect technique.
+    /// </summary>
     public class TechniqueInfo
     {
+        /// <summary>
+        /// The source start position of the technique declaration.
+        /// </summary>
         public int startPos;
+
+        /// <summary>
+        /// The source length of the technique declaration.
+        /// </summary>
         public int length;
 
-        public string name;
+        /// <summary>
+        /// The technique name.
+        /// </summary>
+        public string name = string.Empty;
+
+        /// <summary>
+        /// The passes declared within the technique.
+        /// </summary>
         public List<PassInfo> Passes = new List<PassInfo>();
     }
 }

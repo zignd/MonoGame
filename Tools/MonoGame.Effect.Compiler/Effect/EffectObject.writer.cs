@@ -14,7 +14,7 @@ namespace MonoGame.Effect
 
         private const string Header = "MGFX";
         internal const int Version = 11;
-        
+
         static int ComputeHash(Stream stream)
         {
             System.Diagnostics.Debug.Assert(stream.CanSeek);
@@ -206,7 +206,10 @@ namespace MonoGame.Effect
                     case EffectParameterType.Bool:
                     case EffectParameterType.Int32:
                     case EffectParameterType.Single:
-                        writer.Write((byte[])param.data);
+                        if (param.data is not byte[] buffer)
+                            throw new InvalidOperationException($"Parameter '{param.name}' is missing scalar data.");
+
+                        writer.Write(buffer);
                         break;
                 }
             }
@@ -214,10 +217,14 @@ namespace MonoGame.Effect
 
         private static void WriteAnnotations(BinaryWriter writer, d3dx_parameter[] annotations)
         {
-            var count = annotations == null ? 0 : annotations.Length;
+            var count = annotations.Length;
             writer.Write(count);
             for (var i = 0; i < count; i++)
-                WriteParameter(writer, annotations[i]);
+            {
+                var annotation = annotations[i]
+                    ?? throw new InvalidOperationException("Annotation handle array contains a null parameter.");
+                WriteParameter(writer, annotation);
+            }
         }
 	}
 }

@@ -4,12 +4,21 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System;
 using System.Linq;
 
 namespace MonoGame.Effect.Compiler.Effect.Spirv
 {
     internal class SpirvTypeStructMember
     {
+        internal SpirvTypeStructMember(int index, SpirvTypeBase type, string name)
+        {
+            Index = index;
+            Type = type;
+            Name = name;
+        }
+
         public int Index { get; init; }
         public SpirvTypeBase Type { get; init; }
         public string Name { get; init; }
@@ -21,10 +30,10 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
             switch (decoration.Type)
             {
                 case SpirvDecorationType.Offset:
-                    Offset = uint.Parse(decoration.Args[0]);
+                    Offset = uint.Parse(decoration.Args[0], CultureInfo.InvariantCulture);
                     break;
                 case SpirvDecorationType.MatrixStride:
-                    MatrixStride = uint.Parse(decoration.Args[0]);
+                    MatrixStride = uint.Parse(decoration.Args[0], CultureInfo.InvariantCulture);
                     break;
             }
         }
@@ -34,13 +43,13 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
     internal class SpirvTypeStruct : SpirvTypeBase
     {
         public override SpirvType Type => SpirvType.Struct;
-        public List<SpirvTypeStructMember> Members { get; private set; }
+        public List<SpirvTypeStructMember> Members { get; private set; } = [];
 
         protected override void ParseArgs(string[] args, SpirvReflectionInfo.SpirvParseContext context)
         {
             Members = [];
 
-            if (!context.MemberNames.TryGetValue(Id, out Dictionary<int, string> memberNames))
+            if (!context.MemberNames.TryGetValue(Id, out Dictionary<int, string>? memberNames))
             {
                 memberNames = [];
             }
@@ -49,23 +58,19 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
             {
                 string memberTypeId = args[memberIdx];
 
-                if (!context.Types.TryGetValue(memberTypeId, out SpirvTypeBase type))
+                if (!context.Types.TryGetValue(memberTypeId, out SpirvTypeBase? type))
                 {
                     Debug.WriteLine($"OpTypeStruct {Name ?? Id} uses a member of unencountered type: {memberTypeId}");
+                    throw new InvalidOperationException($"OpTypeStruct {Name ?? Id} referenced unknown member type '{memberTypeId}'.");
                 }
 
-                if (!memberNames.TryGetValue(memberIdx, out string memberName))
+                if (!memberNames.TryGetValue(memberIdx, out string? memberName))
                 {
                     Debug.WriteLine($"Could not find name for member {memberIdx} in SpirvTypeStruct {Name ?? Id}");
                     memberName = memberTypeId;
                 }
 
-                Members.Add(new SpirvTypeStructMember
-                {
-                    Index = memberIdx,
-                    Type = type,
-                    Name = memberName
-                });
+                Members.Add(new SpirvTypeStructMember(memberIdx, type, memberName));
             }
         }
     }

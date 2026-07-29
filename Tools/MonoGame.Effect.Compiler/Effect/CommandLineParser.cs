@@ -8,8 +8,10 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 
 
 namespace MonoGame.Effect
@@ -19,9 +21,12 @@ namespace MonoGame.Effect
     // From Shawn Hargreaves Blog:
     // https://shawnhargreaves.com/blog/a-reusable-reflection-based-command-line-parser.html
     //
+    /// <summary>
+    /// Parses command-line arguments into a reflected options object.
+    /// </summary>
     public class CommandLineParser
     {
-        object _optionsObject;
+        readonly object _optionsObject;
 
         Queue<FieldInfo> _requiredOptions = new Queue<FieldInfo>();
         Dictionary<string, FieldInfo> _optionalOptions = new Dictionary<string, FieldInfo>();
@@ -32,6 +37,10 @@ namespace MonoGame.Effect
 
 
         // Constructor.
+        /// <summary>
+        /// Initializes a parser for the specified options object.
+        /// </summary>
+        /// <param name="optionsObject">The object whose public fields define supported options.</param>
         public CommandLineParser(object optionsObject)
         {
             this._optionsObject = optionsObject;
@@ -39,7 +48,7 @@ namespace MonoGame.Effect
             // Reflect to find what commandline options are available.
             foreach (var field in optionsObject.GetType().GetFields())
             {
-                String description;
+                string? description;
                 var fieldName = GetOptionNameAndDescription(field, out description);
 
                 if (GetAttribute<RequiredAttribute>(field) != null)
@@ -47,10 +56,10 @@ namespace MonoGame.Effect
                     // Record a required option.
                     _requiredOptions.Enqueue(field);
 
-                    _requiredUsageArguments.Add(string.Format("<{0}>", fieldName));
+                    _requiredUsageArguments.Add(string.Format(CultureInfo.InvariantCulture, "<{0}>", fieldName));
 
                     if (!string.IsNullOrEmpty(description))
-                        _requiredUsageHelp.Add(string.Format("{0} {1}", fieldName, description));
+                        _requiredUsageHelp.Add(string.Format(CultureInfo.InvariantCulture, "{0} {1}", fieldName, description));
                 }
                 else
                 {
@@ -58,14 +67,19 @@ namespace MonoGame.Effect
                     _optionalOptions.Add(fieldName.ToLowerInvariant(), field);
 
                     if (field.FieldType == typeof(bool))
-                        _optionalUsageHelp.Add(string.Format("/{0} {1}", fieldName, description));
+                        _optionalUsageHelp.Add(string.Format(CultureInfo.InvariantCulture, "/{0} {1}", fieldName, description));
                     else
-                        _optionalUsageHelp.Add(string.Format("/{0}:value {1}", fieldName, description));
+                        _optionalUsageHelp.Add(string.Format(CultureInfo.InvariantCulture, "/{0}:value {1}", fieldName, description));
                 }
             }
         }
 
 
+        /// <summary>
+        /// Parses the provided arguments and applies them to the configured options object.
+        /// </summary>
+        /// <param name="args">The command-line arguments to parse.</param>
+        /// <returns><see langword="true"/> when all arguments are valid; otherwise, <see langword="false"/>.</returns>
         public bool ParseCommandLine(string[] args)
         {
             // Parse each argument in turn.
@@ -114,7 +128,7 @@ namespace MonoGame.Effect
                 var name = split[0];
                 var value = (split.Length > 1) ? split[1] : "true";
 
-                FieldInfo field;
+                FieldInfo? field;
 
                 if (!_optionalOptions.TryGetValue(name.ToLowerInvariant(), out field))
                 {
@@ -124,7 +138,7 @@ namespace MonoGame.Effect
 
                 return SetOption(field, value);
             }
-            
+
             ShowError("Too many arguments");
             return false;
         }
@@ -158,8 +172,8 @@ namespace MonoGame.Effect
         static object ChangeType(string value, Type type)
         {
             var converter = TypeDescriptor.GetConverter(type);
-
-            return converter.ConvertFromInvariantString(value);
+            return converter.ConvertFromInvariantString(value)
+                ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Could not convert '{0}' to {1}.", value, type.FullName));
         }
 
 
@@ -171,7 +185,8 @@ namespace MonoGame.Effect
 
         IList GetList(FieldInfo field)
         {
-            return (IList)field.GetValue(_optionsObject);
+            return (IList)(field.GetValue(_optionsObject)
+                ?? throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Option field '{0}' is null.", field.Name)));
         }
 
 
@@ -194,7 +209,7 @@ namespace MonoGame.Effect
                 return field.Name;
         }
 
-        static string GetOptionNameAndDescription(FieldInfo field, out String description)
+        static string GetOptionNameAndDescription(FieldInfo field, out string? description)
         {
             var nameAttribute = GetAttribute<NameAttribute>(field);
 
@@ -210,7 +225,10 @@ namespace MonoGame.Effect
             }
         }
 
-        public string Title { get; set; }
+        /// <summary>
+        /// Gets or sets the title written before usage information when an error is reported.
+        /// </summary>
+        public string Title { get; set; } = string.Empty;
 
         void ShowError(string message, params object[] args)
         {
@@ -243,6 +261,7 @@ namespace MonoGame.Effect
         }
 
 
+        [return: MaybeNull]
         static T GetAttribute<T>(ICustomAttributeProvider provider) where T : Attribute
         {
             return provider.GetCustomAttributes(typeof(T), false).OfType<T>().FirstOrDefault();
@@ -250,39 +269,67 @@ namespace MonoGame.Effect
 
 
         // Used on optionsObject fields to indicate which options are required.
+    /// <summary>
+    /// Marks an option field as a required positional argument.
+    /// </summary>
         [AttributeUsage(AttributeTargets.Field)]
         public sealed class RequiredAttribute : Attribute
         {
         }
 
         // Used on an optionsObject field to rename the corresponding commandline option.
+    /// <summary>
+    /// Specifies the command-line name and optional description for an option field.
+    /// </summary>
         [AttributeUsage(AttributeTargets.Field)]
         public class NameAttribute : Attribute
         {
+            /// <summary>
+            /// Initializes the attribute with the specified option name.
+            /// </summary>
+            /// <param name="name">The option name exposed on the command line.</param>
             public NameAttribute(string name)
             {
                 Name = name;
                 Description = null;
             }
 
+            /// <summary>
+            /// Initializes the attribute with the specified option name and description.
+            /// </summary>
+            /// <param name="name">The option name exposed on the command line.</param>
+            /// <param name="description">The usage text shown for the option.</param>
             public NameAttribute(string name, string description)
             {
                 Name = name;
                 Description = description;
             }
 
+            /// <summary>
+            /// Gets the option name exposed on the command line.
+            /// </summary>
             public string Name { get; private set; }
-            public string Description { get; protected set; }
+
+            /// <summary>
+            /// Gets the usage description shown for the option.
+            /// </summary>
+            public string? Description { get; protected set; }
         }
 
+        /// <summary>
+        /// Describes a shader profile option with the known profile names in its usage text.
+        /// </summary>
         [AttributeUsage(AttributeTargets.Field)]
         public sealed class ProfileNameAttribute : NameAttribute
         {
+            /// <summary>
+            /// Initializes the attribute for the profile option.
+            /// </summary>
             public ProfileNameAttribute()
                 : base("Profile")
             {
                 var names = ShaderProfile.All.Select(p => p.Name);
-                Description = "\t - Must be one of the following: " + string.Join(", ", names);                               
+                Description = "\t - Must be one of the following: " + string.Join(", ", names);
             }
         }
     }

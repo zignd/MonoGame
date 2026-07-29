@@ -2,19 +2,28 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
+using System.Globalization;
+
 namespace MonoGame.Effect.Compiler.Effect.Spirv
 {
     // https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpConstant
     internal class SpirvConstant
     {
-        public string Id { get; private set; }
-        public SpirvTypeScalar Type { get; private set; }
+        public string Id { get; }
+        public SpirvTypeScalar Type { get; }
         // This can be an int or a floating point value. Just use a float here and cast to int when required.
-        public float Value { get; private set; }
+        public float Value { get; }
 
-        internal static SpirvConstant ParseConstant(string[] parts, SpirvReflectionInfo.SpirvParseContext context)
+        private SpirvConstant(string id, SpirvTypeScalar type, float value)
         {
-            if (!context.Types.TryGetValue(parts[3], out SpirvTypeBase type))
+            Id = id;
+            Type = type;
+            Value = value;
+        }
+
+        internal static SpirvConstant? ParseConstant(string[] parts, SpirvReflectionInfo.SpirvParseContext context)
+        {
+            if (!context.Types.TryGetValue(parts[3], out SpirvTypeBase? type))
             {
                 return null;
             }
@@ -23,14 +32,9 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
                 return null;
             }
 
-            float value = float.Parse(parts[4]);
+            float value = float.Parse(parts[4], CultureInfo.InvariantCulture);
 
-            return new SpirvConstant
-            {
-                Id = parts[0],
-                Type = type as SpirvTypeScalar,
-                Value = value
-            };
+            return new SpirvConstant(parts[0], (SpirvTypeScalar)type, value);
         }
     }
 }

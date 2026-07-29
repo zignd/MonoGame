@@ -9,20 +9,51 @@ using System.Globalization;
 
 namespace MonoGame.Effect
 {
+    /// <summary>
+    /// Stores the parsed shader entry points and render-state assignments for an effect pass.
+    /// </summary>
     public class PassInfo
     {
-        public string name;
+        /// <summary>
+        /// The pass name.
+        /// </summary>
+        public string name = string.Empty;
 
-        public string vsModel;
-        public string vsFunction;
+        /// <summary>
+        /// The vertex shader model string.
+        /// </summary>
+        public string? vsModel;
 
-        public string psModel;
-        public string psFunction;
+        /// <summary>
+        /// The vertex shader entry-point function name.
+        /// </summary>
+        public string? vsFunction;
 
-        public BlendState blendState;
-        public RasterizerState rasterizerState;
-        public DepthStencilState depthStencilState;
-		
+        /// <summary>
+        /// The pixel shader model string.
+        /// </summary>
+        public string? psModel;
+
+        /// <summary>
+        /// The pixel shader entry-point function name.
+        /// </summary>
+        public string? psFunction;
+
+        /// <summary>
+        /// The pass blend state, when one is configured.
+        /// </summary>
+        public BlendState? blendState;
+
+        /// <summary>
+        /// The pass rasterizer state, when one is configured.
+        /// </summary>
+        public RasterizerState? rasterizerState;
+
+        /// <summary>
+        /// The pass depth-stencil state, when one is configured.
+        /// </summary>
+        public DepthStencilState? depthStencilState;
+
         private static Blend ToAlphaBlend(Blend blend)
         {
             switch (blend)
@@ -39,6 +70,9 @@ namespace MonoGame.Effect
             return blend;
         }
 
+        /// <summary>
+        /// Sets whether alpha blending is enabled for the pass.
+        /// </summary>
         public bool AlphaBlendEnable
         {
             set
@@ -66,16 +100,22 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the fill mode used by the pass rasterizer state.
+        /// </summary>
         public FillMode FillMode
         {
             set
             {
                 if (rasterizerState == null)
                     rasterizerState = new RasterizerState();
-                rasterizerState.FillMode = value;             
+                rasterizerState.FillMode = value;
             }
         }
 
+        /// <summary>
+        /// Sets the face-culling mode used by the pass rasterizer state.
+        /// </summary>
         public CullMode CullMode
         {
             set
@@ -86,6 +126,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets whether depth testing is enabled.
+        /// </summary>
         public bool ZEnable
         {
             set
@@ -96,6 +139,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets whether depth writes are enabled.
+        /// </summary>
         public bool ZWriteEnable
         {
             set
@@ -106,6 +152,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the depth comparison function.
+        /// </summary>
         public CompareFunction DepthBufferFunction
         {
             set
@@ -116,6 +165,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets whether multisample antialiasing is enabled.
+        /// </summary>
         public bool MultiSampleAntiAlias
         {
             set
@@ -126,6 +178,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets whether scissor testing is enabled.
+        /// </summary>
         public bool ScissorTestEnable
         {
             set
@@ -136,6 +191,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets whether stencil testing is enabled.
+        /// </summary>
         public bool StencilEnable
         {
             set
@@ -146,6 +204,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the stencil operation to apply when the stencil test fails.
+        /// </summary>
         public StencilOperation StencilFail
         {
             set
@@ -156,6 +217,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the stencil comparison function.
+        /// </summary>
         public CompareFunction StencilFunc
         {
             set
@@ -166,6 +230,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the stencil-read mask.
+        /// </summary>
         public int StencilMask
         {
             set
@@ -176,6 +243,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the stencil operation to apply when both stencil and depth tests pass.
+        /// </summary>
         public StencilOperation StencilPass
         {
             set
@@ -186,6 +256,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the stencil reference value.
+        /// </summary>
         public int StencilRef
         {
             set
@@ -196,6 +269,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the stencil-write mask.
+        /// </summary>
         public int StencilWriteMask
         {
             set
@@ -206,6 +282,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the stencil operation to apply when the stencil test passes but the depth test fails.
+        /// </summary>
         public StencilOperation StencilZFail
         {
             set
@@ -216,6 +295,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the source blend factor.
+        /// </summary>
         public Blend SrcBlend
         {
             set
@@ -227,6 +309,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the destination blend factor.
+        /// </summary>
         public Blend DestBlend
         {
             set
@@ -238,6 +323,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the blend operation.
+        /// </summary>
         public BlendFunction BlendOp
         {
             set
@@ -248,6 +336,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the enabled color write channels.
+        /// </summary>
         public ColorWriteChannels ColorWriteEnable
         {
             set
@@ -255,9 +346,12 @@ namespace MonoGame.Effect
                 if (blendState == null)
                     blendState = new BlendState();
                 blendState.ColorWriteChannels = value;
-            }    
+            }
         }
 
+        /// <summary>
+        /// Sets the rasterizer depth bias.
+        /// </summary>
         public float DepthBias
         {
             set
@@ -268,6 +362,9 @@ namespace MonoGame.Effect
             }
         }
 
+        /// <summary>
+        /// Sets the rasterizer slope-scaled depth bias.
+        /// </summary>
         public float SlopeScaleDepthBias
         {
             set

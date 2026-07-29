@@ -9,16 +9,24 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
 {
     internal class SpirvSampledImage
     {
-        public string Id { get; private set; }
-        public SpirvLoad LoadedSampler { get; private set; }
-        public SpirvLoad LoadedImage { get; private set; }
-        public SpirvTypeSampledImage SampleType { get; private set; }
+        public string Id { get; }
+        public SpirvLoad LoadedSampler { get; }
+        public SpirvLoad LoadedImage { get; }
+        public SpirvTypeSampledImage SampleType { get; }
 
-        internal static SpirvSampledImage ParseSampledImage(string[] parts, SpirvReflectionInfo.SpirvParseContext context)
+        private SpirvSampledImage(string id, SpirvLoad loadedSampler, SpirvLoad loadedImage, SpirvTypeSampledImage sampleType)
+        {
+            Id = id;
+            LoadedSampler = loadedSampler;
+            LoadedImage = loadedImage;
+            SampleType = sampleType;
+        }
+
+        internal static SpirvSampledImage? ParseSampledImage(string[] parts, SpirvReflectionInfo.SpirvParseContext context)
         {
             string id = parts[0];
 
-            if (!context.Types.TryGetValue(parts[3], out SpirvTypeBase spirvTypeBase))
+            if (!context.Types.TryGetValue(parts[3], out SpirvTypeBase? spirvTypeBase))
             {
                 Debug.WriteLine($"OpSampledImage {id} referenced unparsed type {parts[3]}");
                 return null;
@@ -29,25 +37,19 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
                 return null;
             }
 
-            if (!context.Loads.TryGetValue(parts[4], out SpirvLoad imageLoad))
+            if (!context.Loads.TryGetValue(parts[4], out SpirvLoad? imageLoad))
             {
                 Debug.WriteLine($"OpSampledImage {id} referenced unparsed image load {parts[4]}");
                 return null;
             }
 
-            if (!context.Loads.TryGetValue(parts[5], out SpirvLoad sampledLoad))
+            if (!context.Loads.TryGetValue(parts[5], out SpirvLoad? sampledLoad))
             {
                 Debug.WriteLine($"OpSampledImage {id} referenced unparsed sampler load {parts[5]}");
                 return null;
             }
 
-            return new SpirvSampledImage
-            {
-                Id = id,
-                LoadedSampler = sampledLoad,
-                LoadedImage = imageLoad,
-                SampleType = spirvTypeBase as SpirvTypeSampledImage
-            };
+            return new SpirvSampledImage(id, sampledLoad, imageLoad, (SpirvTypeSampledImage)spirvTypeBase);
         }
     }
 }

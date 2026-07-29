@@ -3,6 +3,7 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System.Diagnostics;
+using System.Globalization;
 
 namespace MonoGame.Effect.Compiler.Effect.Spirv
 {
@@ -10,19 +11,19 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
     internal class SpirvTypeArray : SpirvTypeBase
     {
         public override SpirvType Type => SpirvType.Array;
-        public SpirvTypeBase ElementType { get; private set; }
+        public SpirvTypeBase? ElementType { get; private set; }
         public uint Length { get; private set; }
         public uint? ArrayStride { get; private set; }
 
         protected override void ParseArgs(string[] args, SpirvReflectionInfo.SpirvParseContext context)
         {
-            if (!context.Types.TryGetValue(args[0], out SpirvTypeBase type))
-            {     
+            if (!context.Types.TryGetValue(args[0], out SpirvTypeBase? type))
+            {
                 Debug.WriteLine($"OpTypeArray {Name ?? Id} uses elements of unencountered type: {args[3]}");
                 return;
             }
 
-            if (!context.Constants.TryGetValue(args[1], out SpirvConstant constant))
+            if (!context.Constants.TryGetValue(args[1], out SpirvConstant? constant))
             {
                 Debug.WriteLine($"OpTypeArray {Name ?? Id} specified unparsed constant for length {args[1]}");
                 return;
@@ -36,7 +37,7 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
         {
             if (spirvDecoration.Type == SpirvDecorationType.ArrayStride)
             {
-                ArrayStride = uint.Parse(spirvDecoration.Args[0]);
+                ArrayStride = uint.Parse(spirvDecoration.Args[0], CultureInfo.InvariantCulture);
             }
         }
     }

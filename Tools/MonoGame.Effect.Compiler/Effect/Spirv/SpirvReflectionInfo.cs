@@ -2,21 +2,22 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
-using Microsoft.VisualBasic;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 
 namespace MonoGame.Effect.Compiler.Effect.Spirv
 {
     internal class SpirvReflectionInfo
     {
-        public ReadOnlyCollection<SpirvVariable> Variables { get; init; }
-        public string EntryPoint { get; init; }
-        public ReadOnlyCollection<SpirvVariable> Input { get; init; }
-        public ReadOnlyCollection<SpirvVariable> Output { get; init; }
-        public ReadOnlyCollection<SpirvSampledImage> SampledImages { get; init; }
-        public ReadOnlyCollection<SpirvLoad> ImageLoads { get; init; }
+        public ReadOnlyCollection<SpirvVariable> Variables { get; init; } = new List<SpirvVariable>().AsReadOnly();
+        public string EntryPoint { get; init; } = string.Empty;
+        public ReadOnlyCollection<SpirvVariable> Input { get; init; } = new List<SpirvVariable>().AsReadOnly();
+        public ReadOnlyCollection<SpirvVariable> Output { get; init; } = new List<SpirvVariable>().AsReadOnly();
+        public ReadOnlyCollection<SpirvSampledImage> SampledImages { get; init; } = new List<SpirvSampledImage>().AsReadOnly();
+        public ReadOnlyCollection<SpirvLoad> ImageLoads { get; init; } = new List<SpirvLoad>().AsReadOnly();
 
         internal class SpirvParseContext
         {
@@ -29,7 +30,7 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
             internal List<SpirvSampledImage> SampledImages = [];
             internal List<(string id, SpirvDecoration decoration)> Decorations = [];
             internal List<(string id, int index, SpirvDecoration decoration)> MemberDecorations = [];
-            internal string[] EntryPoint = null;
+            internal string[]? EntryPoint;
         }
 
         internal static SpirvReflectionInfo Parse(string[] spirvFileLines)
@@ -45,7 +46,7 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
                 {
                     if (parts[2].StartsWith("OpType"))
                     {
-                        SpirvTypeBase newType = SpirvTypeBase.ParseType(parts, context);
+                        SpirvTypeBase? newType = SpirvTypeBase.ParseType(parts, context);
                         if (newType != null) context.Types.Add(newType.Id, newType);
                     }
                     else if (parts[2] == "OpVariable")
@@ -55,18 +56,19 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
                     }
                     else if (parts[2] == "OpConstant")
                     {
-                        SpirvConstant newConst = SpirvConstant.ParseConstant(parts, context);
-                        context.Constants.Add(newConst.Id, newConst);
+                        SpirvConstant? newConst = SpirvConstant.ParseConstant(parts, context);
+                        if (newConst != null)
+                            context.Constants.Add(newConst.Id, newConst);
                     }
                     else if (parts[2] == "OpLoad")
                     {
-                        SpirvLoad load = SpirvLoad.ParseLoad(parts, context);
+                        SpirvLoad? load = SpirvLoad.ParseLoad(parts, context);
                         if (load != null)
                             context.Loads.Add(load.Id, load);
                     }
                     else if (parts[2] == "OpSampledImage")
                     {
-                        SpirvSampledImage sampledImage = SpirvSampledImage.ParseSampledImage(parts, context);
+                        SpirvSampledImage? sampledImage = SpirvSampledImage.ParseSampledImage(parts, context);
                         if (sampledImage != null)
                             context.SampledImages.Add(sampledImage);
                     }
@@ -78,26 +80,27 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
                 }
                 else if (parts[0] == "OpMemberName")
                 {
-                    if (!context.MemberNames.TryGetValue(parts[1], out Dictionary<int, string> members))
+                    if (!context.MemberNames.TryGetValue(parts[1], out Dictionary<int, string>? members))
                     {
                         members = [];
                         context.MemberNames.Add(parts[1], members);
                     }
 
-                    members.Add(int.Parse(parts[2]), parts[3].Trim('\"'));
+                    members.Add(int.Parse(parts[2], CultureInfo.InvariantCulture), parts[3].Trim('\"'));
                 }
                 else if (parts[0] == "OpDecorate" || parts[0] == "OpDecorateString")
                 {
                     string target = parts[1];
-                    SpirvDecoration decoration = SpirvDecoration.ParseDecorator(parts[2..]);
+                    SpirvDecoration? decoration = SpirvDecoration.ParseDecorator(parts[2..]);
                     if (decoration != null) context.Decorations.Add((target, decoration));
                 }
                 else if (parts[0] == "OpMemberDecorate")
                 {
                     string target = parts[1];
-                    int index = int.Parse(parts[2]);
-                    SpirvDecoration decoration = SpirvDecoration.ParseDecorator(parts[3..]);
-                    context.MemberDecorations.Add((target, index, decoration));
+                    int index = int.Parse(parts[2], CultureInfo.InvariantCulture);
+                    SpirvDecoration? decoration = SpirvDecoration.ParseDecorator(parts[3..]);
+                    if (decoration != null)
+                        context.MemberDecorations.Add((target, index, decoration));
                 }
                 else if (parts[0] == "OpEntryPoint")
                 {
@@ -109,11 +112,11 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
             // Then assign anything that could have been a forward ref
             foreach ((string id, SpirvDecoration decoration) in context.Decorations)
             {
-                if (context.Variables.TryGetValue(id, out SpirvVariable variable))
+                if (context.Variables.TryGetValue(id, out SpirvVariable? variable))
                 {
                     variable.ApplyDecoration(decoration);
                 }
-                else if (context.Types.TryGetValue(id, out SpirvTypeBase type))
+                else if (context.Types.TryGetValue(id, out SpirvTypeBase? type))
                 {
                     type.ApplyDecoration(decoration);
                 }
@@ -121,12 +124,15 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
 
             foreach ((string id, int index, SpirvDecoration decoration) in context.MemberDecorations)
             {
-                SpirvTypeStruct targetStruct = context.Types[id] as SpirvTypeStruct;
+                var targetStruct = context.Types[id] as SpirvTypeStruct
+                    ?? throw new InvalidOperationException($"Member decoration referenced non-struct type '{id}'.");
 
                 targetStruct.Members[index].ApplyDecoration(decoration);
             }
 
-            string[] entryPointInputOutput = context.EntryPoint[4..];
+            var entryPoint = context.EntryPoint
+                ?? throw new InvalidOperationException("SPIR-V entry point was not found.");
+            string[] entryPointInputOutput = entryPoint[4..];
             List<SpirvVariable> inputs = [];
             List<SpirvVariable> outputs = [];
 
@@ -153,7 +159,7 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
 
             return new SpirvReflectionInfo
             {
-                EntryPoint = context.EntryPoint[3].Trim('\"'),
+                EntryPoint = entryPoint[3].Trim('\"'),
                 Variables = context.Variables.Values.ToList().AsReadOnly(),
                 Input = inputs.AsReadOnly(),
                 Output = outputs.AsReadOnly(),

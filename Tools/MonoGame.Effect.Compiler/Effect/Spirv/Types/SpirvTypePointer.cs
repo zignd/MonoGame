@@ -21,7 +21,7 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
     {
         public override SpirvType Type => SpirvType.Pointer;
         public StorageClass StorageClass { get; private set; }
-        public SpirvTypeBase PointerType { get; private set; }
+        public SpirvTypeBase PointerType { get; private set; } = null!;
 
         protected override void ParseArgs(string[] args, SpirvReflectionInfo.SpirvParseContext context)
         {
@@ -33,11 +33,8 @@ namespace MonoGame.Effect.Compiler.Effect.Spirv
 
             StorageClass = storageClass;
 
-            if (!context.Types.TryGetValue(args[1], out SpirvTypeBase type))
-            {
-                Debug.WriteLine($"OpTypeStruct {Name ?? Id} uses a member of unencountered type {args[1]}");
-                return;
-            }
+            if (!context.Types.TryGetValue(args[1], out SpirvTypeBase? type))
+                throw new InvalidOperationException($"OpTypePointer {Name ?? Id} referenced unknown pointee type '{args[1]}'.");
 
             PointerType = type;
         }

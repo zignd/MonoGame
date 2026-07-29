@@ -115,11 +115,6 @@ Copyright: Microsoft Corporation
 License: MIT
 Comment: Taken from DirectXTK12.
 
-Files: MonoGame/external/CppNet/*
-Component: CppNet
-Copyright: 2007-2008 Shevek
-License: Apache-2.0
-
 Files: MonoGame/external/stb/stb_image.h
        MonoGame/external/stb/stb_image_write.h
        MonoGame/external/stb/stb_image_resize2.h
