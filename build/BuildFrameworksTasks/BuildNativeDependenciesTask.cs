@@ -84,7 +84,7 @@ public sealed class BuildNativeDependenciesTask : FrostingTask<BuildContext>
                 args.Append("-A").Append(targetArch == "arm64" ? "ARM64" : "x64");
                 if (isSDL)
                 {
-                    args.Append("-DSDL_FORCE_STATIC_VCRT=ON");
+                    args.Append("-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded");
                 }
                 else
                 {
