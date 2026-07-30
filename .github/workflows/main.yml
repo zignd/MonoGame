@@ -137,12 +137,12 @@ jobs:
       - name: Install Fonts
         uses: monogame/monogame-actions/install-fonts@v1
         
-      - name: Install SDL2 deps on Linux
+      - name: Install SDL3 deps on Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get install -y --no-install-recommends \
             libasound2-dev libpulse-dev libaudio-dev libjack-jackd2-dev libsndio-dev libsamplerate0-dev \
-            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
             libwayland-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
             libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev fcitx-libs-dev \
             libpipewire-0.3-dev libdecor-0-dev
@@ -376,6 +376,12 @@ jobs:
           dotnet-version: '${{ env.DotnetVersion }}'
           global-json-file: "./global.json"
 
+      - name: Install Linux Native smoke dependencies
+        if: runner.environment == 'github-hosted' && matrix.platform == 'linux' && runner.arch == 'X64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers xvfb xauth
+
       - name: Update Homebrew
         if: runner.environment == 'github-hosted' && runner.os == 'macos'
         run: |
@@ -423,7 +429,7 @@ jobs:
           path: tests-windowsdx
           
       - name: Download tests-windowsdx12-${{ matrix.platform }}
-        if: runner.os == 'Windows' && runner.environment != 'github-hosted'
+        if: runner.os == 'Windows'
         uses: actions/download-artifact@v4
         with:
           name: tests-windowsdx12-${{ matrix.platform }}
@@ -434,6 +440,29 @@ jobs:
         with:
           name: tests-desktopvk-${{ matrix.platform }}
           path: tests-desktopvk
+
+      - name: Run hosted Windows DX12 SDL3 smoke tests
+        if: runner.environment == 'github-hosted' && runner.os == 'Windows'
+        run: dotnet MonoGame.Tests.dll --where="cat == NativeSdl3" --timeout=60000 --labels=Before
+        env:
+          CI: true
+        working-directory: tests-windowsdx12
+
+      - name: Run hosted macOS Vulkan SDL3 smoke tests
+        if: runner.environment == 'github-hosted' && runner.os == 'macos'
+        run: dotnet MonoGame.Tests.dll --where="cat == NativeSdl3" --timeout=60000 --labels=Before
+        env:
+          CI: true
+        working-directory: tests-desktopvk
+
+      - name: Run hosted Linux Vulkan SDL3 smoke tests
+        if: runner.environment == 'github-hosted' && matrix.platform == 'linux' && runner.arch == 'X64'
+        run: xvfb-run -a -s "-screen 0 1280x720x24" dotnet MonoGame.Tests.dll --where="cat == NativeSdl3 && cat != Fullscreen" --timeout=60000 --labels=Before
+        env:
+          CI: true
+          SDL_VIDEODRIVER: x11
+          VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.json
+        working-directory: tests-desktopvk
 
       # Run the DirectX 11 tests in two steps: first the audio, then the rest.
       # This is because the audio tests has some incompatibilities within the runner with ContentManagerTests.

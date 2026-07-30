@@ -23,13 +23,13 @@ public sealed class BuildNativeDependenciesTask : FrostingTask<BuildContext>
 
     private void BuildDependenciesForArch(BuildContext context, string targetArch)
     {
-        BuildSDL2(context, targetArch);
+        BuildSDL3(context, targetArch);
         BuildFAudio(context, targetArch);
     }
 
-    private void BuildSDL2(BuildContext context, string targetArch)
+    private void BuildSDL3(BuildContext context, string targetArch)
     {
-        var sdlSourceDir = "native/monogame/external/sdl2/sdl";
+        var sdlSourceDir = "native/monogame/external/sdl3";
         var sdlBuildDir = System.IO.Path.Combine(sdlSourceDir, "build", targetArch);
         if (context.Environment.Platform.Family != PlatformFamily.Windows)
             sdlBuildDir = System.IO.Path.Combine(sdlSourceDir, "build");
@@ -40,32 +40,34 @@ public sealed class BuildNativeDependenciesTask : FrostingTask<BuildContext>
             .Append("-S").AppendQuoted(context.MakeAbsolute(new DirectoryPath(sdlSourceDir)).FullPath)
             .Append("-B").AppendQuoted(context.MakeAbsolute(new DirectoryPath(sdlBuildDir)).FullPath)
             .Append("-DSDL_STATIC=ON")
-            .Append("-DSDL_TEST=OFF");
+            .Append("-DSDL_SHARED=OFF")
+            .Append("-DSDL_TEST_LIBRARY=OFF")
+            .Append("-DSDL_TESTS=OFF");
 
         AppendPlatformCMakeArgs(configureArgs, context, isSDL: true, targetArch);
 
-        RunCMake(context, configureArgs, "SDL2 CMake configuration failed!");
+        RunCMake(context, configureArgs, "SDL3 CMake configuration failed!");
 
-        RunCMakeBuild(context, sdlBuildDir, "Release", "SDL2 build failed!");
+        RunCMakeBuild(context, sdlBuildDir, "Release", "SDL3 build failed!");
     }
 
     private void BuildFAudio(BuildContext context, string targetArch)
     {
         var faudioSourceDir = "native/monogame/external/faudio";
-        var faudioBuildDir = System.IO.Path.Combine(faudioSourceDir, "build", targetArch);
+        var faudioBuildDir = System.IO.Path.Combine(faudioSourceDir, "build-sdl3", targetArch);
         if (context.Environment.Platform.Family != PlatformFamily.Windows)
-            faudioBuildDir = System.IO.Path.Combine(faudioSourceDir, "build");
+            faudioBuildDir = System.IO.Path.Combine(faudioSourceDir, "build-sdl3");
 
         RecreateDirectory(context, faudioBuildDir);
 
-        var sdlIncludeDir = System.IO.Path.Combine("native/monogame/external/sdl2/sdl", "include");
+        var sdlIncludeDir = System.IO.Path.Combine("native/monogame/external/sdl3", "include");
 
         var configureArgs = new ProcessArgumentBuilder()
             .Append("-S").AppendQuoted(context.MakeAbsolute(new DirectoryPath(faudioSourceDir)).FullPath)
             .Append("-B").AppendQuoted(context.MakeAbsolute(new DirectoryPath(faudioBuildDir)).FullPath)
             .Append("-DBUILD_SHARED_LIBS=OFF")
             .Append($"-DCMAKE_C_STANDARD_INCLUDE_DIRECTORIES=\"{context.MakeAbsolute(new DirectoryPath(sdlIncludeDir))}\"")
-            .Append("-DBUILD_SDL3=OFF");
+            .Append("-DBUILD_SDL3=ON");
 
         AppendPlatformCMakeArgs(configureArgs, context, isSDL: false, targetArch);
 

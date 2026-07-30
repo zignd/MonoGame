@@ -384,6 +384,25 @@ MGG_GraphicsSystem* MGG_GraphicsSystem_Create()
 			adapter->desc = desc;
 			system->adapters.push_back(adapter);
 		}
+
+		// Hosted CI commonly has no hardware D3D12 adapter. Fall back to WARP so the
+		// DX12 backend remains usable for runtime validation and software-only hosts.
+		if (system->adapters.empty() &&
+			SUCCEEDED(system->dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(adapter1.ReleaseAndGetAddressOf()))))
+		{
+			DXGI_ADAPTER_DESC1 desc;
+			if (SUCCEEDED(adapter1->GetDesc1(&desc)) &&
+				SUCCEEDED(D3D12CreateDevice(adapter1.Get(), D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), nullptr)))
+			{
+				auto adapter = new MGG_GraphicsAdapter();
+				int size_needed = WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1, NULL, 0, NULL, NULL);
+				adapter->description.resize(size_needed - 1, '\0');
+				WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1, &adapter->description[0], size_needed, NULL, NULL);
+				adapter->adapter = adapter1;
+				adapter->desc = desc;
+				system->adapters.push_back(adapter);
+			}
+		}
 	}
 
 #endif

@@ -19,26 +19,25 @@ newoption {
     }
 }
 
--- Which SDL major version the platform layer (MGP) is built against. Default SDL2 (shipping);
--- SDL3 is opt-in and matures in parallel. The MGP sources are shared and #if MG_SDL2 / MG_SDL3 guarded.
+-- Which SDL major version the platform layer (MGP) is built against. SDL3 is the default;
+-- SDL2 remains available as an explicit fallback. The MGP sources are shared and guarded.
 newoption {
     trigger = "sdl",
     value = "VERSION",
     description = "SDL major version for the platform layer (2 or 3)",
-    default = "2",
+    default = "3",
     allowed = {
-        { "2", "SDL2 (default, shipping)" },
-        { "3", "SDL3 (opt-in)" }
+        { "2", "SDL2 (fallback)" },
+        { "3", "SDL3 (default)" }
     }
 }
 
 function common(project_name)
-    -- The SDL3 variant outputs to a distinct "<project>-sdl3" artifacts folder so it coexists on
-    -- disk with the default SDL2 build (neither clobbers the other). The Trace Arena backend props
-    -- pick the folder via its own -p:Sdl switch.
+    -- The default SDL3 variant uses the canonical project path consumed by packages and tests.
+    -- The explicit SDL2 fallback uses a distinct path so both variants can coexist.
     local variant = project_name
-    if _OPTIONS["sdl"] == "3" then
-        variant = project_name .. "-sdl3"
+    if _OPTIONS["sdl"] == "2" then
+        variant = project_name .. "-sdl2"
     end
     if os.target() == "windows" then
         filter "platforms:x64"
@@ -63,8 +62,7 @@ function common(project_name)
     filter {}
     defines {"DLL_EXPORT"}
     targetdir(platform_target_path)
-    -- Per-variant object dir so the SDL2 and SDL3 builds don't share stale .o files (switching
-    -- variants would otherwise need a `make clean`).
+    -- Per-variant object dir so the SDL2 and SDL3 builds don't share stale objects.
     objdir("obj/" .. variant)
     targetname "mgruntime"
     cppdialect "C++17"
@@ -98,7 +96,7 @@ function sdl2()
     filter {}
 end
 
--- SDL3 (opt-in via --sdl=3). Shares the same MGP sources as sdl2(); the sources are
+-- SDL3 (default, or explicit via --sdl=3). Shares the same MGP sources as sdl2(); the sources are
 -- #if MG_SDL2 / MG_SDL3 guarded. SDL3 headers live under external/sdl3/include (SDL3/*.h).
 function sdl3()
     -- SDL_ENABLE_OLD_NAMES turns on SDL3's official compat aliases for renamed-but-unchanged
@@ -201,8 +199,7 @@ function faudio()
     includedirs {"external/faudio/include"}
 
     -- FAudio uses SDL as its platform layer (threads/audio-device/IO), so it must be built against
-    -- the SAME SDL major version we link. The SDL3 variant is built into build-sdl3 (see the SDL3
-    -- FAudio build step); the default SDL2 variant stays in build.
+    -- the SAME SDL major version we link. SDL3 uses build-sdl3; the SDL2 fallback uses build.
     local faudio_build = (_OPTIONS["sdl"] == "3") and "external/faudio/build-sdl3" or "external/faudio/build"
 
     filter {"system:windows"}

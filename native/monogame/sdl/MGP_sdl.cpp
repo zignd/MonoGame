@@ -811,8 +811,10 @@ MGP_Window* MGP_Window_Create(
 
 	Uint32 flags = SDL_WINDOW_HIDDEN;// | SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-#if defined(MG_VULKAN) || defined(MG_DIRECTX12)
+#if defined(MG_VULKAN)
 	flags |= SDL_WINDOW_VULKAN;
+#elif defined(MG_DIRECTX12)
+    // DirectX 12 only needs the HWND exposed by SDL; no SDL graphics flag is required.
 #elif defined(MG_METAL)
 	flags |= SDL_WINDOW_METAL;
 #else
