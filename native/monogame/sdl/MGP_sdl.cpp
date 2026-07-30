@@ -326,6 +326,23 @@ MGGraphicsBackend MGP_Platform_GetGraphicsBackend()
 
 }
 
+mgint MGP_Platform_GetSdlVersion()
+{
+#if MG_SDL3
+    return SDL_GetVersion();
+#else
+    SDL_version version;
+    SDL_GetVersion(&version);
+    return SDL_VERSIONNUM(version.major, version.minor, version.patch);
+#endif
+}
+
+mgbyte MGP_Platform_PushSdlEvent(void* event_)
+{
+    assert(event_ != nullptr);
+    return SDL_PushEvent(static_cast<SDL_Event*>(event_)) != 0;
+}
+
 static MGP_Window* MGP_WindowFromId(MGP_Platform* platform, Uint32 windowId)
 {
     assert(platform != nullptr);
@@ -886,6 +903,13 @@ void* MGP_Window_GetNativeHandle(MGP_Window* window)
 	assert(window != nullptr);
 	assert(window->window != nullptr);
 	return window->window;
+}
+
+mgulong MGP_Window_GetSdlFlags(MGP_Window* window)
+{
+    assert(window != nullptr);
+    assert(window->window != nullptr);
+    return static_cast<mgulong>(SDL_GetWindowFlags(window->window));
 }
 
 mgbyte MGP_Window_GetAllowUserResizing(MGP_Window* window)

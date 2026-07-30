@@ -28,7 +28,7 @@ internal unsafe partial class NativeSdl3SmokeTest
     [SetUp]
     public void SetUp()
     {
-        Assert.That(Sdl.GetVersion() / 1_000_000, Is.EqualTo(3), "The Native test runner must load SDL3.");
+        Assert.That(MGP.Platform_GetSdlVersion() / 1_000_000, Is.EqualTo(3), "The Native test runner must load SDL3.");
 
         _platform = MGP.Platform_Create(out GameRunBehavior behavior);
         Assert.Multiple(() =>
@@ -70,7 +70,7 @@ internal unsafe partial class NativeSdl3SmokeTest
             Key = 'w'
         };
 
-        Assert.That(Sdl.PushEvent(ref sdlEvent), Is.True);
+        Assert.That(MGP.Platform_PushSdlEvent((nint)(&sdlEvent)), Is.Not.Zero);
         Assert.That(TryPoll(expectedType, out MGP_Event translated), Is.True);
         Assert.Multiple(() =>
         {
@@ -89,7 +89,7 @@ internal unsafe partial class NativeSdl3SmokeTest
             MotionY = 45
         };
 
-        Assert.That(Sdl.PushEvent(ref sdlEvent), Is.True);
+        Assert.That(MGP.Platform_PushSdlEvent((nint)(&sdlEvent)), Is.Not.Zero);
         Assert.That(TryPollMouseMove(123, 45), Is.True);
     }
 
@@ -121,7 +121,7 @@ internal unsafe partial class NativeSdl3SmokeTest
             GamepadButton = 0
         };
 
-        Assert.That(Sdl.PushEvent(ref sdlEvent), Is.True);
+        Assert.That(MGP.Platform_PushSdlEvent((nint)(&sdlEvent)), Is.Not.Zero);
         Assert.That(TryPoll(EventType.ControllerStateChange, out MGP_Event translated), Is.True);
         Assert.Multiple(() =>
         {
@@ -186,7 +186,6 @@ internal unsafe partial class NativeSdl3SmokeTest
 
     private bool WaitForFullscreen(bool expected)
     {
-        var nativeWindow = MGP.Window_GetNativeHandle(_window);
         var timeout = Stopwatch.StartNew();
         while (timeout.Elapsed < TimeSpan.FromSeconds(5))
         {
@@ -194,7 +193,7 @@ internal unsafe partial class NativeSdl3SmokeTest
             {
             }
 
-            var isFullscreen = (Sdl.GetWindowFlags(nativeWindow) & SdlWindowFullscreen) != 0;
+            var isFullscreen = (MGP.Window_GetSdlFlags(_window) & SdlWindowFullscreen) != 0;
             if (isFullscreen == expected)
                 return true;
 
@@ -235,17 +234,5 @@ internal unsafe partial class NativeSdl3SmokeTest
         public byte GamepadButton;
     }
 
-    private static partial class Sdl
-    {
-        [LibraryImport(MGP.MonoGameNativeDLL, EntryPoint = "SDL_GetVersion")]
-        public static partial int GetVersion();
-
-        [LibraryImport(MGP.MonoGameNativeDLL, EntryPoint = "SDL_PushEvent")]
-        [return: MarshalAs(UnmanagedType.U1)]
-        public static partial bool PushEvent(ref SdlEvent sdlEvent);
-
-        [LibraryImport(MGP.MonoGameNativeDLL, EntryPoint = "SDL_GetWindowFlags")]
-        public static partial ulong GetWindowFlags(nint window);
-    }
 }
 #endif

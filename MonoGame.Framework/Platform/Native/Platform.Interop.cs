@@ -277,6 +277,12 @@ internal static unsafe partial class MGP
     [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Platform_GetGraphicsBackend", ExactSpelling = true)]
     public static extern GraphicsBackend Platform_GetGraphicsBackend();
 
+    [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Platform_GetSdlVersion", ExactSpelling = true)]
+    public static extern int Platform_GetSdlVersion();
+
+    [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Platform_PushSdlEvent", ExactSpelling = true)]
+    public static extern byte Platform_PushSdlEvent(nint event_);
+
     #endregion
 
     #region Window
@@ -292,6 +298,9 @@ internal static unsafe partial class MGP
 
     [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Window_GetNativeHandle", ExactSpelling = true)]
     public static extern nint Window_GetNativeHandle(MGP_Window* window);
+
+    [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Window_GetSdlFlags", ExactSpelling = true)]
+    public static extern ulong Window_GetSdlFlags(MGP_Window* window);
 
     [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Window_GetAllowUserResizing", ExactSpelling = true)]
     public static extern byte Window_GetAllowUserResizing(MGP_Window* window);
