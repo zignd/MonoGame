@@ -35,15 +35,20 @@ Visual Studio (2022/2026), VSCode and Rider are supported in those contexts.
 > [!IMPORTANT]
 > Mobile development is not possible from Linux.
 
-## For Modern platforms (Vulkan / DX12)
+## Default desktop backends (Direct3D 12 / Vulkan / Metal)
 
 ======================================
 
-With the addition of the new development platforms, there are additional dependencies required to support these targets, namely:
+The standard desktop runtime uses the Native backend with SDL3. Its default graphics backend is
+Direct3D 12 on Windows, Vulkan on Linux, and Metal on macOS. SDL2 and DesktopGL/OpenGL are optional
+compatibility paths rather than the default development targets.
+
+The default backends require the following platform dependencies:
 
 * The [Vulkan SDK](https://vulkan.lunarg.com/) required for using Vulkan targets. (Make sure to run the setup script `setup_env.sh` on Mac/Linux)
 * The [Java SDK](https://www.oracle.com/java/technologies/downloads/), min version 17.
 * DirectX 12 (Windows Only) should be installed by default, [you can check here](https://support.microsoft.com/en-us/topic/how-to-install-the-latest-version-of-directx-d1f5ffa5-dae2-246c-91b1-ee1e973ed8c2).
+* Xcode and its current macOS SDK are required to build the Metal backend on macOS.
 
 ## Building from Source
 

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://monogame.net/schemas/shader-pipeline/v1/usage-manifest.schema.json",
+  "title": "MonoGame Shader Pipeline Usage Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "pipelines"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "pipelines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pipelineKey", "priority", "source"],
+        "properties": {
+          "pipelineKey": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "priority": { "type": "integer", "minimum": 0 },
+          "source": { "enum": ["Recorded", "Declared", "FrameworkRequired", "KeepRule"] }
+        }
+      }
+    }
+  }
+}

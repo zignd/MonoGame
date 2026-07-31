@@ -60,6 +60,13 @@ License: Apache-2.0 AND MIT
 Comment: Files in this repository are individually licensed under Apache-2.0,
          MIT, or Apache-2.0 OR MIT as indicated by their SPDX identifiers.
 
+Files: MonoGame/native/monogame/external/spirv-cross/*
+Component: SPIRV-Cross
+Copyright: 2015-2025 The Khronos Group Inc.
+License: Apache-2.0
+Comment: MonoGame pins a SPIRV-Cross submodule revision for runtime SPIR-V to
+         Metal Shading Language translation without requiring the Vulkan SDK.
+
 Files: MonoGame/native/monogame/external/volk/*
 Component: Volk
 Copyright: 2018-2024 Arseny Kapoulkine

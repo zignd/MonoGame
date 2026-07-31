@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework.Content.Pipeline;
 using Microsoft.Xna.Framework.Content.Pipeline.Graphics;
@@ -33,6 +34,8 @@ namespace MonoGame.Tests.ContentPipeline
         {
             get { return _logger; }
         }
+
+        public IReadOnlyList<string> LogMessages => _logger.Messages;
 
         public override string OutputDirectory
         {

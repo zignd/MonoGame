@@ -65,6 +65,22 @@ internal struct MGG_GraphicsDevice_Caps
 }
 
 [StructLayout(LayoutKind.Sequential)]
+internal struct MGG_ShaderPipelineDiagnostics
+{
+    public ulong ShaderCreationCount;
+    public ulong PipelineCacheHits;
+    public ulong PipelineCacheMisses;
+    public ulong PipelineCreationCount;
+    public ulong RuntimeTranslationCount;
+    public ulong PipelineCacheImports;
+    public ulong PipelineCacheRejections;
+    public PipelineCacheStatus LastPipelineCacheStatus;
+    public double ShaderCreationMilliseconds;
+    public double PipelineCreationMilliseconds;
+    public double RuntimeTranslationMilliseconds;
+}
+
+[StructLayout(LayoutKind.Sequential)]
 internal struct MGG_BlendState_Info
 {
     public Blend colorSourceBlend;
@@ -185,6 +201,24 @@ internal static unsafe partial class MGG
 
     [DllImport(MGP.MonoGameNativeDLL, EntryPoint = "MGG_GraphicsDevice_GetCaps", ExactSpelling = true)]
     public static extern void GraphicsDevice_GetCaps(MGG_GraphicsDevice* device, out MGG_GraphicsDevice_Caps caps);
+
+    [DllImport(MGP.MonoGameNativeDLL, EntryPoint = "MGG_GraphicsDevice_GetShaderPipelineDiagnostics", ExactSpelling = true)]
+    public static extern void GraphicsDevice_GetShaderPipelineDiagnostics(MGG_GraphicsDevice* device, out MGG_ShaderPipelineDiagnostics diagnostics);
+
+    [DllImport(MGP.MonoGameNativeDLL, EntryPoint = "MGG_GraphicsDevice_ResetShaderPipelineDiagnostics", ExactSpelling = true)]
+    public static extern void GraphicsDevice_ResetShaderPipelineDiagnostics(MGG_GraphicsDevice* device);
+
+    [DllImport(MGP.MonoGameNativeDLL, EntryPoint = "MGG_GraphicsDevice_PrewarmCurrentPipeline", ExactSpelling = true)]
+    public static extern bool GraphicsDevice_PrewarmCurrentPipeline(MGG_GraphicsDevice* device, PrimitiveType primitiveType);
+
+    [DllImport(MGP.MonoGameNativeDLL, EntryPoint = "MGG_GraphicsDevice_GetPipelineCacheDataSize", ExactSpelling = true)]
+    public static extern int GraphicsDevice_GetPipelineCacheDataSize(MGG_GraphicsDevice* device);
+
+    [DllImport(MGP.MonoGameNativeDLL, EntryPoint = "MGG_GraphicsDevice_GetPipelineCacheData", ExactSpelling = true)]
+    public static extern bool GraphicsDevice_GetPipelineCacheData(MGG_GraphicsDevice* device, byte* data, int dataBytes);
+
+    [DllImport(MGP.MonoGameNativeDLL, EntryPoint = "MGG_GraphicsDevice_ImportPipelineCache", ExactSpelling = true)]
+    public static extern PipelineCacheStatus GraphicsDevice_ImportPipelineCache(MGG_GraphicsDevice* device, byte* data, int dataBytes);
 
     [DllImport(MGP.MonoGameNativeDLL, EntryPoint = "MGG_GraphicsDevice_ResizeSwapchain", ExactSpelling = true)]
     public static extern void GraphicsDevice_ResizeSwapchain(

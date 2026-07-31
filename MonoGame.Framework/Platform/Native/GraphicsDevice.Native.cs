@@ -468,6 +468,7 @@ public partial class GraphicsDevice
     private unsafe void PlatformDrawIndexedPrimitives(PrimitiveType primitiveType, int baseVertex, int startIndex, int primitiveCount)
     {
         ApplyState(true);
+        RecordPipelineUsage(primitiveType);
         if (baseVertex < 0)
             baseVertex = 0;
         if (startIndex < 0)
@@ -476,10 +477,17 @@ public partial class GraphicsDevice
         MGG.GraphicsDevice_DrawIndexed(Handle, primitiveType, primitiveCount, startIndex, baseVertex);
     }
 
+    public unsafe bool PrewarmCurrentPipeline(PrimitiveType primitiveType)
+    {
+        ApplyState(true);
+        return MGG.GraphicsDevice_PrewarmCurrentPipeline(Handle, primitiveType);
+    }
+
     private unsafe  void PlatformDrawUserPrimitives<T>(PrimitiveType primitiveType, T[] vertexData, int vertexOffset, VertexDeclaration vertexDeclaration, int vertexCount) where T : struct
     {
         var startVertex = SetUserVertexBuffer(vertexData, vertexOffset, vertexCount, vertexDeclaration);
         ApplyState(true);
+        RecordPipelineUsage(primitiveType);
 
         MGG.GraphicsDevice_Draw(Handle, primitiveType, startVertex, vertexCount);
     }
@@ -487,6 +495,7 @@ public partial class GraphicsDevice
     private unsafe void PlatformDrawPrimitives(PrimitiveType primitiveType, int vertexStart, int vertexCount)
     {
         ApplyState(true);
+        RecordPipelineUsage(primitiveType);
         if (vertexStart < 0)
             vertexStart = 0;
 
@@ -499,6 +508,7 @@ public partial class GraphicsDevice
         var startVertex = SetUserVertexBuffer(vertexData, vertexOffset, numVertices, vertexDeclaration);
         var startIndex = SetUserIndexBuffer(indexData, indexOffset, indexCount);
         ApplyState(true);
+        RecordPipelineUsage(primitiveType);
 
         MGG.GraphicsDevice_DrawIndexed(Handle, primitiveType, primitiveCount, startIndex, startVertex);
     }
@@ -509,8 +519,10 @@ public partial class GraphicsDevice
         var startVertex = SetUserVertexBuffer(vertexData, vertexOffset, numVertices, vertexDeclaration);
         var startIndex = SetUserIndexBuffer(indexData, indexOffset, indexCount);
         ApplyState(true);
+        RecordPipelineUsage(primitiveType);
 
         MGG.GraphicsDevice_DrawIndexed(Handle, primitiveType, primitiveCount, startIndex, startVertex);
+        RecordPipelineUsage(primitiveType);
     }
 
     private unsafe void PlatformDrawInstancedPrimitives(PrimitiveType primitiveType, int baseVertex, int startIndex, int primitiveCount, int baseInstance, int instanceCount)

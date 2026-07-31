@@ -32,9 +32,9 @@
 #include <unordered_map>
 #include <string>
 
-#include "spirv_msl.hpp"
-
 #include "api_MGG.h"
+#include "MGMetalShaderTranspiler.h"
+#include "MGMetalShaderPayload.h"
 
 // Shared, backend-agnostic compiled effects (same SPIR-V blobs the Vulkan backend consumes).
 #include "AlphaTestEffect.vk.mgfxo.h"
@@ -56,7 +56,7 @@ using namespace mgmetal;
 
 static const int MAX_TEXTURE_SLOTS = 16;
 static const int MAX_VERTEX_BUFFERS = 16;
-static const int NUM_STAGES = (int)MGShaderStage::Count; // 2 (Vertex, Pixel)
+static const int NUM_STAGES = 2; // Vertex, Pixel
 static const int MAX_FRAMES_IN_FLIGHT = 3;
 
 // Metal buffer-index convention for the translated shaders:
@@ -64,13 +64,20 @@ static const int MAX_FRAMES_IN_FLIGHT = 3;
 //   buffer(1 + slot)        -> vertex stream 'slot' (via the vertex descriptor), vertex stage only
 // This keeps vertex streams from colliding with the cbuffer. Textures/samplers use slot index
 // directly: texture(slot), sampler(slot). All pinned via SPIRV-Cross add_msl_resource_binding.
-static const int MG_MTL_CBUFFER_INDEX = 0;
 static const int MG_MTL_VBO_BASE = 1;
 
 // The reused SPIR-V was compiled with -fvk-invert-y (Vulkan's Y-down NDC). Metal's NDC is Y-up
 // (like D3D), so we cancel that baked-in flip with SPIRV-Cross flip_vert_y. If the image ever
 // comes out upside-down, flip this one flag.
-static const bool MG_MTL_FLIP_VERT_Y = true;
+#define MGMTL_STRINGIFY_IMPL(value) #value
+#define MGMTL_STRINGIFY(value) MGMTL_STRINGIFY_IMPL(value)
+
+struct MGMTL_TranslationCacheEntry
+{
+    std::string source;
+    std::string entryPoint;
+    id<MTLLibrary> library = nil;
+};
 
 static inline void MGMTL_Log(const char* fmt, ...)
 {
@@ -268,6 +275,7 @@ struct MGG_GraphicsDevice
 
     // Pipeline cache.
     std::unordered_map<uint64_t, id<MTLRenderPipelineState>> pipelines;
+    std::unordered_map<std::string, MGMTL_TranslationCacheEntry> translations;
 
     // Fallbacks for used-but-unbound slots.
     id<MTLTexture> nullTexture = nil;
@@ -291,6 +299,18 @@ struct MGG_GraphicsDevice
     double lastCompileMs = 0.0;
     uint64_t lastCompileFrame = 0;
     id<MTLBuffer> perfStaging = nil;
+
+    uint64_t shaderCreationCount = 0;
+    uint64_t pipelineCacheHits = 0;
+    uint64_t pipelineCacheMisses = 0;
+    uint64_t pipelineCreationCount = 0;
+    uint64_t pipelineCacheImports = 0;
+    uint64_t pipelineCacheRejections = 0;
+    MGPipelineCacheStatus lastPipelineCacheStatus = MGPipelineCacheStatus::None;
+    uint64_t runtimeTranslationCount = 0;
+    double shaderCreationMilliseconds = 0.0;
+    double pipelineCreationMilliseconds = 0.0;
+    double runtimeTranslationMilliseconds = 0.0;
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -498,6 +518,39 @@ void MGG_GraphicsDevice_GetCaps(MGG_GraphicsDevice* device, MGG_GraphicsDevice_C
     // The Metal backend consumes the Vulkan shader profile (FormatId 80). The managed Effect loader
     // checks each MGFX blob's profile byte against this, so it must match the Vulkan content.
     caps.ShaderProfile = 80;
+}
+
+void MGG_GraphicsDevice_GetShaderPipelineDiagnostics(MGG_GraphicsDevice* device, MGG_ShaderPipelineDiagnostics& diagnostics)
+{
+    assert(device != nullptr);
+    diagnostics = {};
+    diagnostics.ShaderCreationCount = device->shaderCreationCount;
+    diagnostics.PipelineCacheHits = device->pipelineCacheHits;
+    diagnostics.PipelineCacheMisses = device->pipelineCacheMisses;
+    diagnostics.PipelineCreationCount = device->pipelineCreationCount;
+    diagnostics.PipelineCacheImports = device->pipelineCacheImports;
+    diagnostics.PipelineCacheRejections = device->pipelineCacheRejections;
+    diagnostics.LastPipelineCacheStatus = device->lastPipelineCacheStatus;
+    diagnostics.RuntimeTranslationCount = device->runtimeTranslationCount;
+    diagnostics.ShaderCreationMilliseconds = device->shaderCreationMilliseconds;
+    diagnostics.PipelineCreationMilliseconds = device->pipelineCreationMilliseconds;
+    diagnostics.RuntimeTranslationMilliseconds = device->runtimeTranslationMilliseconds;
+}
+
+void MGG_GraphicsDevice_ResetShaderPipelineDiagnostics(MGG_GraphicsDevice* device)
+{
+    assert(device != nullptr);
+    device->shaderCreationCount = 0;
+    device->pipelineCacheHits = 0;
+    device->pipelineCacheMisses = 0;
+    device->pipelineCreationCount = 0;
+    device->pipelineCacheImports = 0;
+    device->pipelineCacheRejections = 0;
+    device->lastPipelineCacheStatus = MGPipelineCacheStatus::None;
+    device->runtimeTranslationCount = 0;
+    device->shaderCreationMilliseconds = 0.0;
+    device->pipelineCreationMilliseconds = 0.0;
+    device->runtimeTranslationMilliseconds = 0.0;
 }
 
 void MGG_GraphicsDevice_GetTitleSafeArea(mgint& x, mgint& y, mgint& width, mgint& height)
@@ -1519,80 +1572,22 @@ void MGG_InputLayout_Destroy(MGG_GraphicsDevice* device, MGG_InputLayout* layout
 // Shaders (SPIR-V -> MSL via SPIRV-Cross)
 // ===========================================================================================
 
-static bool MGMTL_SpirvToMsl(const uint32_t* code, size_t words, std::string& outMsl, std::string& outEntry)
+static std::string MGMTL_TranslationCacheKey(const mgbyte* spirv, size_t sizeInBytes)
 {
-    try
-    {
-        spirv_cross::CompilerMSL msl(code, words);
-
-        spirv_cross::CompilerMSL::Options mslOpts;
-        mslOpts.platform = spirv_cross::CompilerMSL::Options::macOS;
-        mslOpts.set_msl_version(2, 0);
-        msl.set_msl_options(mslOpts);
-
-        // Cancel the -fvk-invert-y baked into the (Vulkan) SPIR-V: Metal NDC is Y-up like D3D.
-        spirv_cross::CompilerGLSL::Options common = msl.get_common_options();
-        common.vertex.flip_vert_y = MG_MTL_FLIP_VERT_Y;
-        msl.set_common_options(common);
-
-        auto model = msl.get_execution_model();
-        auto resources = msl.get_shader_resources();
-        const int SlotOffset = 32;
-
-        auto pin = [&](uint32_t id, uint32_t baseTypeId, int tex, int samp, int buf)
-        {
-            spirv_cross::MSLResourceBinding rb;
-            rb.stage = model;
-            rb.desc_set = msl.get_decoration(id, spv::DecorationDescriptorSet);
-            rb.binding = msl.get_decoration(id, spv::DecorationBinding);
-            rb.count = 1;
-            rb.basetype = msl.get_type(baseTypeId).basetype;
-            rb.msl_buffer = buf < 0 ? 0 : (uint32_t)buf;
-            rb.msl_texture = tex < 0 ? 0 : (uint32_t)tex;
-            rb.msl_sampler = samp < 0 ? 0 : (uint32_t)samp;
-            msl.add_msl_resource_binding(rb);
-        };
-
-        for (auto& r : resources.uniform_buffers)
-            pin(r.id, r.base_type_id, -1, -1, MG_MTL_CBUFFER_INDEX);
-        for (auto& r : resources.separate_images)
-        {
-            int slot = (int)msl.get_decoration(r.id, spv::DecorationBinding) - SlotOffset;
-            pin(r.id, r.base_type_id, slot, -1, -1);
-        }
-        for (auto& r : resources.separate_samplers)
-        {
-            int slot = (int)msl.get_decoration(r.id, spv::DecorationBinding) - SlotOffset;
-            pin(r.id, r.base_type_id, -1, slot, -1);
-        }
-        for (auto& r : resources.sampled_images) // combined (defensive; DXC usually emits separate)
-        {
-            int slot = (int)msl.get_decoration(r.id, spv::DecorationBinding) - SlotOffset;
-            pin(r.id, r.base_type_id, slot, slot, -1);
-        }
-
-        outMsl = msl.compile();
-
-        for (auto& e : msl.get_entry_points_and_stages())
-        {
-            if (e.execution_model == model)
-            {
-                outEntry = msl.get_cleansed_entry_point_name(e.name, e.execution_model);
-                break;
-            }
-        }
-        return true;
-    }
-    catch (const std::exception& ex)
-    {
-        MGMTL_Log("SPIRV-Cross SPIR-V->MSL failed: %s", ex.what());
-        return false;
-    }
+    std::string key = "spirv-cross:";
+    key += MG_MTL_SPIRV_CROSS_REVISION;
+    key += ";platform:macos;msl:2.0;flip-vert-y:";
+    key += MG_MTL_FLIP_VERT_Y ? "1" : "0";
+    key += ";deployment-target:" MGMTL_STRINGIFY(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) ";spirv:";
+    key.append((const char*)spirv, sizeInBytes);
+    return key;
 }
 
 MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, mgbyte* bytecode, mgint sizeInBytes)
 {
     assert(device && bytecode && sizeInBytes > 0);
+
+    double shaderStarted = CACurrentMediaTime();
 
     auto shader = new MGG_Shader();
     shader->stage = stage;
@@ -1625,25 +1620,94 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
         if (shader->samplerSlots & (1u << i)) shader->maxSamplerSlot = i;
     }
 
-    if (remaining <= 0 || (remaining % 4) != 0)
+    MGMetalShaderPayload preparedPayload;
+    bool hasPreparedLibrary = MGG_TryParseMetalShaderPayload(p, remaining, preparedPayload);
+    mgbyte* spirv = p;
+    mgint spirvSize = hasPreparedLibrary ? static_cast<mgint>(preparedPayload.spirvSize) : remaining;
+    if (spirvSize <= 0 || (spirvSize % 4) != 0)
     {
-        MGMTL_Log("MGG_Shader_Create: invalid SPIR-V payload size %d", remaining);
+        MGMTL_Log("MGG_Shader_Create: invalid SPIR-V payload size %d", spirvSize);
         delete shader;
         return nullptr;
     }
 
-    std::string mslSource, entryName;
-    if (!MGMTL_SpirvToMsl((const uint32_t*)p, remaining / 4, mslSource, entryName))
+    std::string translationKey = MGMTL_TranslationCacheKey(spirv, spirvSize);
+    auto cachedTranslation = device->translations.find(translationKey);
+    std::string mslSource;
+    std::string entryName;
+    bool translationCacheHit = cachedTranslation != device->translations.end();
+    id<MTLLibrary> cachedLibrary = translationCacheHit ? cachedTranslation->second.library : nil;
+    double translationMilliseconds = 0.0;
+    if (translationCacheHit)
     {
-        delete shader;
-        return nullptr;
+        mslSource = cachedTranslation->second.source;
+        entryName = cachedTranslation->second.entryPoint;
     }
 
+    double libraryStarted = CACurrentMediaTime();
+    bool preparedLibraryLoaded = false;
     @autoreleasepool
     {
-        NSError* error = nil;
-        MTLCompileOptions* opts = [[MTLCompileOptions alloc] init];
-        id<MTLLibrary> lib = [device->mtlDevice newLibraryWithSource:@(mslSource.c_str()) options:opts error:&error];
+        __block NSError* error = nil;
+        __block id<MTLLibrary> lib = cachedLibrary;
+        if (lib == nil && hasPreparedLibrary)
+        {
+            dispatch_data_t libraryData = dispatch_data_create(
+                preparedPayload.library,
+                preparedPayload.librarySize,
+                dispatch_get_global_queue(0, 0),
+                DISPATCH_DATA_DESTRUCTOR_DEFAULT);
+            lib = [device->mtlDevice newLibraryWithData:libraryData error:&error];
+            if (lib != nil)
+            {
+                entryName.assign(preparedPayload.entryPoint, preparedPayload.entryPointSize);
+                preparedLibraryLoaded = true;
+            }
+            else if (!preparedPayload.allowRuntimeFallback)
+            {
+                MGMTL_Log("MGG_Shader_Create: prepared Metal library rejected in strict mode: %s",
+                    error ? [[error localizedDescription] UTF8String] : "unknown");
+                delete shader;
+                return nullptr;
+            }
+            else
+            {
+                MGMTL_Log("MGG_Shader_Create: prepared Metal library rejected; using diagnostics SPIR-V fallback: %s",
+                    error ? [[error localizedDescription] UTF8String] : "unknown");
+                error = nil;
+            }
+        }
+        if (lib == nil)
+        {
+            if (mslSource.empty())
+            {
+                double translationStarted = CACurrentMediaTime();
+                std::string translationError;
+                if (!MGMTL_SpirvToMsl(
+                    reinterpret_cast<const uint32_t*>(spirv),
+                    spirvSize / 4,
+                    mslSource,
+                    entryName,
+                    &translationError))
+                {
+                    MGMTL_Log("SPIRV-Cross SPIR-V->MSL failed: %s", translationError.c_str());
+                    delete shader;
+                    return nullptr;
+                }
+                translationMilliseconds = (CACurrentMediaTime() - translationStarted) * 1000.0;
+                device->runtimeTranslationCount++;
+                device->runtimeTranslationMilliseconds += translationMilliseconds;
+            }
+            MTLCompileOptions* opts = [[MTLCompileOptions alloc] init];
+            dispatch_semaphore_t completed = dispatch_semaphore_create(0);
+            [device->mtlDevice newLibraryWithSource:@(mslSource.c_str()) options:opts completionHandler:^(id<MTLLibrary> library, NSError* compileError)
+            {
+                lib = library;
+                error = compileError;
+                dispatch_semaphore_signal(completed);
+            }];
+            dispatch_semaphore_wait(completed, DISPATCH_TIME_FOREVER);
+        }
         if (lib == nil)
         {
             MGMTL_Log("MGG_Shader_Create: MSL compile failed: %s", error ? [[error localizedDescription] UTF8String] : "unknown");
@@ -1651,6 +1715,7 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
             delete shader;
             return nullptr;
         }
+        device->translations[translationKey] = MGMTL_TranslationCacheEntry { mslSource, entryName, lib };
         shader->library = lib;
         shader->function = [lib newFunctionWithName:@(entryName.c_str())];
         if (shader->function == nil)
@@ -1660,7 +1725,18 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
             return nullptr;
         }
     }
+    double libraryMilliseconds = (CACurrentMediaTime() - libraryStarted) * 1000.0;
 
+    if (device->perf)
+    {
+        MGMTL_Log("[metal-perf] shader=%llu prepared-library=%s translation-cache=%s library-cache=%s translation=%.3fms library=%.3fms",
+            shader->id, preparedLibraryLoaded ? "loaded" : (hasPreparedLibrary ? (cachedLibrary != nil ? "cached" : "fallback") : "none"),
+            translationCacheHit ? "hit" : "miss", cachedLibrary != nil ? "hit" : "miss",
+            translationMilliseconds, libraryMilliseconds);
+    }
+
+    device->shaderCreationCount++;
+    device->shaderCreationMilliseconds += (CACurrentMediaTime() - shaderStarted) * 1000.0;
     return shader;
 }
 
@@ -1778,7 +1854,12 @@ static id<MTLRenderPipelineState> MGMTL_GetPipeline(MGG_GraphicsDevice* device)
 
     auto it = device->pipelines.find(h);
     if (it != device->pipelines.end())
+    {
+        device->pipelineCacheHits++;
         return it->second;
+    }
+
+    device->pipelineCacheMisses++;
 
     MTLRenderPipelineDescriptor* pd = [[MTLRenderPipelineDescriptor alloc] init];
     pd.vertexFunction = vs->function;
@@ -1817,22 +1898,33 @@ static id<MTLRenderPipelineState> MGMTL_GetPipeline(MGG_GraphicsDevice* device)
             pd.stencilAttachmentPixelFormat = depthFmt;
     }
 
-    NSError* error = nil;
-    double t0 = device->perf ? CACurrentMediaTime() : 0.0;
-    id<MTLRenderPipelineState> pso = [device->mtlDevice newRenderPipelineStateWithDescriptor:pd error:&error];
+    __block NSError* error = nil;
+    __block id<MTLRenderPipelineState> pso = nil;
+    double t0 = CACurrentMediaTime();
+    dispatch_semaphore_t completed = dispatch_semaphore_create(0);
+    [device->mtlDevice newRenderPipelineStateWithDescriptor:pd completionHandler:^(id<MTLRenderPipelineState> pipelineState, NSError* compileError)
+    {
+        pso = pipelineState;
+        error = compileError;
+        dispatch_semaphore_signal(completed);
+    }];
+    dispatch_semaphore_wait(completed, DISPATCH_TIME_FOREVER);
     if (pso == nil)
     {
         MGMTL_Log("MGG_GetPipeline: pipeline creation failed: %s", error ? [[error localizedDescription] UTF8String] : "unknown");
         return nil;
     }
 
+    double compileMilliseconds = (CACurrentMediaTime() - t0) * 1000.0;
+    device->pipelineCreationCount++;
+    device->pipelineCreationMilliseconds += compileMilliseconds;
+
     if (device->perf)
     {
-        double ms = (CACurrentMediaTime() - t0) * 1000.0;
-        device->lastCompileMs = ms;
+        device->lastCompileMs = compileMilliseconds;
         device->lastCompileFrame = device->perfFrame;
         MGMTL_Log("[metal-perf] frame %llu: compiled render pipeline #%zu in %.2f ms (target=%s)",
-                  (unsigned long long)device->perfFrame, device->pipelines.size() + 1, ms,
+                  (unsigned long long)device->perfFrame, device->pipelines.size() + 1, compileMilliseconds,
                   device->usingBackbuffer ? "backbuffer" : "RT");
     }
 
@@ -1952,6 +2044,29 @@ static int MGMTL_GetIndexCount(MGPrimitiveType type, int primitiveCount)
     case MGPrimitiveType::PointList:     return primitiveCount;
     default:                             return primitiveCount * 3;
     }
+}
+
+mgbool MGG_GraphicsDevice_PrewarmCurrentPipeline(MGG_GraphicsDevice* device, MGPrimitiveType primitiveType)
+{
+    return MGMTL_GetPipeline(device) != nil;
+}
+
+mgint MGG_GraphicsDevice_GetPipelineCacheDataSize(MGG_GraphicsDevice* device)
+{
+    return 0;
+}
+
+mgbool MGG_GraphicsDevice_GetPipelineCacheData(MGG_GraphicsDevice* device, mgbyte* data, mgint dataBytes)
+{
+    return false;
+}
+
+MGPipelineCacheStatus MGG_GraphicsDevice_ImportPipelineCache(MGG_GraphicsDevice* device, mgbyte* data, mgint dataBytes)
+{
+    assert(device != nullptr);
+    device->lastPipelineCacheStatus = dataBytes <= 0 ? MGPipelineCacheStatus::Empty : MGPipelineCacheStatus::Unsupported;
+    device->pipelineCacheRejections++;
+    return device->lastPipelineCacheStatus;
 }
 
 void MGG_GraphicsDevice_Draw(MGG_GraphicsDevice* device, MGPrimitiveType primitiveType, mgint vertexStart, mgint vertexCount)

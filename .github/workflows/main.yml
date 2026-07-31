@@ -182,6 +182,16 @@ jobs:
           CI: true
         shell: bash
 
+      - name: Validate shader production contracts
+        if: runner.os != 'Linux' || runner.arch != 'ARM64'
+        run: |
+          dotnet test Tools/MonoGame.Tools.Tests/MonoGame.Tools.Tests.csproj --no-build -c Release --filter="FullyQualifiedName~EffectCompilerCacheTests|FullyQualifiedName~EffectVariantStripperTests|FullyQualifiedName~ShaderPipelineContractTests"
+          dotnet build Tools/MonoGame.ShaderPipeline.Benchmark/MonoGame.ShaderPipeline.Benchmark.csproj -c Release
+          python3 -m unittest scripts/tests/test_check_shader_pipeline_regression.py
+        env:
+          CI: true
+        shell: bash
+
       - name: Ensure macOS workloads
         if: runner.environment == 'github-hosted' && runner.os == 'macos'
         run: |

@@ -23,3 +23,6 @@
 	path = native/monogame/external/sdl3
 	url = https://github.com/libsdl-org/SDL.git
 	branch = release-3.4.12
+[submodule "native/monogame/external/spirv-cross"]
+	path = native/monogame/external/spirv-cross
+	url = https://github.com/KhronosGroup/SPIRV-Cross.git

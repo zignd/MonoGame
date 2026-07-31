@@ -33,6 +33,12 @@ MG_EXPORT void MGG_GraphicsAdapter_GetInfo(MGG_GraphicsAdapter* adapter, MGG_Gra
 MG_EXPORT MGG_GraphicsDevice* MGG_GraphicsDevice_Create(MGG_GraphicsSystem* system, MGG_GraphicsAdapter* adapter);
 MG_EXPORT void MGG_GraphicsDevice_Destroy(MGG_GraphicsDevice* device);
 MG_EXPORT void MGG_GraphicsDevice_GetCaps(MGG_GraphicsDevice* device, MGG_GraphicsDevice_Caps& caps);
+MG_EXPORT void MGG_GraphicsDevice_GetShaderPipelineDiagnostics(MGG_GraphicsDevice* device, MGG_ShaderPipelineDiagnostics& diagnostics);
+MG_EXPORT void MGG_GraphicsDevice_ResetShaderPipelineDiagnostics(MGG_GraphicsDevice* device);
+MG_EXPORT mgbool MGG_GraphicsDevice_PrewarmCurrentPipeline(MGG_GraphicsDevice* device, MGPrimitiveType primitiveType);
+MG_EXPORT mgint MGG_GraphicsDevice_GetPipelineCacheDataSize(MGG_GraphicsDevice* device);
+MG_EXPORT mgbool MGG_GraphicsDevice_GetPipelineCacheData(MGG_GraphicsDevice* device, mgbyte* data, mgint dataBytes);
+MG_EXPORT MGPipelineCacheStatus MGG_GraphicsDevice_ImportPipelineCache(MGG_GraphicsDevice* device, mgbyte* data, mgint dataBytes);
 MG_EXPORT void MGG_GraphicsDevice_ResizeSwapchain(MGG_GraphicsDevice* device, void* nativeWindowHandle, mgint width, mgint height, MGSurfaceFormat color, MGDepthFormat depth, mgint multiSampleCount, mgint syncInterval);
 MG_EXPORT void MGG_GraphicsDevice_GetBackBufferSize(MGG_GraphicsDevice* device, mgint& width, mgint& height);
 MG_EXPORT mgint MGG_GraphicsDevice_BeginFrame(MGG_GraphicsDevice* device);

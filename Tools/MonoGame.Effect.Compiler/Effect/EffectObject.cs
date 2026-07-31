@@ -858,6 +858,52 @@ namespace MonoGame.Effect
 		public List<ShaderData> Shaders { get; private set; } = [];
 
 		public List<ConstantBufferData> ConstantBuffers { get; private set; } = [];
+
+		internal void RetainVariants(IReadOnlySet<(int Technique, int Pass)> retainedPasses)
+		{
+			var techniques = new List<d3dx_technique>();
+			var usedShaderIndices = new SortedSet<int>();
+			for (var techniqueIndex = 0; techniqueIndex < Techniques.Length; techniqueIndex++)
+			{
+				var technique = Techniques[techniqueIndex];
+				var passes = technique.pass_handles
+					.Where((_, passIndex) => retainedPasses.Contains((techniqueIndex, passIndex)))
+					.ToArray();
+				if (passes.Length == 0)
+					continue;
+
+				technique.pass_handles = passes;
+				technique.pass_count = (uint)passes.Length;
+				techniques.Add(technique);
+				foreach (var pass in passes)
+				{
+					var vertexShader = GetShaderIndex(STATE_CLASS.VERTEXSHADER, pass.states);
+					var pixelShader = GetShaderIndex(STATE_CLASS.PIXELSHADER, pass.states);
+					if (vertexShader >= 0)
+						usedShaderIndices.Add(vertexShader);
+					if (pixelShader >= 0)
+						usedShaderIndices.Add(pixelShader);
+				}
+			}
+
+			var shaderMap = usedShaderIndices
+				.Select((shaderIndex, newIndex) => (shaderIndex, newIndex))
+				.ToDictionary(pair => pair.shaderIndex, pair => pair.newIndex);
+			foreach (var technique in techniques)
+			{
+				foreach (var pass in technique.pass_handles)
+				{
+					foreach (var state in pass.states)
+					{
+						if (state.parameter.data is int shaderIndex && shaderMap.TryGetValue(shaderIndex, out var newIndex))
+							state.parameter.data = newIndex;
+					}
+				}
+			}
+
+			Techniques = techniques.ToArray();
+			Shaders = usedShaderIndices.Select(shaderIndex => Shaders[shaderIndex]).ToList();
+		}
 	}
 }
 

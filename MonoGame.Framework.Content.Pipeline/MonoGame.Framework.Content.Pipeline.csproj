@@ -21,6 +21,11 @@
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
+    <Content Include="..\Artifacts\native\mgmetalcompiler\macosx\Release\mgmetalcompiler"
+      Condition="Exists('..\Artifacts\native\mgmetalcompiler\macosx\Release\mgmetalcompiler')"
+      Link="mgmetalcompiler"
+      PackagePath="runtimes\osx\native"
+      CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

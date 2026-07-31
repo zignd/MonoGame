@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://monogame.net/schemas/shader-pipeline/v1/shader-artifact.schema.json",
+  "title": "MonoGame Shader Artifact Identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "compilerName",
+    "compilerVersion",
+    "compilerExecutableVersion",
+    "shaderProfile",
+    "shaderModel",
+    "entryPoint",
+    "stage",
+    "optimization",
+    "resourceBindingVersion",
+    "reflectionLayoutVersion",
+    "targetOperatingSystem",
+    "sources",
+    "defines"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "compilerName": { "type": "string", "minLength": 1 },
+    "compilerVersion": { "type": "string", "minLength": 1 },
+    "compilerExecutableVersion": { "type": "string", "minLength": 1 },
+    "shaderProfile": { "type": "string", "minLength": 1 },
+    "shaderModel": { "type": "string", "minLength": 1 },
+    "entryPoint": { "type": "string", "minLength": 1 },
+    "stage": { "enum": ["Vertex", "Pixel", "Compute"] },
+    "optimization": { "type": "string", "minLength": 1 },
+    "resourceBindingVersion": { "type": "string", "minLength": 1 },
+    "reflectionLayoutVersion": { "type": "string", "minLength": 1 },
+    "targetOperatingSystem": { "type": "string", "minLength": 1 },
+    "minimumDeploymentTarget": { "type": "string", "default": "" },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "contentHash"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "contentHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "defines": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

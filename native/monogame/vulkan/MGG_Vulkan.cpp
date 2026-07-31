@@ -5,6 +5,7 @@
 #include "api_MGG.h"
 
 #include "mg_common.h"
+#include "MGMetalShaderPayload.h"
 
 #include "AlphaTestEffect.vk.mgfxo.h"
 #include "BasicEffect.vk.mgfxo.h"
@@ -13,6 +14,8 @@
 #include "SkinnedEffect.vk.mgfxo.h"
 #include "SpriteEffect.vk.mgfxo.h"
 #include "mg_effect.h"
+
+#include <chrono>
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #define VULKAN_HPP_NO_EXCEPTIONS
@@ -250,6 +253,7 @@ struct MGVK_Transfer
 
 
 const int MAX_TEXTURE_SLOTS = 16;
+const int NUM_SHADER_STAGES = 2;
 
 struct MGG_GraphicsDevice
 {
@@ -313,8 +317,8 @@ struct MGG_GraphicsDevice
 
 	uint64_t currentTextureId = 1;
 	uint64_t currentSamplerId = 1;
-	MGG_Texture* textures[(mgint)MGShaderStage::Count][MAX_TEXTURE_SLOTS] = { 0 };
-	MGG_SamplerState* samplers[(mgint)MGShaderStage::Count][MAX_TEXTURE_SLOTS] = { 0 };
+	MGG_Texture* textures[NUM_SHADER_STAGES][MAX_TEXTURE_SLOTS] = { 0 };
+	MGG_SamplerState* samplers[NUM_SHADER_STAGES][MAX_TEXTURE_SLOTS] = { 0 };
 	uint32_t textureSamplerDirty = 0;
 	MGG_Texture* nullTexture[3];
 
@@ -322,7 +326,7 @@ struct MGG_GraphicsDevice
 	float blendFactor[4] = { 0 };
 
 	uint32_t currentShaderId = 0;
-	MGG_Shader* shaders[(mgint)MGShaderStage::Count] = { 0 };
+	MGG_Shader* shaders[NUM_SHADER_STAGES] = { 0 };
 	bool shaderDirty = false;
 	std::map<uint64_t, MGVK_Program*> shader_programs;
 	std::vector<MGG_Shader*> all_shaders;
@@ -366,6 +370,16 @@ struct MGG_GraphicsDevice
 	std::vector<MGG_Texture*> all_textures;
 
 	std::vector<MGG_OcclusionQuery*> deferredOcclusionQueries;
+
+	uint64_t shaderCreationCount = 0;
+	uint64_t pipelineCacheHits = 0;
+	uint64_t pipelineCacheMisses = 0;
+	uint64_t pipelineCreationCount = 0;
+	uint64_t pipelineCacheImports = 0;
+	uint64_t pipelineCacheRejections = 0;
+	MGPipelineCacheStatus lastPipelineCacheStatus = MGPipelineCacheStatus::None;
+	double shaderCreationMilliseconds = 0.0;
+	double pipelineCreationMilliseconds = 0.0;
 };
 
 struct MGG_Texture
@@ -1822,6 +1836,35 @@ void MGG_GraphicsDevice_GetCaps(MGG_GraphicsDevice* device, MGG_GraphicsDevice_C
 
 	// Vulkan shader profile from pipeline.
 	caps.ShaderProfile = 80;
+}
+
+void MGG_GraphicsDevice_GetShaderPipelineDiagnostics(MGG_GraphicsDevice* device, MGG_ShaderPipelineDiagnostics& diagnostics)
+{
+	assert(device != nullptr);
+	diagnostics = {};
+	diagnostics.ShaderCreationCount = device->shaderCreationCount;
+	diagnostics.PipelineCacheHits = device->pipelineCacheHits;
+	diagnostics.PipelineCacheMisses = device->pipelineCacheMisses;
+	diagnostics.PipelineCreationCount = device->pipelineCreationCount;
+	diagnostics.PipelineCacheImports = device->pipelineCacheImports;
+	diagnostics.PipelineCacheRejections = device->pipelineCacheRejections;
+	diagnostics.LastPipelineCacheStatus = device->lastPipelineCacheStatus;
+	diagnostics.ShaderCreationMilliseconds = device->shaderCreationMilliseconds;
+	diagnostics.PipelineCreationMilliseconds = device->pipelineCreationMilliseconds;
+}
+
+void MGG_GraphicsDevice_ResetShaderPipelineDiagnostics(MGG_GraphicsDevice* device)
+{
+	assert(device != nullptr);
+	device->shaderCreationCount = 0;
+	device->pipelineCacheHits = 0;
+	device->pipelineCacheMisses = 0;
+	device->pipelineCreationCount = 0;
+	device->pipelineCacheImports = 0;
+	device->pipelineCacheRejections = 0;
+	device->lastPipelineCacheStatus = MGPipelineCacheStatus::None;
+	device->shaderCreationMilliseconds = 0.0;
+	device->pipelineCreationMilliseconds = 0.0;
 }
 
 void MGVK_RecreateSwapChain(
@@ -3768,7 +3811,10 @@ static VkPipeline MGVK_CreatePipeline(MGG_GraphicsDevice* device)
 	uint32_t hash = MG_ComputeHash((mgbyte*)&device->pipelineState, sizeof(MGVK_PipelineState));
 	auto itr = device->pipelines.find(hash);
 	if (itr != device->pipelines.end())
+	{
+		device->pipelineCacheHits++;
 		return itr->second.cache;
+	}
 
 	VkGraphicsPipelineCreateInfo pipelineInfo;
 	memset(&pipelineInfo, 0, sizeof(pipelineInfo));
@@ -3879,8 +3925,13 @@ static VkPipeline MGVK_CreatePipeline(MGG_GraphicsDevice* device)
 	MGVK_PipelineCache pipeline;
 	pipeline.state = device->pipelineState;
 
+	device->pipelineCacheMisses++;
+	auto started = std::chrono::steady_clock::now();
 	VkResult res = vkCreateGraphicsPipelines(device->device, device->pipelineCache, 1, &pipelineInfo, nullptr, &pipeline.cache);
 	VK_CHECK_RESULT(res);
+	device->pipelineCreationCount++;
+	device->pipelineCreationMilliseconds += std::chrono::duration<double, std::milli>(
+		std::chrono::steady_clock::now() - started).count();
 	VK_SET_OBJECT_NAME(device->device, pipeline.cache, VK_OBJECT_TYPE_PIPELINE, "MGVK_PipelineCache.cache (hash: %u)", hash);
 
 	device->pipelines[hash] = pipeline;
@@ -4050,6 +4101,72 @@ static int MGVK_GetIndexCount(MGPrimitiveType primitiveType, mgint primitiveCoun
 	case MGPrimitiveType::PointList:
 		return primitiveCount;
 	}
+}
+
+mgbool MGG_GraphicsDevice_PrewarmCurrentPipeline(MGG_GraphicsDevice* device, MGPrimitiveType primitiveType)
+{
+	assert(device != nullptr);
+	auto& frame = device->frames[device->frameIndex];
+	assert(frame.is_recording);
+	MGVK_UpdateRenderPass(device, device->frame, frame.commandBuffer);
+	device->pipelineState.topology = ToVkPrimitiveTopology(primitiveType);
+	return MGVK_CreatePipeline(device) != VK_NULL_HANDLE;
+}
+
+mgint MGG_GraphicsDevice_GetPipelineCacheDataSize(MGG_GraphicsDevice* device)
+{
+	assert(device != nullptr);
+	size_t size = 0;
+	if (vkGetPipelineCacheData(device->device, device->pipelineCache, &size, nullptr) != VK_SUCCESS || size > INT32_MAX)
+		return 0;
+	return (mgint)size;
+}
+
+mgbool MGG_GraphicsDevice_GetPipelineCacheData(MGG_GraphicsDevice* device, mgbyte* data, mgint dataBytes)
+{
+	assert(device != nullptr);
+	if (data == nullptr || dataBytes <= 0)
+		return false;
+	size_t size = (size_t)dataBytes;
+	return vkGetPipelineCacheData(device->device, device->pipelineCache, &size, data) == VK_SUCCESS && size <= (size_t)dataBytes;
+}
+
+MGPipelineCacheStatus MGG_GraphicsDevice_ImportPipelineCache(MGG_GraphicsDevice* device, mgbyte* data, mgint dataBytes)
+{
+	assert(device != nullptr);
+	auto finish = [device](MGPipelineCacheStatus status)
+	{
+		device->lastPipelineCacheStatus = status;
+		if (status == MGPipelineCacheStatus::Success)
+			device->pipelineCacheImports++;
+		else
+			device->pipelineCacheRejections++;
+		return status;
+	};
+	if (data == nullptr || dataBytes <= 0)
+		return finish(MGPipelineCacheStatus::Empty);
+	if ((size_t)dataBytes < sizeof(VkPipelineCacheHeaderVersionOne))
+		return finish(MGPipelineCacheStatus::InvalidData);
+	const auto* header = reinterpret_cast<const VkPipelineCacheHeaderVersionOne*>(data);
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(device->physicalDevice, &properties);
+	if (header->headerSize < sizeof(VkPipelineCacheHeaderVersionOne) ||
+		header->headerVersion != VK_PIPELINE_CACHE_HEADER_VERSION_ONE)
+		return finish(MGPipelineCacheStatus::InvalidData);
+	if (header->vendorID != properties.vendorID || header->deviceID != properties.deviceID ||
+		memcmp(header->pipelineCacheUUID, properties.pipelineCacheUUID, VK_UUID_SIZE) != 0)
+		return finish(MGPipelineCacheStatus::Incompatible);
+
+	VkPipelineCacheCreateInfo createInfo{ VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO };
+	createInfo.initialDataSize = (size_t)dataBytes;
+	createInfo.pInitialData = data;
+	VkPipelineCache imported = VK_NULL_HANDLE;
+	if (vkCreatePipelineCache(device->device, &createInfo, nullptr, &imported) != VK_SUCCESS)
+		return finish(MGPipelineCacheStatus::InvalidData);
+	vkDeviceWaitIdle(device->device);
+	VkResult result = vkMergePipelineCaches(device->device, device->pipelineCache, 1, &imported);
+	vkDestroyPipelineCache(device->device, imported, nullptr);
+	return finish(result == VK_SUCCESS ? MGPipelineCacheStatus::Success : MGPipelineCacheStatus::Error);
 }
 
 void MGG_GraphicsDevice_Draw(MGG_GraphicsDevice* device, MGPrimitiveType primitiveType, mgint vertexStart, mgint vertexCount)
@@ -5175,7 +5292,7 @@ void MGG_Buffer_SetData(MGG_GraphicsDevice* device, MGG_Buffer*& buffer, mgint o
 		switch (buffer->type)
 		{
 		case MGBufferType::Constant:
-			for (int i=0; i < (int)MGShaderStage::Count; i++)
+			for (int i=0; i < NUM_SHADER_STAGES; i++)
 			{
 				if (device->uniforms[i] == last)
 				{
@@ -5669,6 +5786,7 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
 	assert(bytecode != nullptr);
 	assert(sizeInBytes > 0);
 
+	auto started = std::chrono::steady_clock::now();
 	auto shader = new MGG_Shader();
 	shader->stage = stage;
 
@@ -5693,6 +5811,10 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
 		bytecode += sizeof(VkDescriptorSetLayoutBinding) * count;
 		sizeInBytes -= sizeof(VkDescriptorSetLayoutBinding) * count;
 	}
+
+	MGMetalShaderPayload metalPayload;
+	if (MGG_TryParseMetalShaderPayload(bytecode, sizeInBytes, metalPayload))
+		sizeInBytes = static_cast<mgint>(metalPayload.spirvSize);
 
 	VkShaderModuleCreateInfo create_info = { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
 	create_info.codeSize = sizeInBytes;
@@ -5721,6 +5843,9 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
 		shader->poolInfo = nullptr;
 		shader->pool = nullptr;
 		shader->writes = nullptr;
+		device->shaderCreationCount++;
+		device->shaderCreationMilliseconds += std::chrono::duration<double, std::milli>(
+			std::chrono::steady_clock::now() - started).count();
 		return shader;
 	}
 
@@ -5832,6 +5957,9 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
 		}
 	}
 
+	device->shaderCreationCount++;
+	device->shaderCreationMilliseconds += std::chrono::duration<double, std::milli>(
+		std::chrono::steady_clock::now() - started).count();
 	return shader;
 }
 

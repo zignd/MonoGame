@@ -9,6 +9,13 @@
   <PropertyGroup>
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
     <CollectBundleResourcesDependsOn>IncludeContent;</CollectBundleResourcesDependsOn>
+    <MonoGameShaderBuildMode Condition="'$(MonoGameShaderBuildMode)' == '' And '$(Configuration)' == 'Release'">Production</MonoGameShaderBuildMode>
+    <MonoGameShaderBuildMode Condition="'$(MonoGameShaderBuildMode)' == ''">Development</MonoGameShaderBuildMode>
+    <MonoGameMetalOfflineLibraries Condition="'$(MonoGameMetalOfflineLibraries)' == ''">false</MonoGameMetalOfflineLibraries>
+    <MonoGameMetalRuntimeFallback Condition="'$(MonoGameMetalRuntimeFallback)' == ''">false</MonoGameMetalRuntimeFallback>
+    <MonoGameMetalDeploymentTarget Condition="'$(MonoGameMetalDeploymentTarget)' == ''">11.0</MonoGameMetalDeploymentTarget>
+    <MonoGameEnableVariantStripping Condition="'$(MonoGameEnableVariantStripping)' == ''">false</MonoGameEnableVariantStripping>
+    <MonoGameKeepFrameworkVariants Condition="'$(MonoGameKeepFrameworkVariants)' == ''">true</MonoGameKeepFrameworkVariants>
   </PropertyGroup>
 
   <!--
@@ -172,6 +179,7 @@
     <Exec
       Condition="'%(ContentReference.FullPath)' != ''"
       Command="$(_Command) $(MonoGameMGCBAdditionalArguments) /@:&quot;%(ContentReference.FullPath)&quot; /platform:$(MonoGamePlatform) /outputDir:&quot;%(ContentReference.ContentOutputDir)&quot; /intermediateDir:&quot;%(ContentReference.ContentIntermediateOutputDir)&quot; /workingDir:&quot;%(ContentReference.FullDir)&quot;"
+      EnvironmentVariables="MONOGAME_SHADER_BUILD_MODE=$(MonoGameShaderBuildMode);MONOGAME_SHADER_CACHE_DIRECTORY=$(MonoGameShaderCacheDirectory);MONOGAME_METAL_OFFLINE_LIBRARIES=$(MonoGameMetalOfflineLibraries);MONOGAME_METAL_RUNTIME_FALLBACK=$(MonoGameMetalRuntimeFallback);MONOGAME_METAL_DEPLOYMENT_TARGET=$(MonoGameMetalDeploymentTarget);MONOGAME_METAL_SHADER_COMPILER=$(MonoGameMetalShaderCompilerPath);MONOGAME_ENABLE_VARIANT_STRIPPING=$(MonoGameEnableVariantStripping);MONOGAME_VARIANT_MANIFEST_PATHS=$(MonoGameVariantManifestPaths);MONOGAME_VARIANT_KEEP_RULES=$(MonoGameVariantKeepRules);MONOGAME_VARIANT_REPORT_PATH=$(MonoGameVariantReportPath);MONOGAME_KEEP_FRAMEWORK_VARIANTS=$(MonoGameKeepFrameworkVariants)"
       WorkingDirectory="$(MSBuildProjectDirectory)" />
 
     <ItemGroup>

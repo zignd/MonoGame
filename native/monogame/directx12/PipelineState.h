@@ -32,6 +32,12 @@ public:
 
     void ApplyCurrentPipelineState();
 
+    void GetDiagnostics(MGG_ShaderPipelineDiagnostics& diagnostics) const;
+    void ResetDiagnostics();
+    MGPipelineCacheStatus ImportPipelineCache(const mgbyte* data, size_t dataBytes);
+    size_t GetPipelineCacheDataSize() const;
+    bool GetPipelineCacheData(mgbyte* data, size_t dataBytes) const;
+
     void SetDeviceParameters();
     size_t GetPipelineHash();
 
@@ -43,6 +49,12 @@ public:
 
         size_t m_lastPSOHash = 0;
         std::unordered_map<size_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> m_psoHashMap;
+        Microsoft::WRL::ComPtr<ID3D12PipelineLibrary> m_pipelineLibrary;
+
+        uint64_t m_pipelineCacheHits = 0;
+        uint64_t m_pipelineCacheMisses = 0;
+        uint64_t m_pipelineCreationCount = 0;
+        double m_pipelineCreationMilliseconds = 0.0;
     };
 
     InternalData* impl;

@@ -21,6 +21,8 @@
 #include "Texture.h"
 #include "Sampler.h"
 
+#include <chrono>
+
 #ifdef _WIN32
 #include <Windows.h>
 #endif
@@ -168,6 +170,9 @@ struct MGG_GraphicsDevice
 	DeviceResources* resources = nullptr;
 	CommandContext* context = nullptr;
 	PipelineStateManager* pipelineManager = nullptr;
+	uint64_t pipelineCacheImports = 0;
+	uint64_t pipelineCacheRejections = 0;
+	MGPipelineCacheStatus lastPipelineCacheStatus = MGPipelineCacheStatus::None;
 
 	MGG_Shader* currentShader[2] = { nullptr, nullptr };
 
@@ -213,6 +218,9 @@ struct MGG_GraphicsDevice
 	std::vector<MGG_Buffer*> discarded;
 	std::vector<MGG_Buffer*> pending;
 	std::vector<MGG_Buffer*> free;
+
+	uint64_t shaderCreationCount = 0;
+	double shaderCreationMilliseconds = 0.0;
 };
 
 struct MGG_Buffer
@@ -605,6 +613,29 @@ void MGG_GraphicsDevice_GetCaps(MGG_GraphicsDevice* device, MGG_GraphicsDevice_C
 #else
 	caps.ShaderProfile = 2;
 #endif
+}
+
+void MGG_GraphicsDevice_GetShaderPipelineDiagnostics(MGG_GraphicsDevice* device, MGG_ShaderPipelineDiagnostics& diagnostics)
+{
+	assert(device != nullptr);
+	diagnostics = {};
+	diagnostics.ShaderCreationCount = device->shaderCreationCount;
+	diagnostics.ShaderCreationMilliseconds = device->shaderCreationMilliseconds;
+	diagnostics.PipelineCacheImports = device->pipelineCacheImports;
+	diagnostics.PipelineCacheRejections = device->pipelineCacheRejections;
+	diagnostics.LastPipelineCacheStatus = device->lastPipelineCacheStatus;
+	device->pipelineManager->GetDiagnostics(diagnostics);
+}
+
+void MGG_GraphicsDevice_ResetShaderPipelineDiagnostics(MGG_GraphicsDevice* device)
+{
+	assert(device != nullptr);
+	device->shaderCreationCount = 0;
+	device->shaderCreationMilliseconds = 0.0;
+	device->pipelineCacheImports = 0;
+	device->pipelineCacheRejections = 0;
+	device->lastPipelineCacheStatus = MGPipelineCacheStatus::None;
+	device->pipelineManager->ResetDiagnostics();
 }
 
 void MGG_GraphicsDevice_ResolveRenderTargets(MGG_GraphicsDevice* device)
@@ -1264,6 +1295,40 @@ static int MGDX_GetIndexCount(MGPrimitiveType primitiveType, mgint primitiveCoun
 	case MGPrimitiveType::PointList:
 		return primitiveCount;
 	}
+}
+
+mgbool MGG_GraphicsDevice_PrewarmCurrentPipeline(MGG_GraphicsDevice* device, MGPrimitiveType primitiveType)
+{
+	assert(device != nullptr);
+	MGDX_ApplyState(device);
+	return true;
+}
+
+mgint MGG_GraphicsDevice_GetPipelineCacheDataSize(MGG_GraphicsDevice* device)
+{
+	assert(device != nullptr);
+	size_t size = device->pipelineManager->GetPipelineCacheDataSize();
+	return size <= INT32_MAX ? (mgint)size : 0;
+}
+
+mgbool MGG_GraphicsDevice_GetPipelineCacheData(MGG_GraphicsDevice* device, mgbyte* data, mgint dataBytes)
+{
+	assert(device != nullptr);
+	return dataBytes > 0 && device->pipelineManager->GetPipelineCacheData(data, (size_t)dataBytes);
+}
+
+MGPipelineCacheStatus MGG_GraphicsDevice_ImportPipelineCache(MGG_GraphicsDevice* device, mgbyte* data, mgint dataBytes)
+{
+	assert(device != nullptr);
+	MGPipelineCacheStatus status = data == nullptr || dataBytes <= 0
+		? MGPipelineCacheStatus::Empty
+		: device->pipelineManager->ImportPipelineCache(data, (size_t)dataBytes);
+	device->lastPipelineCacheStatus = status;
+	if (status == MGPipelineCacheStatus::Success)
+		device->pipelineCacheImports++;
+	else if (status != MGPipelineCacheStatus::Empty)
+		device->pipelineCacheRejections++;
+	return status;
 }
 
 void MGG_GraphicsDevice_Draw(MGG_GraphicsDevice* device, MGPrimitiveType primitiveType, mgint vertexStart, mgint vertexCount)
@@ -2284,6 +2349,7 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
 	// extra copy?  Or should the C# side be responsible
 	// to keep it around?
 
+	auto started = std::chrono::steady_clock::now();
 	auto shader = new MGG_Shader();
 	shader->stage = stage;
 
@@ -2304,6 +2370,9 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
 
 	shader->bytecode.resize(sizeInBytes);
 	memcpy(shader->bytecode.data(), bytecode, sizeInBytes);
+	device->shaderCreationCount++;
+	device->shaderCreationMilliseconds += std::chrono::duration<double, std::milli>(
+		std::chrono::steady_clock::now() - started).count();
 
 	return shader;
 }

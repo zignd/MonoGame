@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://monogame.net/schemas/shader-pipeline/v1/cache-metadata.schema.json",
+  "title": "MonoGame Shader Pipeline Cache Metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "backend",
+    "device",
+    "driverVersion",
+    "operatingSystem",
+    "contentHash",
+    "compilerVersion"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "backend": { "enum": ["DirectX12", "Vulkan", "Metal"] },
+    "device": { "type": "string", "minLength": 1 },
+    "driverVersion": { "type": "string", "minLength": 1 },
+    "operatingSystem": { "type": "string", "minLength": 1 },
+    "contentHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "compilerVersion": { "type": "string", "minLength": 1 }
+  }
+}

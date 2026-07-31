@@ -5,7 +5,13 @@ namespace BuildScripts;
 
 public sealed class BuildPremake
 {
-    public void Run(BuildContext context, string name, string workingDirectory, string solutionFile)
+    public void Run(
+        BuildContext context,
+        string name,
+        string workingDirectory,
+        string solutionFile,
+        string generationOptions = "",
+        string makeTarget = "")
     {
         switch (context.Environment.Platform.Family)
         {
@@ -25,8 +31,8 @@ public sealed class BuildPremake
             {
                 // Linux/macOS build for the host architecture only
                 var arch = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x64";
-                Scaffold(context, name, workingDirectory, $"--arch={arch} gmake");
-                Make(context, name, workingDirectory);
+                Scaffold(context, name, workingDirectory, $"--arch={arch} {generationOptions} gmake", generationOptions);
+                Make(context, name, workingDirectory, makeTarget);
 
                 break;
             }
@@ -37,10 +43,10 @@ public sealed class BuildPremake
         }
     }
 
-    private void Scaffold(BuildContext context, string name, string workingDirectory, string premakeArguments)
+    private void Scaffold(BuildContext context, string name, string workingDirectory, string premakeArguments, string cleanOptions = "")
     {
         int exit;
-        exit = context.StartProcess("premake5", new ProcessSettings { WorkingDirectory = workingDirectory, Arguments = "clean" });
+        exit = context.StartProcess("premake5", new ProcessSettings { WorkingDirectory = workingDirectory, Arguments = $"{cleanOptions} clean" });
         if (exit != 0)
         {
             throw new Exception($"{name} Premake clean failed! {exit}");
@@ -62,9 +68,9 @@ public sealed class BuildPremake
         }
     }
 
-    private void Make(BuildContext context, string name, string workingDirectory)
+    private void Make(BuildContext context, string name, string workingDirectory, string target)
     {
-        int exit = context.StartProcess("make", new ProcessSettings { WorkingDirectory = workingDirectory, Arguments = "config=release" });
+        int exit = context.StartProcess("make", new ProcessSettings { WorkingDirectory = workingDirectory, Arguments = $"config=release {target}" });
         if (exit != 0)
         {
             throw new Exception($"{name} build failed with make! {exit}");

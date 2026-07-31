@@ -3,12 +3,14 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
+using System.Buffers.Binary;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace Microsoft.Xna.Framework.Graphics
 {
 
-    // TODO: We should convert the types below 
+    // TODO: We should convert the types below
     // into the start of a Shader reflection API.
 
     internal enum SamplerType
@@ -89,6 +91,8 @@ namespace Microsoft.Xna.Framework.Graphics
         /// </summary>
         internal int HashKey { get; private set; }
 
+        internal string ArtifactKey { get; private set; }
+
         public SamplerInfo[] Samplers { get; private set; }
 
 	    public int[] CBuffers { get; private set; }
@@ -123,6 +127,7 @@ namespace Microsoft.Xna.Framework.Graphics
 
             var shaderLength = reader.ReadInt32();
             var shaderBytecode = reader.ReadBytes(shaderLength);
+            ArtifactKey = ComputeArtifactKey(Stage, shaderBytecode);
 
             var samplerCount = (int)reader.ReadByte();
             Samplers = new SamplerInfo[samplerCount];
@@ -139,9 +144,9 @@ namespace Microsoft.Xna.Framework.Graphics
 					Samplers[s].state.AddressV = (TextureAddressMode)reader.ReadByte();
 					Samplers[s].state.AddressW = (TextureAddressMode)reader.ReadByte();
                     Samplers[s].state.BorderColor = new Color(
-                        reader.ReadByte(), 
-                        reader.ReadByte(), 
-                        reader.ReadByte(), 
+                        reader.ReadByte(),
+                        reader.ReadByte(),
+                        reader.ReadByte(),
                         reader.ReadByte());
 					Samplers[s].state.Filter = (TextureFilter)reader.ReadByte();
 					Samplers[s].state.MaxAnisotropy = reader.ReadInt32();
@@ -169,6 +174,33 @@ namespace Microsoft.Xna.Framework.Graphics
             }
 
             PlatformConstruct(Stage, shaderBytecode);
+        }
+
+        internal static string ComputeArtifactKey(ShaderStage stage, byte[] shaderBytecode)
+        {
+            const uint preparedMetalMagic = 0x4C4D474D;
+            const uint preparedMetalVersion = 1;
+            const int footerSize = 28;
+            var identityLength = shaderBytecode.Length;
+            if (shaderBytecode.Length >= footerSize)
+            {
+                var footer = shaderBytecode.AsSpan(shaderBytecode.Length - footerSize);
+                var libraryLength = BinaryPrimitives.ReadInt32LittleEndian(footer[16..]);
+                var entryPointLength = BinaryPrimitives.ReadInt32LittleEndian(footer[20..]);
+                var metadataLength = BinaryPrimitives.ReadInt32LittleEndian(footer[24..]);
+                var extensionLength = (long)libraryLength + entryPointLength + metadataLength + footerSize;
+                if (BinaryPrimitives.ReadUInt32LittleEndian(footer) == preparedMetalMagic &&
+                    BinaryPrimitives.ReadUInt32LittleEndian(footer[4..]) == preparedMetalVersion &&
+                    libraryLength > 0 && entryPointLength > 0 && metadataLength >= 0 &&
+                    extensionLength < shaderBytecode.Length)
+                    identityLength -= checked((int)extensionLength);
+            }
+
+            var identityBytes = new byte[identityLength + 1];
+            identityBytes[0] = (byte)stage;
+            Buffer.BlockCopy(shaderBytecode, 0, identityBytes, 1, identityLength);
+            using var sha256 = SHA256.Create();
+            return BitConverter.ToString(sha256.ComputeHash(identityBytes)).Replace("-", string.Empty).ToLowerInvariant();
         }
 
         internal protected override void GraphicsDeviceResetting()

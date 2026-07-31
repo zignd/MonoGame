@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://monogame.net/schemas/shader-pipeline/v1/pipeline-description.schema.json",
+  "title": "MonoGame Graphics Pipeline Description",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "shaderArtifacts",
+    "vertexLayout",
+    "primitiveTopology",
+    "blendState",
+    "depthStencilState",
+    "rasterizerState",
+    "renderTargetFormats",
+    "depthStencilFormat",
+    "sampleCount",
+    "sampleMask"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "shaderArtifacts": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+    },
+    "vertexLayout": { "type": "string" },
+    "primitiveTopology": { "type": "string", "minLength": 1 },
+    "blendState": { "type": "string", "minLength": 1 },
+    "depthStencilState": { "type": "string", "minLength": 1 },
+    "rasterizerState": { "type": "string", "minLength": 1 },
+    "renderTargetFormats": { "type": "string", "minLength": 1 },
+    "depthStencilFormat": { "type": "string" },
+    "sampleCount": { "type": "integer", "minimum": 1 },
+    "sampleMask": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "specializationConstants": { "type": "string", "default": "" },
+    "backendCompatibilityFlags": { "type": "string", "default": "" }
+  }
+}

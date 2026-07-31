@@ -94,7 +94,6 @@ enum class MGShaderStage : mgint
 {
     Vertex = 0,
     Pixel = 1,
-    Count = 2,
 };
 
 enum class MGIndexElementSize : mgint
@@ -110,6 +109,17 @@ enum class MGPrimitiveType : mgint
     LineList = 2,
     LineStrip = 3,
     PointList = 4,
+};
+
+enum class MGPipelineCacheStatus : mgint
+{
+    None = 0,
+    Success = 1,
+    Empty = 2,
+    InvalidData = 3,
+    Incompatible = 4,
+    Unsupported = 5,
+    Error = 6,
 };
 
 enum class MGBlend : mgint

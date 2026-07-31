@@ -88,6 +88,21 @@ struct MGG_GraphicsDevice_Caps
     mgint ShaderProfile;
 };
 
+struct MGG_ShaderPipelineDiagnostics
+{
+    mgulong ShaderCreationCount;
+    mgulong PipelineCacheHits;
+    mgulong PipelineCacheMisses;
+    mgulong PipelineCreationCount;
+    mgulong RuntimeTranslationCount;
+    mgulong PipelineCacheImports;
+    mgulong PipelineCacheRejections;
+    MGPipelineCacheStatus LastPipelineCacheStatus;
+    mgdouble ShaderCreationMilliseconds;
+    mgdouble PipelineCreationMilliseconds;
+    mgdouble RuntimeTranslationMilliseconds;
+};
+
 struct Vector4
 {
     mgfloat X;

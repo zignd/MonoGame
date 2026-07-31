@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework Condition="$([MSBuild]::IsOSPlatform('Windows'))">net10.0-windows</TargetFramework>
+    <TargetFramework Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net10.0</TargetFramework>
+    <UseAppHost>false</UseAppHost>
+    <RootNamespace>MonoGame.ShaderPipeline.Benchmark</RootNamespace>
+    <_OSArchitecture>$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant())</_OSArchitecture>
+    <NativePlatform Condition="'$(_OSArchitecture)' == 'arm64'">arm64</NativePlatform>
+    <NativePlatform Condition="'$(NativePlatform)' == ''">x64</NativePlatform>
+    <BenchmarkBackend Condition="$([MSBuild]::IsOSPlatform('Windows'))">Direct3D 12</BenchmarkBackend>
+    <BenchmarkBackend Condition="$([MSBuild]::IsOSPlatform('Linux'))">Vulkan</BenchmarkBackend>
+    <BenchmarkBackend Condition="$([MSBuild]::IsOSPlatform('OSX'))">Metal</BenchmarkBackend>
+    <BenchmarkNativeLibrary Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(MSBuildThisFileDirectory)..\..\Artifacts\native\mgruntime\windowsdx\windows\$(NativePlatform)\Release\mgruntime.dll</BenchmarkNativeLibrary>
+    <BenchmarkNativeLibrary Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(MSBuildThisFileDirectory)../../Artifacts/native/mgruntime/desktopvk/linux/$(NativePlatform)/Release/libmgruntime.so</BenchmarkNativeLibrary>
+    <BenchmarkNativeLibrary Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(MSBuildThisFileDirectory)../../Artifacts/native/mgruntime/desktopmetal/macosx/Release/libmgruntime.dylib</BenchmarkNativeLibrary>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../MonoGame.Framework/MonoGame.Framework.Native.csproj" />
+    <ProjectReference Include="../../src/NuGetPackages/MonoGame.Runtime.Mac.Metal/MonoGame.Runtime.Mac.Metal.csproj" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
+    <Content Include="$(BenchmarkNativeLibrary)" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Condition="!$([MSBuild]::IsOSPlatform('OSX')) and Exists('$(BenchmarkNativeLibrary)')" />
+  </ItemGroup>
+  <Target Name="ValidateBenchmarkBackend" BeforeTargets="Build">
+    <Error Condition="'$(BenchmarkBackend)' == ''" Text="The shader benchmark has no standard Native backend configured for this operating system." />
+    <Error Condition="!Exists('$(BenchmarkNativeLibrary)')" Text="The $(BenchmarkBackend) Native runtime is missing at '$(BenchmarkNativeLibrary)'. Build it first with: dotnet run --project build/Build.csproj -- --target=&quot;Build Native Metal&quot;" />
+  </Target>
+</Project>

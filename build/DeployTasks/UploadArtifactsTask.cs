@@ -80,6 +80,7 @@ public sealed class UploadArtifactsTask : AsyncFrostingTask<BuildContext>
                 // macOS produces universal binaries
                 await context.GitHubActions().Commands.UploadArtifact(new DirectoryPath("Artifacts/native/mgpipeline/macosx/Release/"), $"mgpipeline-macos.{context.Version}");
                 await context.GitHubActions().Commands.UploadArtifact(new DirectoryPath("Artifacts/native/mgruntime/desktopvk/macosx/"), $"mgnative-macos.{context.Version}");
+                await context.GitHubActions().Commands.UploadArtifact(new DirectoryPath("Artifacts/native/mgruntime/desktopmetal/macosx/"), $"mgnative-macos-metal.{context.Version}");
                 break;
             default:
                 throw new NotSupportedException($"Platform {context.Environment.Platform.Family} is not supported for static library checks.");

@@ -39,6 +39,9 @@ public sealed class PackNativeRuntimeTask : AsyncFrostingTask<BuildContext>
 
             // macOS Vulkan - universal binary (x64 + arm64 in one file)
             await DownloadArtifactAsync(context, $"mgnative-macos.{context.Version}", "Artifacts/native/mgruntime/desktopvk/macosx/");
+
+            // macOS Metal - universal binary (x64 + arm64 in one file)
+            await DownloadArtifactAsync(context, $"mgnative-macos-metal.{context.Version}", "Artifacts/native/mgruntime/desktopmetal/macosx/");
         }
 
         // Pack all runtime NuGet packages with whatever native binaries are available.
@@ -47,6 +50,7 @@ public sealed class PackNativeRuntimeTask : AsyncFrostingTask<BuildContext>
         context.DotNetPack("src/NuGetPackages/MonoGame.Runtime.Windows.DX12/MonoGame.Runtime.Windows.DX12.csproj", context.DotNetPackSettings);
         context.DotNetPack("src/NuGetPackages/MonoGame.Runtime.Windows.Vulkan/MonoGame.Runtime.Windows.Vulkan.csproj", context.DotNetPackSettings);
         context.DotNetPack("src/NuGetPackages/MonoGame.Runtime.Mac.Vulkan/MonoGame.Runtime.Mac.Vulkan.csproj", context.DotNetPackSettings);
+        context.DotNetPack("src/NuGetPackages/MonoGame.Runtime.Mac.Metal/MonoGame.Runtime.Mac.Metal.csproj", context.DotNetPackSettings);
         context.DotNetPack("src/NuGetPackages/MonoGame.Runtime.Linux.Vulkan/MonoGame.Runtime.Linux.Vulkan.csproj", context.DotNetPackSettings);
 
         if (context.BuildSystem().IsRunningOnGitHubActions)

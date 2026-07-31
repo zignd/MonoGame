@@ -4,10 +4,6 @@
 
 local vulkan_sdk = os.getenv("VULKAN_SDK")
 
-if vulkan_sdk == nil and os.target() == "macosx" then
-    error("Error: VULKAN_SDK environment variable is not set. Please set it to your Vulkan SDK installation path.")
-end
-
 newoption {
     trigger = "arch",
     value = "ARCH",
@@ -17,6 +13,11 @@ newoption {
         { "x64", "64-bit x86" },
         { "arm64", "64-bit ARM" }
     }
+}
+
+newoption {
+    trigger = "metal-only",
+    description = "Generate only the native Metal project without requiring the Vulkan SDK"
 }
 
 -- Which SDL major version the platform layer (MGP) is built against. SDL3 is the default;
@@ -68,7 +69,7 @@ function common(project_name)
     cppdialect "C++17"
 
     files {"include/**.h", "common/**.h", "common/**.cpp"}
-    includedirs {"include", "../../external/stb"}
+    includedirs {"include", "common", "../../external/stb"}
 end
 
 -- SDL is supported on all desktop platforms.
@@ -137,6 +138,10 @@ end
 
 -- Vulkan is supported for all desktop platforms.
 function vulkan()
+    if vulkan_sdk == nil and os.target() == "macosx" then
+        error("Error: VULKAN_SDK environment variable is not set. Please set it to your Vulkan SDK installation path.")
+    end
+
     defines {"MG_VULKAN"}
 
     files {"vulkan/**.h", "vulkan/**.cpp"}
@@ -163,22 +168,26 @@ end
 
 -- Metal is the native macOS/iOS graphics backend. It renders straight to a CAMetalLayer (no MoltenVK),
 -- reusing the Vulkan backend's compiled effect headers (vulkan/*.vk.mgfxo.h: SPIR-V + reflection header)
--- and translating SPIR-V -> MSL at runtime via SPIRV-Cross (linked from the Vulkan SDK). Obj-C++ (.mm).
+-- and translating SPIR-V -> MSL at runtime via the pinned SPIRV-Cross submodule. Obj-C++ (.mm).
 function metal()
     defines {"MG_METAL"}
 
-    files {"metal/**.h", "metal/**.cpp", "metal/**.mm"}
+    files {
+        "metal/**.h", "metal/**.cpp", "metal/**.mm",
+        "external/spirv-cross/spirv_cross.cpp",
+        "external/spirv-cross/spirv_parser.cpp",
+        "external/spirv-cross/spirv_cross_parsed_ir.cpp",
+        "external/spirv-cross/spirv_cfg.cpp",
+        "external/spirv-cross/spirv_glsl.cpp",
+        "external/spirv-cross/spirv_msl.cpp",
+        "external/spirv-cross/spirv_cross_util.cpp"
+    }
 
     -- "vulkan" is on the include path so metal/ can #include the shared *.vk.mgfxo.h effect blobs;
-    -- the SDK's spirv_cross include dir provides the SPIRV-Cross C++ headers (spirv_msl.hpp, ...),
-    -- which include each other by bare name so the directory itself must be on the search path.
-    includedirs {"vulkan", path.join(vulkan_sdk, "include"), path.join(vulkan_sdk, "include/spirv_cross")}
+    -- SPIRV-Cross headers include each other by bare name, so its root is also an include directory.
+    includedirs {"vulkan", "external/spirv-cross"}
 
     filter {"system:macosx"}
-    libdirs {path.join(vulkan_sdk, "lib")}
-    -- SPIRV-Cross C++ API for runtime SPIR-V -> MSL. The MSL backend layers on GLSL then core; util
-    -- provides helpers. (Universal static libs shipped with the Vulkan SDK.)
-    links {"spirv-cross-msl", "spirv-cross-glsl", "spirv-cross-core", "spirv-cross-util"}
     links {"Metal.framework", "MetalKit.framework", "QuartzCore.framework", "Foundation.framework",
         "IOSurface.framework", "AppKit.framework"}
     filter {}
@@ -252,14 +261,38 @@ if os.target() == "windows" then
     platforms { "x64", "arm64" }
 end
 
-project "desktopvk"
-common("desktopvk")
-sdl()
-vulkan()
-faudio()
-configs()
+if not _OPTIONS["metal-only"] then
+    project "desktopvk"
+    common("desktopvk")
+    sdl()
+    vulkan()
+    faudio()
+    configs()
+end
 
 if os.target() == "macosx" then
+    project "mgmetalcompiler"
+    kind "ConsoleApp"
+    language "C++"
+    cppdialect "C++17"
+    targetname "mgmetalcompiler"
+    targetdir "../../Artifacts/native/mgmetalcompiler/%{cfg.system}/%{cfg.buildcfg}"
+    objdir "obj/mgmetalcompiler"
+    files {
+        "tools/metalcompiler/main.cpp",
+        "metal/MGMetalShaderTranspiler.h",
+        "metal/MGMetalShaderTranspiler.cpp",
+        "external/spirv-cross/spirv_cross.cpp",
+        "external/spirv-cross/spirv_parser.cpp",
+        "external/spirv-cross/spirv_cross_parsed_ir.cpp",
+        "external/spirv-cross/spirv_cfg.cpp",
+        "external/spirv-cross/spirv_glsl.cpp",
+        "external/spirv-cross/spirv_msl.cpp",
+        "external/spirv-cross/spirv_cross_util.cpp"
+    }
+    includedirs {"metal", "external/spirv-cross"}
+    configs()
+
     -- Native Metal head (macOS). Coexists on disk with desktopvk via common()'s per-project artifacts.
     project "desktopmetal"
     common("desktopmetal")
