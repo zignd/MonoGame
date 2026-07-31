@@ -210,6 +210,14 @@ namespace Microsoft.Xna.Framework.Media
             return TimeSpan.FromTicks(_clock.Time);
         }
 
+        private partial void PlatformSetPlayPosition(TimeSpan position)
+        {
+            var wasPaused = State == MediaState.Paused;
+            _session.Start(null, new Variant { Value = position.Ticks });
+            if (wasPaused)
+                _session.Pause();
+        }
+
         private void PlatformDispose(bool disposing)
         {
             if (_videoCache != null)

@@ -59,6 +59,11 @@ namespace Microsoft.Xna.Framework.Media
             throw new NotImplementedException("VideoPlayer is not implemented on this platform.");
         }
 
+        private partial void PlatformSetPlayPosition(TimeSpan position)
+        {
+            throw new NotImplementedException("VideoPlayer is not implemented on this platform.");
+        }
+
         private void PlatformSetVolume()
         {
             throw new NotImplementedException("VideoPlayer is not implemented on this platform.");

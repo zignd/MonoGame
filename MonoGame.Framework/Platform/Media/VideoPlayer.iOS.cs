@@ -80,6 +80,11 @@ namespace Microsoft.Xna.Framework.Media
             throw new NotImplementedException();
         }
 
+        private partial void PlatformSetPlayPosition(TimeSpan position)
+        {
+            _currentVideo.MovieView.MoviePlayer.CurrentPlaybackTime = position.TotalSeconds;
+        }
+
         private void PlatformSetIsLooped()
         {
             throw new NotImplementedException();

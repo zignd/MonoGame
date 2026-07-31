@@ -67,6 +67,11 @@ namespace Microsoft.Xna.Framework.Media
             throw new NotImplementedException();
         }
 
+        private partial void PlatformSetPlayPosition(TimeSpan position)
+        {
+            _currentVideo.Player.SeekTo((int)Math.Min(position.TotalMilliseconds, int.MaxValue));
+        }
+
         private TimeSpan PlatformSetVolume()
         {
             throw new NotImplementedException();

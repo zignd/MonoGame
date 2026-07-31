@@ -136,6 +136,11 @@ namespace Microsoft.Xna.Framework.Media
             return TimeSpan.FromSeconds(_mediaEngine.CurrentTime);
         }
 
+        private partial void PlatformSetPlayPosition(TimeSpan position)
+        {
+            _mediaEngine.CurrentTime = position.TotalSeconds;
+        }
+
         private void PlatformSetVolume()
         {
             _mediaEngine.Volume = _volume;

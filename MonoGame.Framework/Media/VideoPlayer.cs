@@ -78,6 +78,20 @@ namespace Microsoft.Xna.Framework.Media
             }
         }
 
+        /// <summary>Seeks the current video to a position supported by the active platform backend.</summary>
+        public void SetPlayPosition(TimeSpan position)
+        {
+            if (_currentVideo == null)
+                return;
+
+            position = position < TimeSpan.Zero ? TimeSpan.Zero : position;
+            if (position > _currentVideo.Duration)
+                position = _currentVideo.Duration;
+            PlatformSetPlayPosition(position);
+        }
+
+        private partial void PlatformSetPlayPosition(TimeSpan position);
+
         /// <summary>
         /// Gets the media playback state, <see cref="MediaState"/>.
         /// </summary>

@@ -105,6 +105,11 @@ namespace Microsoft.Xna.Framework.Media
             return _currentVideo.CurrentPosition;
         }
 
+        private partial void PlatformSetPlayPosition(TimeSpan position)
+        {
+            _currentVideo.Player.Seek(CoreMedia.CMTime.FromSeconds(position.TotalSeconds, 1000));
+        }
+
         private void PlatformDispose(bool disposing)
         {
         }

@@ -49,6 +49,11 @@ public sealed partial class VideoPlayer : IDisposable
         return _currentVideo.Position;
     }
 
+    private partial void PlatformSetPlayPosition(TimeSpan position)
+    {
+        throw new NotSupportedException("Seeking video is not supported by the Native backend.");
+    }
+
     private void PlatformSetIsLooped()
     {
         _currentVideo.IsLooped = _isLooped;
