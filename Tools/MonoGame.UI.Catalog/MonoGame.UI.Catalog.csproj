@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework Condition="$([MSBuild]::IsOSPlatform('Windows'))">net10.0-windows</TargetFramework>
+    <TargetFramework Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net10.0</TargetFramework>
+    <UseAppHost>false</UseAppHost>
+    <RootNamespace>MonoGame.UI.Catalog</RootNamespace>
+    <_OSArchitecture>$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant())</_OSArchitecture>
+    <NativePlatform Condition="'$(_OSArchitecture)' == 'arm64'">arm64</NativePlatform>
+    <NativePlatform Condition="'$(NativePlatform)' == ''">x64</NativePlatform>
+    <CatalogBackend Condition="$([MSBuild]::IsOSPlatform('Windows'))">Direct3D 12</CatalogBackend>
+    <CatalogBackend Condition="$([MSBuild]::IsOSPlatform('Linux'))">Vulkan</CatalogBackend>
+    <CatalogBackend Condition="$([MSBuild]::IsOSPlatform('OSX'))">Metal</CatalogBackend>
+    <CatalogNativeBuildTarget Condition="$([MSBuild]::IsOSPlatform('OSX'))">Build Native Metal</CatalogNativeBuildTarget>
+    <CatalogNativeBuildTarget Condition="'$(CatalogNativeBuildTarget)' == ''">Build Native</CatalogNativeBuildTarget>
+    <CatalogNativeLibrary Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(MSBuildThisFileDirectory)..\..\Artifacts\native\mgruntime\windowsdx\windows\$(NativePlatform)\Release\mgruntime.dll</CatalogNativeLibrary>
+    <CatalogNativeLibrary Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(MSBuildThisFileDirectory)../../Artifacts/native/mgruntime/desktopvk/linux/$(NativePlatform)/Release/libmgruntime.so</CatalogNativeLibrary>
+    <CatalogNativeLibrary Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(MSBuildThisFileDirectory)../../Artifacts/native/mgruntime/desktopmetal/macosx/Release/libmgruntime.dylib</CatalogNativeLibrary>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../MonoGame.Framework/MonoGame.Framework.Native.csproj" />
+    <Content Include="../../Tests/Assets/Fonts/Catalog.xnb" Link="Content/Fonts/Catalog.xnb" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../Tests/Assets/Fonts/Catalog@2x.xnb" Link="Content/Fonts/Catalog@2x.xnb" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(CatalogNativeLibrary)" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(CatalogNativeLibrary)')" />
+  </ItemGroup>
+  <Target Name="ValidateCatalogBackend" BeforeTargets="Build">
+    <Error Condition="'$(CatalogBackend)' == ''" Text="MonoGame.UI.Catalog has no standard Native backend configured for this operating system." />
+    <Error Condition="!Exists('$(CatalogNativeLibrary)')" Text="The $(CatalogBackend) Native runtime is missing at '$(CatalogNativeLibrary)'. Build it first with: dotnet run --project build/Build.csproj -- --target=&quot;$(CatalogNativeBuildTarget)&quot;" />
+  </Target>
+</Project>
