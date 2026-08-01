@@ -1649,8 +1649,8 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
     bool preparedLibraryLoaded = false;
     @autoreleasepool
     {
-        __block NSError* error = nil;
-        __block id<MTLLibrary> lib = cachedLibrary;
+        NSError* error = nil;
+        id<MTLLibrary> lib = cachedLibrary;
         if (lib == nil && hasPreparedLibrary)
         {
             void* libraryBytes = malloc(preparedPayload.librarySize);
@@ -1708,14 +1708,7 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
                 device->runtimeTranslationMilliseconds += translationMilliseconds;
             }
             MTLCompileOptions* opts = [[MTLCompileOptions alloc] init];
-            dispatch_semaphore_t completed = dispatch_semaphore_create(0);
-            [device->mtlDevice newLibraryWithSource:@(mslSource.c_str()) options:opts completionHandler:^(id<MTLLibrary> library, NSError* compileError)
-            {
-                lib = library;
-                error = compileError;
-                dispatch_semaphore_signal(completed);
-            }];
-            dispatch_semaphore_wait(completed, DISPATCH_TIME_FOREVER);
+            lib = [device->mtlDevice newLibraryWithSource:@(mslSource.c_str()) options:opts error:&error];
         }
         if (lib == nil)
         {
