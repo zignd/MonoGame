@@ -11,9 +11,6 @@ outputs; CI should publish them as job artifacts.
 ```sh
 dotnet run --project build/Build.csproj -- --target="Build Native"
 
-dotnet run --project Tools/MonoGame.UI.Catalog/MonoGame.UI.Catalog.csproj -- \
-  --metrics Artifacts/shader-pipeline-baseline/catalog.json --frames 120
-
 dotnet run --project Tools/MonoGame.ShaderPipeline.Benchmark/MonoGame.ShaderPipeline.Benchmark.csproj -- \
   --output Artifacts/shader-pipeline-baseline/shader-benchmark.json --frames 120 \
   --pipeline-cache Artifacts/shader-pipeline-baseline/native-pipeline.cache
@@ -41,8 +38,10 @@ Captured on 2026-07-30 with macOS 26.5.2 on Arm64 and the Metal Native backend.
 
 | Workload | Frames | Shaders | Shader ms | Pipeline hits/misses | Pipelines | Pipeline ms | Translations | Translation ms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| UI catalog | 10 | 32 | 1107.33 | 869 / 1 | 1 | 19.51 | 32 | 7.95 |
 | BasicEffect 16-variant matrix | 120 | 30 | 12.33 | 1910 / 10 | 10 | 123.65 | 30 | 8.09 |
+
+The retained UI catalog moved to the standalone Forma repository. Its UI metrics baseline no longer
+depends on fork shader diagnostics; use the shader benchmark above for fork pipeline captures.
 
 A 100-reload Metal stress capture completed in 120 rendered frames with 100 successful swaps, zero
 failed swaps, and no runtime or GPU lifetime errors. Reproduce it with:
