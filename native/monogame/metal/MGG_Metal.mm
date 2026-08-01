@@ -2048,6 +2048,22 @@ static int MGMTL_GetIndexCount(MGPrimitiveType type, int primitiveCount)
     }
 }
 
+static void MGMTL_ApplyBaseVertex(MGG_GraphicsDevice* device, mgint baseVertex)
+{
+    MTLVertexDescriptor* descriptor = device->inputLayout ? device->inputLayout->descriptor : nil;
+    for (int i = 0; i < MAX_VERTEX_BUFFERS; i++)
+    {
+        MGG_Buffer* buffer = device->vertexBuffers[i];
+        if (buffer == nullptr || buffer->buffer == nil) continue;
+
+        NSUInteger offset = device->vertexOffsets[i];
+        MTLVertexBufferLayoutDescriptor* layout = descriptor.layouts[MG_MTL_VBO_BASE + i];
+        if (baseVertex > 0 && layout.stepFunction == MTLVertexStepFunctionPerVertex)
+            offset += (NSUInteger)baseVertex * layout.stride;
+        [device->encoder setVertexBuffer:buffer->buffer offset:offset atIndex:(MG_MTL_VBO_BASE + i)];
+    }
+}
+
 mgbool MGG_GraphicsDevice_PrewarmCurrentPipeline(MGG_GraphicsDevice* device, MGPrimitiveType primitiveType)
 {
     return MGMTL_GetPipeline(device) != nil;
@@ -2086,6 +2102,7 @@ void MGG_GraphicsDevice_DrawIndexed(MGG_GraphicsDevice* device, MGPrimitiveType 
     MGG_Buffer* ib = device->indexBuffer;
     if (ib == nullptr || ib->buffer == nil) return;
     MGMTL_ApplyState(device, primitiveType);
+    MGMTL_ApplyBaseVertex(device, vertexStart);
 
     int indexCount = MGMTL_GetIndexCount(primitiveType, primitiveCount);
     int indexBytes = device->indexBufferSize == MGIndexElementSize::ThirtyTwoBits ? 4 : 2;
@@ -2093,10 +2110,7 @@ void MGG_GraphicsDevice_DrawIndexed(MGG_GraphicsDevice* device, MGPrimitiveType 
                                 indexCount:indexCount
                                  indexType:ToMTLIndexType(device->indexBufferSize)
                                indexBuffer:ib->buffer
-                         indexBufferOffset:(NSUInteger)indexStart * indexBytes
-                             instanceCount:1
-                                baseVertex:vertexStart
-                              baseInstance:0];
+                                                 indexBufferOffset:(NSUInteger)indexStart * indexBytes];
 }
 
 void MGG_GraphicsDevice_DrawIndexedInstanced(MGG_GraphicsDevice* device, MGPrimitiveType primitiveType, mgint primitiveCount, mgint indexStart, mgint vertexStart, mgint instanceCount)
@@ -2106,6 +2120,7 @@ void MGG_GraphicsDevice_DrawIndexedInstanced(MGG_GraphicsDevice* device, MGPrimi
     MGG_Buffer* ib = device->indexBuffer;
     if (ib == nullptr || ib->buffer == nil) return;
     MGMTL_ApplyState(device, primitiveType);
+    MGMTL_ApplyBaseVertex(device, vertexStart);
 
     int indexCount = MGMTL_GetIndexCount(primitiveType, primitiveCount);
     int indexBytes = device->indexBufferSize == MGIndexElementSize::ThirtyTwoBits ? 4 : 2;
@@ -2114,9 +2129,7 @@ void MGG_GraphicsDevice_DrawIndexedInstanced(MGG_GraphicsDevice* device, MGPrimi
                                  indexType:ToMTLIndexType(device->indexBufferSize)
                                indexBuffer:ib->buffer
                          indexBufferOffset:(NSUInteger)indexStart * indexBytes
-                             instanceCount:instanceCount
-                                baseVertex:vertexStart
-                              baseInstance:0];
+                                                         instanceCount:instanceCount];
 }
 
 // ===========================================================================================
