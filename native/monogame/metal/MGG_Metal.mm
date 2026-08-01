@@ -26,6 +26,7 @@
 #endif
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <cstdint>
 #include <vector>
@@ -1652,8 +1653,16 @@ MGG_Shader* MGG_Shader_Create(MGG_GraphicsDevice* device, MGShaderStage stage, m
         __block id<MTLLibrary> lib = cachedLibrary;
         if (lib == nil && hasPreparedLibrary)
         {
+            void* libraryBytes = malloc(preparedPayload.librarySize);
+            if (libraryBytes == nullptr)
+            {
+                MGMTL_Log("MGG_Shader_Create: failed to allocate prepared Metal library");
+                delete shader;
+                return nullptr;
+            }
+            memcpy(libraryBytes, preparedPayload.library, preparedPayload.librarySize);
             dispatch_data_t libraryData = dispatch_data_create(
-                preparedPayload.library,
+                libraryBytes,
                 preparedPayload.librarySize,
                 dispatch_get_global_queue(0, 0),
                 DISPATCH_DATA_DESTRUCTOR_DEFAULT);
