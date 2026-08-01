@@ -1905,17 +1905,9 @@ static id<MTLRenderPipelineState> MGMTL_GetPipeline(MGG_GraphicsDevice* device)
             pd.stencilAttachmentPixelFormat = depthFmt;
     }
 
-    __block NSError* error = nil;
-    __block id<MTLRenderPipelineState> pso = nil;
+    NSError* error = nil;
     double t0 = CACurrentMediaTime();
-    dispatch_semaphore_t completed = dispatch_semaphore_create(0);
-    [device->mtlDevice newRenderPipelineStateWithDescriptor:pd completionHandler:^(id<MTLRenderPipelineState> pipelineState, NSError* compileError)
-    {
-        pso = pipelineState;
-        error = compileError;
-        dispatch_semaphore_signal(completed);
-    }];
-    dispatch_semaphore_wait(completed, DISPATCH_TIME_FOREVER);
+    id<MTLRenderPipelineState> pso = [device->mtlDevice newRenderPipelineStateWithDescriptor:pd error:&error];
     if (pso == nil)
     {
         MGMTL_Log("MGG_GetPipeline: pipeline creation failed: %s", error ? [[error localizedDescription] UTF8String] : "unknown");
