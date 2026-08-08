@@ -7,6 +7,7 @@
 #include "directx12.h"
 
 #include "GraphicsEnums.h"
+#include "api_structs.h"
 
 enum class MGPrimitiveType;
 
