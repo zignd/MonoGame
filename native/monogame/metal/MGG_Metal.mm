@@ -1004,6 +1004,14 @@ void MGG_GraphicsDevice_SetRenderTargets(MGG_GraphicsDevice* device, MGG_Texture
     // Ending the encoder flushes any MSAA resolve for the outgoing target.
     MGMTL_EndEncoder(device);
 
+    // A clear-only target has no draw to start its deferred render pass. Realize the pending clear
+    // before unbinding it so later sampling does not expose uninitialized texture contents.
+    if (device->clearColor || device->clearDepth || device->clearStencil)
+    {
+        if (MGMTL_EnsureEncoder(device))
+            MGMTL_EndEncoder(device);
+    }
+
     // Switching targets starts fresh: no pending clears carry over, and the pipeline formats change.
     device->clearColor = device->clearDepth = device->clearStencil = false;
     device->pipelineDirty = true;
