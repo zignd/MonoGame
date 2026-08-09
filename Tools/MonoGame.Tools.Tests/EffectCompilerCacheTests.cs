@@ -40,6 +40,18 @@ internal sealed class EffectCompilerCacheTests
     }
 
     [Test]
+    public void NullDefinesUseTheEmptyDefinesKey()
+    {
+        using var directory = new TemporaryDirectory();
+        var source = directory.WriteFile("Main.fx", "float Value = 1;\n");
+
+        var nullDefines = EffectCompilerCache.ComputeKey(source, Array.Empty<string>(), "Vulkan", false, null, "1");
+        var emptyDefines = EffectCompilerCache.ComputeKey(source, Array.Empty<string>(), "Vulkan", false, string.Empty, "1");
+
+        Assert.That(nullDefines, Is.EqualTo(emptyDefines));
+    }
+
+    [Test]
     public void IncludeEditInvalidatesOnlyDependentEffects()
     {
         using var directory = new TemporaryDirectory();

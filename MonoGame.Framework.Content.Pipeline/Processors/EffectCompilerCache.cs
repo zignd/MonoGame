@@ -50,7 +50,7 @@ internal sealed class EffectCompilerCache
         Write(writer, compilerIdentity);
         Write(writer, profile);
         writer.Write(debug);
-        Write(writer, defines);
+        Write(writer, defines ?? string.Empty);
         writer.Write((byte)buildMode);
         writer.Write(metalOfflineLibraries);
         Write(writer, metalCompilerIdentity);

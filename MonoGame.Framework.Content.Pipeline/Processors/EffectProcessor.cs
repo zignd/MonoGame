@@ -175,6 +175,7 @@ public class EffectProcessor() : ContentProcessor<EffectContent, CompiledEffectC
         }
 
         var compilerIdentity = $"{typeof(EffectObject).Assembly.GetName().Version}:{typeof(EffectObject).Module.ModuleVersionId:N}:{EffectObject.Version}";
+        var defines = options.Defines ?? string.Empty;
         var cache = new EffectCompilerCache(string.IsNullOrWhiteSpace(CacheDirectory)
             ? Path.Combine(context.IntermediateDirectory, "mgshadercache")
             : CacheDirectory);
@@ -183,7 +184,7 @@ public class EffectProcessor() : ContentProcessor<EffectContent, CompiledEffectC
             shaderResult.Dependencies,
             options.Profile.Name,
             options.Debug,
-            options.Defines,
+            defines,
             compilerIdentity,
             BuildMode,
             MetalOfflineLibraries,
@@ -233,7 +234,7 @@ public class EffectProcessor() : ContentProcessor<EffectContent, CompiledEffectC
             result = new CompiledEffectContent(effectCode);
             if (EnableCache)
             {
-                cache.Write(cacheKey, effectCode, compilerIdentity, options.Profile.Name, options.Debug, options.Defines);
+                cache.Write(cacheKey, effectCode, compilerIdentity, options.Profile.Name, options.Debug, defines);
                 cache.Trim(Math.Max(0, CacheSizeMegabytes) * 1024L * 1024L);
             }
         }
