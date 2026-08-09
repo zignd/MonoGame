@@ -45,7 +45,7 @@ jobs:
           swap-storage: true
 
       - name: Clone repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -55,14 +55,49 @@ jobs:
           echo "runner.arch=${{ runner.arch }}"
 
       - name: Setup .NET Core SDK
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '${{ env.DotnetVersion }}'
           global-json-file: "./global.json"
           
-      - name: Setup Android Dependencies
-        if: runner.arch != 'arm64'
-        uses: monogame/monogame-actions/install-android-dependencies@v1
+      - name: Setup Java
+        if: runner.arch != 'ARM64'
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'microsoft'
+          java-version: '17'
+
+      - name: Setup Android SDK dependencies
+        if: runner.os != 'Windows' && runner.arch != 'ARM64'
+        run: |
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          "$sdkmanager" \
+            "platforms;android-34" \
+            "platforms;android-35" \
+            "platform-tools" \
+            "build-tools;34.0.0" \
+            "emulator" \
+            "system-images;android-34;default;x86_64"
+          for i in {1..10}; do
+            echo y
+          done | "$sdkmanager" --licenses
+        shell: bash
+
+      - name: Setup Android SDK dependencies
+        if: runner.os == 'Windows'
+        run: |
+          $sdkManager = Join-Path $env:ANDROID_HOME "cmdline-tools/latest/bin/sdkmanager.bat"
+          $packages = @(
+            "platforms;android-34"
+            "platforms;android-35"
+            "platform-tools"
+            "build-tools;34.0.0"
+            "emulator"
+            "system-images;android-34;default;x86_64"
+          )
+          & $sdkManager $packages
+          1..10 | ForEach-Object { "y" } | & $sdkManager --licenses
+        shell: pwsh
 
       - name: Setup DotNet on Windows
         if: runner.environment == 'github-hosted' && runner.os == 'windows'
@@ -93,11 +128,9 @@ jobs:
       - name: Add msbuild to PATH
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v3
-        with:
-          vs-version: '[17.0,18.0)'
 
       - name: Setup Premake5
-        uses: abel0b/setup-premake@v2.4
+        uses: abel0b/setup-premake@de7d79047789622064f7a2d251e929fadd166707
         if: runner.os != 'Linux' || runner.arch != 'ARM64'
         with:
           version: "5.0.0-beta2"
@@ -111,14 +144,8 @@ jobs:
           ./Bootstrap.sh
           echo "${GITHUB_WORKSPACE}/premake-core/bin/release" >> "$GITHUB_PATH"
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'microsoft'
-          java-version: '17'
-
       - name: Install Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.1
+        uses: zigrok/setup-vulkan-sdk@45c0d9fd5d600244dfa293b3a8c008f5fdd8a0dd
         if: runner.os != 'macos'
         with:
           vulkan-query-version: 1.4.309.0
@@ -127,7 +154,7 @@ jobs:
 
       - name: Install Full Vulkan SDK
         if: runner.os == 'macos'
-        uses: humbletim/install-vulkan-sdk@v1.2
+        uses: zigrok/install-vulkan-sdk@52e46193a1752c2d315469bfb08c45f09d932f61
         with:
           version: 1.4.309.0
           cache: true
@@ -162,6 +189,7 @@ jobs:
           dotnet run --project build/Build.csproj -- --target=Default
         env:
           DOTNET_SYSTEM_NET_SECURITY_NOREVOCATIONCHECKBYDEFAULT: 1 # android compilation is failing randomly due to downloads from microsofts website during it
+          MONOGAME_WINDOWS_PLATFORM_TOOLSET: ${{ runner.os == 'Windows' && 'v145' || '' }}
 
       - name: Build
         if: runner.os == 'Linux' && runner.arch == 'ARM64'
@@ -209,7 +237,7 @@ jobs:
           ACTIONS_RUNTIME_URL: "${{ env.ACTIONS_RUNTIME_URL }}"           
 
       - name: Expose GitHub Runtime
-        uses: crazy-max/ghaction-github-runtime@v3
+        uses: crazy-max/ghaction-github-runtime@v4
 
       - name: Upload Artifacts
         run: dotnet run --project build/Build.csproj -- --target=UploadArtifacts
@@ -226,7 +254,7 @@ jobs:
         contents: write
     steps:
         - name: Clone Repository
-          uses: actions/checkout@v5
+          uses: actions/checkout@v7
           with:
             submodules: recursive
 
@@ -235,13 +263,13 @@ jobs:
             echo '{ "sdk": { "version": "${{ env.DotnetVersion }}" } }' > global.json
 
         - name: Setup .NET Core SDK
-          uses: actions/setup-dotnet@v5
+          uses: actions/setup-dotnet@v6
           with:
             dotnet-version: '${{ env.DotnetVersion }}'
             global-json-file: "./global.json"
 
         - name: Expose GitHub Runtime
-          uses: crazy-max/ghaction-github-runtime@v3
+          uses: crazy-max/ghaction-github-runtime@v4
 
         - name: Pack Native Runtime
           run: dotnet run --project build/Build.csproj -- --target="Pack Native Runtime"
@@ -258,7 +286,7 @@ jobs:
         contents: write
     steps:
         - name: Clone Repository
-          uses: actions/checkout@v5
+          uses: actions/checkout@v7
           with:
             submodules: recursive
 
@@ -267,12 +295,12 @@ jobs:
             echo '{ "sdk": { "version": "${{ env.DotnetVersion }}" } }' > global.json
 
         - name: Setup .NET Core SDK
-          uses: actions/setup-dotnet@v5
+          uses: actions/setup-dotnet@v6
           with:
             dotnet-version: '${{ env.DotnetVersion }}'
 
         - name: Expose GitHub Runtime
-          uses: crazy-max/ghaction-github-runtime@v3
+          uses: crazy-max/ghaction-github-runtime@v4
 
         - name: Upload Binaries package
           run: dotnet run --project build/Build.csproj -- --target=DeployBinaries
@@ -290,7 +318,7 @@ jobs:
         contents: write
     steps:
         - name: Clone Repository
-          uses: actions/checkout@v4
+          uses: actions/checkout@v7
           with:
             submodules: recursive
 
@@ -299,13 +327,13 @@ jobs:
             echo '{ "sdk": { "version": "${{ env.DotnetVersion }}" } }' > global.json
 
         - name: Setup .NET Core SDK
-          uses: actions/setup-dotnet@v5
+          uses: actions/setup-dotnet@v6
           with:
             dotnet-version: '${{ env.DotnetVersion }}'
             global-json-file: "./global.json"
 
         - name: Expose GitHub Runtime
-          uses: crazy-max/ghaction-github-runtime@v3
+          uses: crazy-max/ghaction-github-runtime@v4
 
         - name: Push Nugets
           run: dotnet run --project build/Build.csproj -- --target=Deploy
@@ -334,9 +362,9 @@ jobs:
     - id: runner
       run: |
         if [ "${{ github.repository }}" == "MonoGame/MonoGame" ]; then
-          echo "::set-output name=runner::-selfhosted-"    
+          echo "runner=-selfhosted-" >> "$GITHUB_OUTPUT"
         else
-          echo "::set-output name=runner::-"
+          echo "runner=-" >> "$GITHUB_OUTPUT"
         fi
 
   tests:
@@ -366,7 +394,7 @@ jobs:
         shell: ${{ matrix.shell }}
     steps:
       - name: Clone repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -385,7 +413,7 @@ jobs:
           echo '{ "sdk": { "version": "${{ env.DotnetVersion }}", "workloadVersion": "${{ env.DotnetVersion }}" } }' > global.json
 
       - name: Setup .NET Core SDK
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '${{ env.DotnetVersion }}'
           global-json-file: "./global.json"
@@ -430,34 +458,34 @@ jobs:
           xcode-version: '${{ env.XCodeVersion }}'
 
       - name: Download tests-desktopgl-${{ matrix.platform }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: tests-desktopgl-${{ matrix.platform }}
           path: tests-desktopgl
           
       - name: Download tests-windowsdx-${{ matrix.platform }}
         if: runner.os == 'Windows'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: tests-windowsdx-${{ matrix.platform }}
           path: tests-windowsdx
           
       - name: Download tests-windowsdx12-${{ matrix.platform }}
         if: runner.os == 'Windows'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: tests-windowsdx12-${{ matrix.platform }}
           path: tests-windowsdx12
 
       - name: Download tests-desktopvk-${{ matrix.platform }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: tests-desktopvk-${{ matrix.platform }}
           path: tests-desktopvk
 
       - name: Download tests-desktopmetal-${{ matrix.platform }}
         if: runner.os == 'macos'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: tests-desktopmetal-${{ matrix.platform }}
           path: tests-desktopmetal

@@ -21,8 +21,9 @@ public sealed class BuildPremake
                 Scaffold(context, name, workingDirectory, "--verbose vs2022");
 
                 // Build for both architectures.
-                BuildForArch(context, name, workingDirectory, solutionFile, "x64");
-                BuildForArch(context, name, workingDirectory, solutionFile, "ARM64");
+                var platformToolset = Environment.GetEnvironmentVariable("MONOGAME_WINDOWS_PLATFORM_TOOLSET");
+                BuildForArch(context, name, workingDirectory, solutionFile, "x64", platformToolset);
+                BuildForArch(context, name, workingDirectory, solutionFile, "ARM64", platformToolset);
                 
                 break;
             }
@@ -59,9 +60,18 @@ public sealed class BuildPremake
         }
     }
 
-    private void BuildForArch(BuildContext context, string name, string workingDirectory, string solutionFile, string arch)
+    private void BuildForArch(
+        BuildContext context,
+        string name,
+        string workingDirectory,
+        string solutionFile,
+        string arch,
+        string? platformToolset)
     {
-        int exit = context.StartProcess("msbuild", new ProcessSettings { WorkingDirectory = workingDirectory, Arguments = $"{solutionFile} /p:Configuration=Release /p:Platform={arch}" });
+        var toolsetArgument = string.IsNullOrWhiteSpace(platformToolset)
+            ? string.Empty
+            : $" /p:PlatformToolset={platformToolset}";
+        int exit = context.StartProcess("msbuild", new ProcessSettings { WorkingDirectory = workingDirectory, Arguments = $"{solutionFile} /p:Configuration=Release /p:Platform={arch}{toolsetArgument}" });
         if (exit != 0)
         {
             throw new Exception($"{name} build failed with msbuild! {exit}");
