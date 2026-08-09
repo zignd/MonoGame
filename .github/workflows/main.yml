@@ -17,16 +17,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-2022
+          - os: windows-latest
             platform: windows
             shell: pwsh
-          - os: macos-26
+          - os: macos-latest
             platform: macos
             shell: bash
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             platform: linux
             shell: bash
-          - os: ubuntu-22.04-arm
+          - os: ubuntu-24.04-arm
             platform: linux-arm
             shell: bash
       fail-fast: false
@@ -345,10 +345,10 @@ jobs:
           - os: windows${{ needs.choose-runner.outputs.runner }}latest
             platform: windows
             shell: pwsh
-          - os: macos${{ needs.choose-runner.outputs.runner }}15
+          - os: macos${{ needs.choose-runner.outputs.runner }}latest
             platform: macos
             shell: bash
-          - os: ubuntu-24.04
+          - os: ubuntu-latest
             platform: linux
             shell: bash
             filter: --where="Category != Audio"
