@@ -1,6 +1,6 @@
 # MonoGame backend & platform dependencies
 
-> Local architecture notes for this fork (`zignd/MonoGame`) — how MonoGame's public API maps onto
+> Local architecture notes for this fork (`zigrok/MonoGame`) — how MonoGame's public API maps onto
 > SDL, the graphics APIs (OpenGL / Vulkan / Metal / Direct3D 12), and, for Vulkan on macOS, MoltenVK.
 > Written to explain the codebase; not an upstream contribution.
 
