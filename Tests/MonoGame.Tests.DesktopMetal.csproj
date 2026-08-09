@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <IsPackable>false</IsPackable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <DefineConstants>METAL;DESKTOP;MACOS</DefineConstants>
+    <Platforms>AnyCPU;ARM64;x64</Platforms>
+    <NativeMetalRuntime>..\Artifacts\native\mgruntime\desktopmetal\macosx\$(Configuration)\libmgruntime.dylib</NativeMetalRuntime>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnitLite" Version="3.13.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="bin\**\*" />
+    <Compile Remove="Framework\WindowsDX\**" />
+    <Compile Remove="obj\**" />
+    <Compile Remove="Properties/**/*" />
+    <Compile Remove="Interactive/**/*" />
+    <Compile Remove="Runner/iOS/**/*" />
+    <Compile Remove="Framework/SDL/**/*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets/**/*" CopyToOutputDirectory="PreserveNewest" />
+
+    <Content Include="..\MonoGame.Framework\Platform\Graphics\Effect\Resources\*.fx*">
+      <Link>Assets\Effects\Stock\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Framework\WindowsDX\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <None Remove="Framework\WindowsDX\**" />
+    <None Remove="obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MonoGame.Framework\MonoGame.Framework.Native.csproj" />
+
+    <NativeLib Include="$(NativeMetalRuntime)" Condition="Exists('$(NativeMetalRuntime)')" />
+  </ItemGroup>
+
+  <Target Name="ValidateNativeMetalRuntime" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(NativeMetalRuntime)')" Text="The DesktopMetal native runtime was not found. Run the 'Build Native Metal' task before building this test project." />
+  </Target>
+
+  <ItemGroup>
+    <Content Include="@(NativeLib)" Visible="false">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <UpToDateCheckBuilt Include="@(NativeLib->'$(OutputPath)%(Filename)%(Extension)')">
+      <Original>%(Identity)</Original>
+    </UpToDateCheckBuilt>
+  </ItemGroup>
+
+</Project>

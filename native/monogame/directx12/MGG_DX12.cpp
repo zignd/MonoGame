@@ -726,6 +726,11 @@ void MGG_GraphicsDevice_GetBackBufferSize(MGG_GraphicsDevice* device, mgint& wid
 	height = backBuffer ? (mgint)backBuffer->GetHeight() : 0;
 }
 
+mgint MGG_GraphicsDevice_GetDrawableSizeMismatchCount(MGG_GraphicsDevice* device)
+{
+	return -1;
+}
+
 static void MGDX_PrepareNextFrame(MGG_GraphicsDevice* device)
 {
 	device->begin_frame_index = device->resources->Prepare();

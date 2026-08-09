@@ -104,6 +104,8 @@ public sealed class UploadArtifactsTask : AsyncFrostingTask<BuildContext>
         await context.GitHubActions().Commands.UploadArtifact(new DirectoryPath(context.NuGetsDirectory), $"nuget-{os}.{context.Version}");
         await context.GitHubActions().Commands.UploadArtifact(new DirectoryPath(System.IO.Path.Combine(context.BuildOutput, "Tests", "DesktopGL", "Release")), $"tests-desktopgl-{os}");
         await context.GitHubActions().Commands.UploadArtifact(new DirectoryPath(System.IO.Path.Combine(context.BuildOutput, "Tests", "DesktopVK", "Release")), $"tests-desktopvk-{os}");
+        if (context.IsRunningOnMacOs())
+            await context.GitHubActions().Commands.UploadArtifact(new DirectoryPath(System.IO.Path.Combine(context.BuildOutput, "Tests", "DesktopMetal", "Release")), $"tests-desktopmetal-{os}");
         if (context.IsRunningOnWindows())
         {
             await context.GitHubActions().Commands.UploadArtifact(new DirectoryPath(System.IO.Path.Combine(context.BuildOutput, "Tests", "WindowsDX", "Release")), $"tests-windowsdx-{os}");

@@ -1,4 +1,4 @@
-#if VULKAN || DIRECTX12
+#if VULKAN || DIRECTX12 || METAL
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -145,6 +145,23 @@ internal unsafe partial class NativeSdl3SmokeTest
         });
     }
 
+#if METAL
+    [Test]
+    [Category("Fullscreen")]
+    public void MetalFullscreenTransitions_NeverAcquireStaleSizeDrawable()
+    {
+        using var game = new MetalFullscreenTransitionGame();
+
+        game.Run();
+
+        Assert.That(game.CompletedTransitions, Is.EqualTo(MetalFullscreenTransitionGame.TransitionCount));
+        Assert.That(
+            MGG.GraphicsDevice_GetDrawableSizeMismatchCount(game.GraphicsDevice.Handle),
+            Is.Zero,
+            "Metal drawable-size validation was disabled or an acquired drawable did not match the live Cocoa backing size.");
+    }
+#endif
+
     [Test]
     [Category("Fullscreen")]
     public void BorderlessFullscreen_EntersAndRestoresWindowedAspect()
@@ -211,6 +228,56 @@ internal unsafe partial class NativeSdl3SmokeTest
             Assert.That(height, Is.GreaterThan(0));
         });
     }
+
+#if METAL
+    private sealed class MetalFullscreenTransitionGame : Game
+    {
+        public const int TransitionCount = 8;
+        private const int FramesPerState = 12;
+        private readonly GraphicsDeviceManager _graphics;
+        private int _framesInState;
+
+        public MetalFullscreenTransitionGame()
+        {
+            _graphics = new GraphicsDeviceManager(this)
+            {
+                PreferredBackBufferWidth = 640,
+                PreferredBackBufferHeight = 360,
+                SynchronizeWithVerticalRetrace = false,
+            };
+            IsFixedTimeStep = false;
+        }
+
+        public int CompletedTransitions { get; private set; }
+
+        protected override void Update(GameTime gameTime)
+        {
+            if (++_framesInState < FramesPerState)
+            {
+                base.Update(gameTime);
+                return;
+            }
+
+            _framesInState = 0;
+            if (CompletedTransitions == TransitionCount)
+            {
+                Exit();
+                return;
+            }
+
+            _graphics.IsFullScreen = !_graphics.IsFullScreen;
+            _graphics.ApplyChanges();
+            CompletedTransitions++;
+            base.Update(gameTime);
+        }
+
+        protected override void Draw(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.CornflowerBlue);
+            base.Draw(gameTime);
+        }
+    }
+#endif
 
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     private struct SdlEvent

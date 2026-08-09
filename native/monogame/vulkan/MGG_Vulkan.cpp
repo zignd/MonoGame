@@ -2335,6 +2335,11 @@ void MGG_GraphicsDevice_GetBackBufferSize(MGG_GraphicsDevice* device, mgint& wid
 	height = (mgint)device->swapchainHeight;
 }
 
+mgint MGG_GraphicsDevice_GetDrawableSizeMismatchCount(MGG_GraphicsDevice* device)
+{
+	return -1;
+}
+
 
 static void MGVK_ProcessDescriptorCaches(MGG_GraphicsDevice* device, FrameCounter currentFrame)
 {

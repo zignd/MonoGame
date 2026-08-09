@@ -451,6 +451,13 @@ jobs:
           name: tests-desktopvk-${{ matrix.platform }}
           path: tests-desktopvk
 
+      - name: Download tests-desktopmetal-${{ matrix.platform }}
+        if: runner.os == 'macos'
+        uses: actions/download-artifact@v4
+        with:
+          name: tests-desktopmetal-${{ matrix.platform }}
+          path: tests-desktopmetal
+
       - name: Run hosted Windows DX12 SDL3 smoke tests
         if: runner.environment == 'github-hosted' && runner.os == 'Windows'
         run: dotnet MonoGame.Tests.dll --where="cat == NativeSdl3" --timeout=60000 --labels=Before
@@ -464,6 +471,14 @@ jobs:
         env:
           CI: true
         working-directory: tests-desktopvk
+
+      - name: Run hosted macOS Metal SDL3 smoke tests
+        if: runner.environment == 'github-hosted' && runner.os == 'macos'
+        run: dotnet MonoGame.Tests.dll --where="cat == NativeSdl3" --timeout=60000 --labels=Before
+        env:
+          CI: true
+          MG_METAL_VALIDATE_DRAWABLE_SIZE: 1
+        working-directory: tests-desktopmetal
 
       - name: Run hosted Linux Vulkan SDL3 smoke tests
         if: runner.environment == 'github-hosted' && matrix.platform == 'linux' && runner.arch == 'X64'

@@ -41,6 +41,7 @@ MG_EXPORT mgbool MGG_GraphicsDevice_GetPipelineCacheData(MGG_GraphicsDevice* dev
 MG_EXPORT MGPipelineCacheStatus MGG_GraphicsDevice_ImportPipelineCache(MGG_GraphicsDevice* device, mgbyte* data, mgint dataBytes);
 MG_EXPORT void MGG_GraphicsDevice_ResizeSwapchain(MGG_GraphicsDevice* device, void* nativeWindowHandle, mgint width, mgint height, MGSurfaceFormat color, MGDepthFormat depth, mgint multiSampleCount, mgint syncInterval);
 MG_EXPORT void MGG_GraphicsDevice_GetBackBufferSize(MGG_GraphicsDevice* device, mgint& width, mgint& height);
+MG_EXPORT mgint MGG_GraphicsDevice_GetDrawableSizeMismatchCount(MGG_GraphicsDevice* device);
 MG_EXPORT mgint MGG_GraphicsDevice_BeginFrame(MGG_GraphicsDevice* device);
 MG_EXPORT void MGG_GraphicsDevice_Clear(MGG_GraphicsDevice* device, MGClearOptions options, Vector4& color, mgfloat depth, mgint stencil);
 MG_EXPORT void MGG_GraphicsDevice_Present(MGG_GraphicsDevice* device, mgint currentFrame, mgint syncInterval);

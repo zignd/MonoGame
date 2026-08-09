@@ -218,6 +218,8 @@ struct MGG_GraphicsDevice
     MTLPixelFormat backbufferFormat = MTLPixelFormatBGRA8Unorm; // CAMetalLayer requires BGRA
     MTLPixelFormat backbufferDepthFormat = MTLPixelFormatInvalid;
     int backbufferWidth = 0, backbufferHeight = 0;
+    int drawableSizeMismatchCount = 0;
+    bool validateDrawableSize = false;
     int multiSampleCount = 1;
     int syncInterval = 1;
 
@@ -485,6 +487,7 @@ MGG_GraphicsDevice* MGG_GraphicsDevice_Create(MGG_GraphicsSystem* system, MGG_Gr
     device->queue = [device->mtlDevice newCommandQueue];
     device->inFlight = dispatch_semaphore_create(MAX_FRAMES_IN_FLIGHT);
     device->perf = getenv("MG_METAL_PERF") != nullptr;
+    device->validateDrawableSize = getenv("MG_METAL_VALIDATE_DRAWABLE_SIZE") != nullptr;
     if (device->perf)
         MGMTL_Log("[metal-perf] diagnostics ON (MG_METAL_PERF): logging pipeline compiles + scanning each present for magenta");
 
@@ -602,6 +605,12 @@ static void MGMTL_CreateBackbufferAuxTargets(MGG_GraphicsDevice* device)
     }
 }
 
+static CGSize MGMTL_GetLiveBackingSize(MGG_GraphicsDevice* device)
+{
+    NSView* view = (__bridge NSView*)device->metalView;
+    return [view convertSizeToBacking:view.bounds.size];
+}
+
 // Track the window's real physical pixel size as the back buffer size (the "swapchain sizes itself to
 // the surface" model — mirrors the Vulkan backend). SDL auto-resizes the CAMetalLayer with the view, so
 // on a fullscreen/resize the drawable grows; without pulling that size into the managed back buffer the
@@ -616,7 +625,19 @@ static void MGMTL_SyncBackbufferSize(MGG_GraphicsDevice* device)
         return;
     if ((SDL_GetWindowFlags(device->window) & SDL_WINDOW_HIDDEN) != 0)
         return;
-    // Read the size SDL set on the layer (= view backing size). Never write it — SDL owns it.
+    // SDL updates drawableSize from a window pixel-size event. During a fullscreen transition the
+    // view bounds can change one callback before that event, briefly allowing nextDrawable to return
+    // an old-size surface for the resized layer. Synchronize from the view's live backing bounds at
+    // the point of acquisition so a stale drawable is never presented through the new geometry.
+    NSView* view = (__bridge NSView*)device->metalView;
+    CGSize backingSize = MGMTL_GetLiveBackingSize(device);
+    if (backingSize.width > 0 && backingSize.height > 0 &&
+        !CGSizeEqualToSize(device->layer.drawableSize, backingSize))
+    {
+        device->layer.contentsScale = backingSize.height / view.bounds.size.height;
+        device->layer.drawableSize = backingSize;
+    }
+
     CGSize ds = device->layer.drawableSize;
     int w = (int)ds.width, h = (int)ds.height;
 
@@ -631,9 +652,8 @@ static void MGMTL_SyncBackbufferSize(MGG_GraphicsDevice* device)
             int pw = 0, ph = 0; SDL_GetWindowSize(device->window, &pw, &ph);
             int xw = 0, xh = 0; SDL_GetWindowSizeInPixels(device->window, &xw, &xh);
             int px = 0, py = 0; SDL_GetWindowPosition(device->window, &px, &py);
-            NSView* v = (__bridge NSView*)device->metalView;
-            CGRect lf = device->layer.frame, vf = v.frame, vb = v.bounds;
-            NSWindow* nw = v.window;
+            CGRect lf = device->layer.frame, vf = view.frame, vb = view.bounds;
+            NSWindow* nw = view.window;
             CGRect wf = nw ? nw.frame : CGRectZero;
             CGRect sf = (nw && nw.screen) ? nw.screen.frame : CGRectZero;
             MGMTL_Log("[metal-geom] flags=0x%x winPts=%dx%d winPx=%dx%d pos=%d,%d | drawable=%.0fx%.0f layerFrame=(%.0f,%.0f %.0fx%.0f) scale=%.2f | viewFrame=(%.0f,%.0f %.0fx%.0f) viewBounds=%.0fx%.0f | nswinFrame=(%.0f,%.0f %.0fx%.0f) screen=(%.0f,%.0f %.0fx%.0f)",
@@ -701,6 +721,11 @@ void MGG_GraphicsDevice_GetBackBufferSize(MGG_GraphicsDevice* device, mgint& wid
     MGMTL_SyncBackbufferSize(device);
     width = device->backbufferWidth;
     height = device->backbufferHeight;
+}
+
+mgint MGG_GraphicsDevice_GetDrawableSizeMismatchCount(MGG_GraphicsDevice* device)
+{
+    return device->validateDrawableSize ? device->drawableSizeMismatchCount : -1;
 }
 
 static void MGMTL_MarkAllDirty(MGG_GraphicsDevice* device)
@@ -792,6 +817,16 @@ static id<MTLTexture> MGMTL_AcquireBackbufferColor(MGG_GraphicsDevice* device, _
         device->drawable = [device->layer nextDrawable];
     if (device->drawable == nil)
         return nil;
+
+    if (device->validateDrawableSize)
+    {
+        CGSize backingSize = MGMTL_GetLiveBackingSize(device);
+        if ((int)device->drawable.texture.width != (int)backingSize.width ||
+            (int)device->drawable.texture.height != (int)backingSize.height)
+        {
+            device->drawableSizeMismatchCount++;
+        }
+    }
 
     if (device->multiSampleCount > 1)
     {
