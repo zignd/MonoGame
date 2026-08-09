@@ -14,6 +14,8 @@ jobs:
   build:
     name: build-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+      MONOGAME_WINDOWS_PLATFORM_TOOLSET: ${{ matrix.platform == 'windows' && 'v145' || '' }}
     strategy:
       matrix:
         include:
@@ -189,7 +191,6 @@ jobs:
           dotnet run --project build/Build.csproj -- --target=Default
         env:
           DOTNET_SYSTEM_NET_SECURITY_NOREVOCATIONCHECKBYDEFAULT: 1 # android compilation is failing randomly due to downloads from microsofts website during it
-          MONOGAME_WINDOWS_PLATFORM_TOOLSET: ${{ runner.os == 'Windows' && 'v145' || '' }}
 
       - name: Build
         if: runner.os == 'Linux' && runner.arch == 'ARM64'
