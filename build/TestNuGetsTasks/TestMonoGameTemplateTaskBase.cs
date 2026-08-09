@@ -193,7 +193,7 @@ public abstract class TestMonoGameTemplateTaskBase : FrostingTask<BuildContext>
         context.Information($"Installing MonoGame templates version {templateVersion}...");
         context.StartProcess("dotnet", new ProcessSettings
         {
-            Arguments = $"new install MonoGame.Templates.CSharp::{templateVersion} --nuget-source \"{nugetSourcePath}\""
+            Arguments = $"new install MonoGame.Templates.CSharp@{templateVersion} --nuget-source \"{nugetSourcePath}\""
         });
     }
 

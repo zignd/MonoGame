@@ -41,7 +41,7 @@ jobs:
           android: false
           dotnet: false 
           docker-images: true
-          large-packages: true
+          large-packages: ${{ runner.arch != 'ARM64' }}
           swap-storage: true
 
       - name: Clone repository
