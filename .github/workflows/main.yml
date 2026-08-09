@@ -92,7 +92,9 @@ jobs:
 
       - name: Add msbuild to PATH
         if: runner.os == 'Windows'
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v3
+        with:
+          vs-version: '[17.0,18.0)'
 
       - name: Setup Premake5
         uses: abel0b/setup-premake@v2.4
@@ -102,6 +104,8 @@ jobs:
       - name: Build Premake5
         if: runner.os == 'Linux' && runner.arch == 'ARM64'
         run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends uuid-dev
           git clone https://github.com/premake/premake-core.git ${GITHUB_WORKSPACE}/premake-core
           cd ${GITHUB_WORKSPACE}/premake-core
           ./Bootstrap.sh
