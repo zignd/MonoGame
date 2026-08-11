@@ -77,6 +77,7 @@ class NativeGamePlatform : GamePlatform
     public override unsafe void RunLoop()
     {
         _window.Show(true);
+        _window.Raise();
 
         while (true)
         {

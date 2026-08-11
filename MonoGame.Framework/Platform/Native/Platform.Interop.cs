@@ -322,6 +322,9 @@ internal static unsafe partial class MGP
     [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Window_Show", ExactSpelling = true)]
     public static extern void Window_Show(MGP_Window* window, byte show);
 
+    [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Window_Raise", ExactSpelling = true)]
+    public static extern void Window_Raise(MGP_Window* window);
+
     [DllImport(MonoGameNativeDLL, EntryPoint = "MGP_Window_GetPosition", ExactSpelling = true)]
     public static extern void Window_GetPosition(MGP_Window* window, out int x, out int y);
 

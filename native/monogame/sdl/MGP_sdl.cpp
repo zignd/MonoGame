@@ -982,6 +982,13 @@ void MGP_Window_Show(MGP_Window* window, mgbyte show)
 		SDL_HideWindow(window->window);
 }
 
+void MGP_Window_Raise(MGP_Window* window)
+{
+    assert(window != nullptr);
+
+    SDL_RaiseWindow(window->window);
+}
+
 void MGP_Window_GetPosition(MGP_Window* window, mgint& x, mgint& y)
 {
 	assert(window != nullptr);

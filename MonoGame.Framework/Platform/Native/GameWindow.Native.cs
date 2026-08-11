@@ -227,4 +227,9 @@ internal class NativeGameWindow : GameWindow
     {
         MGP.Window_Show(_handle, (byte)(show ? 1 : 0));
     }
+
+    internal unsafe void Raise()
+    {
+        MGP.Window_Raise(_handle);
+    }
 }

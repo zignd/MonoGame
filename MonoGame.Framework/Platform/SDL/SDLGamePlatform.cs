@@ -84,6 +84,7 @@ namespace Microsoft.Xna.Framework
         public override void RunLoop()
         {
             Sdl.Window.Show(Window.Handle);
+            Sdl.Window.Raise(Window.Handle);
 
             while (true)
             {
