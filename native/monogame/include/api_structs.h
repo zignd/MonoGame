@@ -205,6 +205,8 @@ struct MGP_MouseButtonEvent
 {
     void* Window;
     MGMouseButton Button;
+    mgint X;
+    mgint Y;
 };
 
 struct MGP_MouseWheelEvent

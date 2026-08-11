@@ -203,6 +203,8 @@ class NativeGamePlatform : GamePlatform
                     var window = NativeGameWindow.FromHandle(event_.MouseButton.Window);
                     if (window != null)
                     {
+                        window.MouseState.X = (int)(event_.MouseButton.X * window.Scale);
+                        window.MouseState.Y = (int)(event_.MouseButton.Y * window.Scale);
                         var state = event_.Type == EventType.MouseButtonDown ? ButtonState.Pressed : ButtonState.Released;
 
                         switch (event_.MouseButton.Button)

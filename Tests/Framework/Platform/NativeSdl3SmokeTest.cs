@@ -19,6 +19,7 @@ internal unsafe partial class NativeSdl3SmokeTest
     private const uint SdlEventKeyDown = 0x300;
     private const uint SdlEventKeyUp = 0x301;
     private const uint SdlEventMouseMotion = 0x400;
+    private const uint SdlEventMouseButtonDown = 0x401;
     private const uint SdlEventGamepadButtonDown = 0x651;
     private const ulong SdlWindowFullscreen = 0x1;
 
@@ -91,6 +92,27 @@ internal unsafe partial class NativeSdl3SmokeTest
 
         Assert.That(MGP.Platform_PushSdlEvent((nint)(&sdlEvent)), Is.Not.Zero);
         Assert.That(TryPollMouseMove(123, 45), Is.True);
+    }
+
+    [Test]
+    public void MouseButtonEvent_PreservesClickPosition()
+    {
+        var sdlEvent = new SdlEvent
+        {
+            Type = SdlEventMouseButtonDown,
+            MouseButton = 1,
+            MotionX = 321,
+            MotionY = 87
+        };
+
+        Assert.That(MGP.Platform_PushSdlEvent((nint)(&sdlEvent)), Is.Not.Zero);
+        Assert.That(TryPoll(EventType.MouseButtonDown, out MGP_Event translated), Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(translated.MouseButton.Button, Is.EqualTo(MouseButton.Left));
+            Assert.That(translated.MouseButton.X, Is.EqualTo(321));
+            Assert.That(translated.MouseButton.Y, Is.EqualTo(87));
+        });
     }
 
     private bool TryPollMouseMove(int expectedX, int expectedY)
@@ -293,6 +315,9 @@ internal unsafe partial class NativeSdl3SmokeTest
 
         [FieldOffset(32)]
         public float MotionY;
+
+        [FieldOffset(24)]
+        public byte MouseButton;
 
         [FieldOffset(16)]
         public int GamepadWhich;
