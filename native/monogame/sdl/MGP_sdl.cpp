@@ -871,6 +871,16 @@ MGP_Window* MGP_Window_Create(
 		return nullptr;
 	}
 
+#if defined(MG_SDL3)
+    // SDL2 enabled text input automatically on desktop; SDL3 requires an explicit opt-in before
+    // it emits SDL_EVENT_TEXT_INPUT for the managed GameWindow.TextInput event.
+    if (!SDL_StartTextInput(window->window))
+    {
+        printf("SDL_StartTextInput failed: %s\n", SDL_GetError());
+        fflush(stdout);
+    }
+#endif
+
     window->windowId = SDL_GetWindowID(window->window);
 
 	platform->windows.push_back(window);
